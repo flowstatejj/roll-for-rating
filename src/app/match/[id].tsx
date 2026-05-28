@@ -1,0 +1,316 @@
+import { Ionicons } from '@expo/vector-icons';
+import { Stack, useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
+
+import { ThemedText } from '@/components/themed-text';
+import { Avatar, BeltChip, Button, Card, Loading, Screen, TextField } from '@/components/ui/kit';
+import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
+import { useAuth } from '@/lib/auth';
+import { cancelMatch, fetchMatch, recordResult, respondToMatch } from '@/lib/matches';
+import { RESULT_LABELS, type MatchWithPeople, type ResultType } from '@/lib/types';
+
+const RESULT_OPTIONS: ResultType[] = ['submission', 'points', 'advantage', 'decision', 'draw'];
+
+export default function MatchDetailScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { session } = useAuth();
+  const theme = useTheme();
+  const userId = session!.user.id;
+
+  const [match, setMatch] = useState<MatchWithPeople | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  // Referee result form state
+  const [winner, setWinner] = useState<'challenger' | 'opponent' | 'draw' | null>(null);
+  const [result, setResult] = useState<ResultType | null>(null);
+  const [method, setMethod] = useState('');
+  const [notes, setNotes] = useState('');
+
+  const load = useCallback(async () => {
+    if (!id) return;
+    try {
+      setMatch(await fetchMatch(id));
+    } catch (e) {
+      console.warn('Failed to load match', e);
+    }
+  }, [id]);
+
+  useEffect(() => { load(); }, [load]);
+
+  if (!match) return <Loading />;
+
+  const amOpponent = match.opponent_id === userId;
+  const amReferee = match.referee_id === userId;
+  const amCompetitor = match.challenger_id === userId || amOpponent;
+
+  async function act(fn: () => Promise<void>, successMsg?: string) {
+    setBusy(true);
+    try {
+      await fn();
+      await load();
+      if (successMsg) Alert.alert('Done', successMsg);
+    } catch (e: any) {
+      Alert.alert('Error', e.message ?? 'Try again.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function submitResult() {
+    if (!winner || !result) {
+      Alert.alert('Incomplete', 'Pick a winner and how the match ended.');
+      return;
+    }
+    const winnerId =
+      winner === 'draw' ? null : winner === 'challenger' ? match!.challenger_id : match!.opponent_id;
+    const finalResult: ResultType = winner === 'draw' ? 'draw' : result;
+    act(
+      () =>
+        recordResult({
+          matchId: match!.id,
+          winnerId,
+          result: finalResult,
+          method: method.trim() || null,
+          notes: notes.trim() || null,
+        }),
+      'Result recorded and ratings updated.',
+    );
+  }
+
+  return (
+    <Screen>
+      <Stack.Screen options={{ title: 'Match' }} />
+
+      <StatusBanner match={match} />
+
+      {/* Competitors */}
+      <Card style={{ gap: Spacing.three }}>
+        <PersonRow
+          person={match.challenger}
+          tag="Challenger"
+          ratingBefore={match.challenger_rating_before}
+          ratingAfter={match.challenger_rating_after}
+          won={match.winner_id === match.challenger_id}
+          isMe={match.challenger_id === userId}
+        />
+        <View style={styles.vsRow}>
+          <View style={[styles.line, { backgroundColor: theme.border }]} />
+          <ThemedText themeColor="textSecondary" style={{ fontWeight: '800' }}>
+            VS
+          </ThemedText>
+          <View style={[styles.line, { backgroundColor: theme.border }]} />
+        </View>
+        <PersonRow
+          person={match.opponent}
+          tag="Opponent"
+          ratingBefore={match.opponent_rating_before}
+          ratingAfter={match.opponent_rating_after}
+          won={match.winner_id === match.opponent_id}
+          isMe={amOpponent}
+        />
+      </Card>
+
+      {/* Referee */}
+      <Card style={styles.refCard}>
+        <Ionicons name="eye-outline" size={20} color={theme.textSecondary} />
+        <ThemedText themeColor="textSecondary">Referee</ThemedText>
+        <ThemedText style={{ fontWeight: '700' }}>
+          {match.referee.display_name}
+          {amReferee ? ' (you)' : ''}
+        </ThemedText>
+      </Card>
+
+      {/* Completed result summary */}
+      {match.status === 'completed' && match.result && (
+        <Card style={{ gap: Spacing.one }}>
+          <ThemedText type="smallBold" themeColor="textSecondary">
+            RESULT
+          </ThemedText>
+          <ThemedText style={{ fontSize: 18, fontWeight: '700' }}>
+            {match.result === 'draw'
+              ? 'Draw'
+              : `${match.winner_id === match.challenger_id ? match.challenger.display_name : match.opponent.display_name} won`}
+          </ThemedText>
+          <ThemedText themeColor="textSecondary">
+            By {RESULT_LABELS[match.result].toLowerCase()}
+            {match.method ? ` · ${match.method}` : ''}
+          </ThemedText>
+          {match.notes ? <ThemedText style={{ marginTop: Spacing.one }}>{match.notes}</ThemedText> : null}
+        </Card>
+      )}
+
+      {/* ACTIONS */}
+
+      {/* Opponent accept/decline */}
+      {match.status === 'pending_opponent' && amOpponent && (
+        <View style={{ gap: Spacing.two }}>
+          <Button label="Accept challenge" icon="checkmark-circle" onPress={() => act(() => respondToMatch(match.id, true))} loading={busy} />
+          <Button label="Decline" variant="danger" onPress={() => act(() => respondToMatch(match.id, false))} loading={busy} />
+        </View>
+      )}
+
+      {match.status === 'pending_opponent' && !amOpponent && (
+        <Card style={{ alignItems: 'center' }}>
+          <ThemedText themeColor="textSecondary">Waiting for {match.opponent.display_name} to accept…</ThemedText>
+        </Card>
+      )}
+
+      {/* Referee records result */}
+      {match.status === 'pending_referee' && amReferee && (
+        <Card style={{ gap: Spacing.three }}>
+          <ThemedText type="subtitle" style={{ fontSize: 18 }}>
+            Record the result
+          </ThemedText>
+
+          <View style={{ gap: Spacing.one }}>
+            <ThemedText type="smallBold" themeColor="textSecondary">Winner</ThemedText>
+            <View style={{ gap: Spacing.two }}>
+              <Choice label={`${match.challenger.display_name} (Challenger)`} selected={winner === 'challenger'} onPress={() => setWinner('challenger')} />
+              <Choice label={`${match.opponent.display_name} (Opponent)`} selected={winner === 'opponent'} onPress={() => setWinner('opponent')} />
+              <Choice label="Draw" selected={winner === 'draw'} onPress={() => { setWinner('draw'); setResult('draw'); }} />
+            </View>
+          </View>
+
+          {winner && winner !== 'draw' && (
+            <View style={{ gap: Spacing.one }}>
+              <ThemedText type="smallBold" themeColor="textSecondary">How did it end?</ThemedText>
+              <View style={styles.resultChips}>
+                {RESULT_OPTIONS.filter((r) => r !== 'draw').map((r) => (
+                  <Choice key={r} compact label={RESULT_LABELS[r]} selected={result === r} onPress={() => setResult(r)} />
+                ))}
+              </View>
+            </View>
+          )}
+
+          {winner && winner !== 'draw' && result === 'submission' && (
+            <TextField label="Submission (optional)" value={method} onChangeText={setMethod} placeholder="e.g. Rear naked choke" />
+          )}
+
+          <TextField label="Notes (optional)" value={notes} onChangeText={setNotes} placeholder="Anything notable about the roll" multiline />
+
+          <Button label="Submit result" icon="trophy" onPress={submitResult} loading={busy} />
+        </Card>
+      )}
+
+      {match.status === 'pending_referee' && !amReferee && (
+        <Card style={{ alignItems: 'center' }}>
+          <ThemedText themeColor="textSecondary">
+            Both accepted. Waiting for {match.referee.display_name} to record the result.
+          </ThemedText>
+        </Card>
+      )}
+
+      {/* Cancel option for competitors while still pending */}
+      {(match.status === 'pending_opponent' || match.status === 'pending_referee') && amCompetitor && (
+        <Button label="Cancel match" variant="ghost" onPress={() => act(() => cancelMatch(match.id))} loading={busy} />
+      )}
+    </Screen>
+  );
+}
+
+function StatusBanner({ match }: { match: MatchWithPeople }) {
+  const theme = useTheme();
+  const map: Record<string, { text: string; color: string }> = {
+    pending_opponent: { text: 'Awaiting opponent', color: '#D9822B' },
+    pending_referee: { text: 'Awaiting referee', color: theme.accent },
+    completed: { text: 'Completed', color: theme.success },
+    declined: { text: 'Declined', color: theme.textSecondary },
+    cancelled: { text: 'Cancelled', color: theme.textSecondary },
+  };
+  const m = map[match.status];
+  return (
+    <View style={[styles.banner, { backgroundColor: m.color + '22' }]}>
+      <ThemedText style={{ color: m.color, fontWeight: '800' }}>{m.text}</ThemedText>
+    </View>
+  );
+}
+
+function PersonRow({
+  person,
+  tag,
+  ratingBefore,
+  ratingAfter,
+  won,
+  isMe,
+}: {
+  person: MatchWithPeople['challenger'];
+  tag: string;
+  ratingBefore: number | null;
+  ratingAfter: number | null;
+  won: boolean;
+  isMe: boolean;
+}) {
+  const theme = useTheme();
+  const delta = ratingBefore != null && ratingAfter != null ? ratingAfter - ratingBefore : null;
+  return (
+    <View style={styles.personRow}>
+      <Avatar name={person.display_name} size={48} />
+      <View style={{ flex: 1, gap: 3 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.one }}>
+          {won && <Ionicons name="trophy" size={16} color={theme.success} />}
+          <ThemedText style={{ fontWeight: '800', fontSize: 16 }} numberOfLines={1}>
+            {person.display_name}{isMe ? ' (you)' : ''}
+          </ThemedText>
+        </View>
+        <View style={{ flexDirection: 'row', gap: Spacing.two, alignItems: 'center' }}>
+          <BeltChip belt={person.belt_rank} size="sm" />
+          <ThemedText type="small" themeColor="textSecondary">{tag}</ThemedText>
+        </View>
+      </View>
+      <View style={{ alignItems: 'flex-end' }}>
+        <ThemedText style={{ fontWeight: '800', fontSize: 18 }}>
+          {ratingAfter ?? person.rating}
+        </ThemedText>
+        {delta != null && (
+          <ThemedText
+            type="small"
+            style={{ color: delta > 0 ? theme.success : delta < 0 ? theme.danger : theme.textSecondary, fontWeight: '700' }}>
+            {delta > 0 ? `+${delta}` : delta}
+          </ThemedText>
+        )}
+      </View>
+    </View>
+  );
+}
+
+function Choice({
+  label,
+  selected,
+  onPress,
+  compact,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+  compact?: boolean;
+}) {
+  const theme = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[
+        styles.choice,
+        compact && { flexGrow: 1, flexBasis: '45%' },
+        {
+          backgroundColor: selected ? theme.accent : theme.background,
+          borderColor: selected ? theme.accent : theme.border,
+        },
+      ]}>
+      <ThemedText style={{ color: selected ? theme.accentText : theme.text, fontWeight: '700', textAlign: 'center' }}>
+        {label}
+      </ThemedText>
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  banner: { borderRadius: 12, paddingVertical: Spacing.two, paddingHorizontal: Spacing.three, alignItems: 'center' },
+  vsRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  line: { flex: 1, height: StyleSheet.hairlineWidth },
+  personRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  refCard: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  resultChips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
+  choice: { borderRadius: 10, borderWidth: 1, paddingVertical: Spacing.three, paddingHorizontal: Spacing.three },
+});
