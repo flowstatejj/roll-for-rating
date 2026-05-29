@@ -114,12 +114,17 @@ export default function MatchDetailScreen() {
 
       {/* Referee */}
       <Card style={styles.refCard}>
+        <Avatar name={match.referee.display_name} size={36} />
+        <View style={{ flex: 1 }}>
+          <ThemedText type="small" themeColor="textSecondary">
+            REFEREE
+          </ThemedText>
+          <ThemedText style={{ fontWeight: '700' }}>
+            {match.referee.display_name}
+            {amReferee ? ' (you)' : ''}
+          </ThemedText>
+        </View>
         <Ionicons name="eye-outline" size={20} color={theme.textSecondary} />
-        <ThemedText themeColor="textSecondary">Referee</ThemedText>
-        <ThemedText style={{ fontWeight: '700' }}>
-          {match.referee.display_name}
-          {amReferee ? ' (you)' : ''}
-        </ThemedText>
       </Card>
 
       {/* Completed result summary */}
@@ -244,31 +249,38 @@ function PersonRow({
 }) {
   const theme = useTheme();
   const delta = ratingBefore != null && ratingAfter != null ? ratingAfter - ratingBefore : null;
+  const deltaColor = delta == null ? theme.textSecondary : delta > 0 ? theme.success : delta < 0 ? theme.danger : theme.textSecondary;
   return (
-    <View style={styles.personRow}>
-      <Avatar name={person.display_name} size={48} />
+    <View
+      style={[
+        styles.personRow,
+        won && { backgroundColor: theme.success + '22', borderRadius: 10, paddingHorizontal: Spacing.two, paddingVertical: Spacing.two },
+      ]}>
+      <Avatar name={person.display_name} size={52} />
       <View style={{ flex: 1, gap: 3 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.one }}>
           {won && <Ionicons name="trophy" size={16} color={theme.success} />}
-          <ThemedText style={{ fontWeight: '800', fontSize: 16 }} numberOfLines={1}>
+          <ThemedText style={{ fontWeight: '800', fontSize: 17 }} numberOfLines={1}>
             {person.display_name}{isMe ? ' (you)' : ''}
           </ThemedText>
         </View>
         <View style={{ flexDirection: 'row', gap: Spacing.two, alignItems: 'center' }}>
           <BeltChip belt={person.belt_rank} size="sm" />
-          <ThemedText type="small" themeColor="textSecondary">{tag}</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {won ? 'Winner' : tag}
+          </ThemedText>
         </View>
       </View>
-      <View style={{ alignItems: 'flex-end' }}>
-        <ThemedText style={{ fontWeight: '800', fontSize: 18 }}>
+      <View style={{ alignItems: 'flex-end', gap: 3 }}>
+        <ThemedText style={{ fontWeight: '800', fontSize: 20 }}>
           {ratingAfter ?? person.rating}
         </ThemedText>
         {delta != null && (
-          <ThemedText
-            type="small"
-            style={{ color: delta > 0 ? theme.success : delta < 0 ? theme.danger : theme.textSecondary, fontWeight: '700' }}>
-            {delta > 0 ? `+${delta}` : delta}
-          </ThemedText>
+          <View style={[styles.deltaPill, { backgroundColor: deltaColor + '26' }]}>
+            <ThemedText type="small" style={{ color: deltaColor, fontWeight: '800' }}>
+              {delta > 0 ? `+${delta}` : delta}
+            </ThemedText>
+          </View>
         )}
       </View>
     </View>
@@ -294,7 +306,7 @@ function Choice({
         styles.choice,
         compact && { flexGrow: 1, flexBasis: '45%' },
         {
-          backgroundColor: selected ? theme.accent : theme.background,
+          backgroundColor: selected ? theme.accent : 'transparent',
           borderColor: selected ? theme.accent : theme.border,
         },
       ]}>
@@ -310,7 +322,8 @@ const styles = StyleSheet.create({
   vsRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   line: { flex: 1, height: StyleSheet.hairlineWidth },
   personRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  refCard: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  deltaPill: { borderRadius: 999, paddingHorizontal: Spacing.two, paddingVertical: 1 },
+  refCard: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   resultChips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   choice: { borderRadius: 10, borderWidth: 1, paddingVertical: Spacing.three, paddingHorizontal: Spacing.three },
 });
