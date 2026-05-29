@@ -40,7 +40,7 @@ export default function SignInScreen() {
             <Ionicons name="trophy" size={32} color={theme.accentText} />
           </View>
           <ThemedText type="title" style={styles.brand}>
-            RollCall
+            Roll for Rating
           </ThemedText>
           <ThemedText themeColor="textSecondary" style={{ textAlign: 'center' }}>
             Rank your rolls. Climb the ladder.
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: Spacing.two,
   },
-  brand: { fontSize: 40 },
+  brand: { fontSize: 34, textAlign: 'center' },
   form: { gap: Spacing.three },
   footer: { flexDirection: 'row', gap: Spacing.one, justifyContent: 'center', marginTop: Spacing.two },
 });

@@ -1,5 +1,5 @@
 -- ============================================================================
--- RollCall — database schema
+-- Roll for Rating — database schema
 -- Run this in the Supabase SQL Editor (Dashboard → SQL Editor → New query).
 -- Safe to re-run: it drops and recreates the objects it owns.
 -- ============================================================================

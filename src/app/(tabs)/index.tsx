@@ -93,7 +93,9 @@ export default function HomeScreen() {
             <View style={[styles.logoMark, { backgroundColor: theme.accent }]}>
               <Ionicons name="body" size={16} color={theme.accentText} />
             </View>
-            <ThemedText style={styles.brandText}>RollCall</ThemedText>
+            <ThemedText style={styles.brandText} numberOfLines={1}>
+              Roll for Rating
+            </ThemedText>
           </View>
           <View style={[styles.topSide, { alignItems: 'flex-end' }]}>
             <Pressable onPress={() => router.push('/(tabs)/leaderboard')}>
@@ -237,7 +239,7 @@ const styles = StyleSheet.create({
   topSide: { flex: 1, justifyContent: 'center' },
   brand: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   logoMark: { width: 26, height: 26, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
-  brandText: { fontSize: 20, fontWeight: '800', letterSpacing: 0.3 },
+  brandText: { fontSize: 17, fontWeight: '800', letterSpacing: 0.2 },
   scroll: { padding: Spacing.three, gap: Spacing.three, paddingBottom: 110 },
   heroRow: { gap: Spacing.two, paddingRight: Spacing.three },
   hero: {
