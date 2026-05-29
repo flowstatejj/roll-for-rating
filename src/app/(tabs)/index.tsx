@@ -76,6 +76,7 @@ export default function HomeScreen() {
   const recent = matches.slice(0, 5);
   const total = profile.wins + profile.losses + profile.draws;
   const winRate = total > 0 ? Math.round((profile.wins / total) * 100) : 0;
+  const drawRate = total > 0 ? Math.round((profile.draws / total) * 100) : 0;
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
@@ -150,6 +151,7 @@ export default function HomeScreen() {
             <StatTile icon="trending-up" value={profile.rating} label="Rating" />
             <StatTile icon="trophy" value={profile.wins} label="Wins" />
             <StatTile icon="pie-chart" value={`${winRate}%`} label="Win rate" />
+            <StatTile icon="pie-chart-outline" value={`${drawRate}%`} label="Draw rate" />
             <StatTile icon="albums" value={total} label="Matches" />
           </ScrollView>
 

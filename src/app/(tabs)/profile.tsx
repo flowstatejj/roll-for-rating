@@ -73,6 +73,7 @@ export default function ProfileScreen() {
 
   const total = profile.wins + profile.losses + profile.draws;
   const winRate = total > 0 ? Math.round((profile.wins / total) * 100) : 0;
+  const drawRate = total > 0 ? Math.round((profile.draws / total) * 100) : 0;
   const memberSince = new Date(profile.created_at).toLocaleDateString(undefined, {
     month: 'short',
     year: 'numeric',
@@ -115,11 +116,11 @@ export default function ProfileScreen() {
       {/* Stat grid */}
       <ThemedText style={styles.sectionLabel}>Stats</ThemedText>
       <View style={styles.grid}>
-        <GridTile icon="trending-up" value={profile.rating} label="Rating" />
         <GridTile icon="trophy" value={profile.wins} label="Wins" />
         <GridTile icon="close-circle" value={profile.losses} label="Losses" />
         <GridTile icon="remove-circle" value={profile.draws} label="Draws" />
         <GridTile icon="pie-chart" value={`${winRate}%`} label="Win rate" />
+        <GridTile icon="pie-chart-outline" value={`${drawRate}%`} label="Draw rate" />
         <GridTile icon="albums" value={total} label="Matches" />
       </View>
 
