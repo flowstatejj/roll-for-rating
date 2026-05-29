@@ -1,17 +1,22 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { RefreshControl, StyleSheet, View } from 'react-native';
+import { Dimensions, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MatchCard } from '@/components/match-card';
+import { TatamiBackground } from '@/components/tatami-background';
 import { ThemedText } from '@/components/themed-text';
-import { BeltChip, Button, Card, EmptyState, Loading, Screen } from '@/components/ui/kit';
+import { Avatar, BeltChip, Button, Card, EmptyState, Loading } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
 import { fetchMyMatches } from '@/lib/matches';
 import { supabase } from '@/lib/supabase';
 import type { MatchWithPeople } from '@/lib/types';
+
+const SCREEN_W = Dimensions.get('window').width;
+const HERO_W = Math.min(SCREEN_W - 64, 360);
 
 export default function HomeScreen() {
   const { profile, refreshProfile, session } = useAuth();
@@ -26,8 +31,7 @@ export default function HomeScreen() {
   const load = useCallback(async () => {
     if (!userId) return;
     try {
-      const data = await fetchMyMatches(userId);
-      setMatches(data);
+      setMatches(await fetchMyMatches(userId));
     } catch (e) {
       console.warn('Failed to load matches', e);
     } finally {
@@ -35,7 +39,6 @@ export default function HomeScreen() {
     }
   }, [userId]);
 
-  // Reload whenever the tab gains focus.
   useFocusEffect(
     useCallback(() => {
       load();
@@ -43,7 +46,6 @@ export default function HomeScreen() {
     }, [load, refreshProfile]),
   );
 
-  // Live updates: any change to a match row refreshes the list + my rating.
   useEffect(() => {
     const channel = supabase
       .channel('home-matches')
@@ -71,83 +73,176 @@ export default function HomeScreen() {
       (m.status === 'pending_referee' && m.referee_id === userId),
   );
   const recent = matches.slice(0, 5);
+  const total = profile.wins + profile.losses + profile.draws;
+  const winRate = total > 0 ? Math.round((profile.wins / total) * 100) : 0;
 
   return (
-    <Screen refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
-      <View style={styles.greetRow}>
-        <View>
-          <ThemedText themeColor="textSecondary">Welcome back,</ThemedText>
-          <ThemedText type="subtitle" style={{ fontSize: 26 }}>
-            {profile.display_name}
-          </ThemedText>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <TatamiBackground />
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+        {/* Top bar */}
+        <View style={styles.topBar}>
+          <View style={styles.topSide}>
+            <Pressable onPress={() => router.push('/(tabs)/profile')}>
+              <Avatar name={profile.display_name} size={36} />
+            </Pressable>
+          </View>
+          <View style={styles.brand}>
+            <View style={[styles.logoMark, { backgroundColor: theme.accent }]}>
+              <Ionicons name="body" size={16} color={theme.accentText} />
+            </View>
+            <ThemedText style={styles.brandText}>RollCall</ThemedText>
+          </View>
+          <View style={[styles.topSide, { alignItems: 'flex-end' }]}>
+            <Pressable onPress={() => router.push('/(tabs)/leaderboard')}>
+              <Ionicons name="podium" size={24} color={theme.text} />
+            </Pressable>
+          </View>
         </View>
-        <BeltChip belt={profile.belt_rank} />
-      </View>
 
-      {/* Rating card */}
-      <Card style={{ backgroundColor: theme.accent }}>
-        <ThemedText style={{ color: theme.accentText, opacity: 0.85, fontWeight: '700' }}>
-          RATING
-        </ThemedText>
-        <ThemedText style={{ color: theme.accentText, fontSize: 56, fontWeight: '800', lineHeight: 60 }}>
-          {profile.rating}
-        </ThemedText>
-        <View style={styles.record}>
-          <Stat label="Wins" value={profile.wins} tint={theme.accentText} />
-          <Stat label="Losses" value={profile.losses} tint={theme.accentText} />
-          <Stat label="Draws" value={profile.draws} tint={theme.accentText} />
-        </View>
-      </Card>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.text} />}>
+          {/* Hero cards */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.heroRow}
+            snapToInterval={HERO_W + Spacing.two}
+            decelerationRate="fast">
+            <Pressable onPress={() => router.push('/match/new')}>
+              <View style={[styles.hero, { width: HERO_W, backgroundColor: theme.accent }]}>
+                <Ionicons name="flame" size={40} color={theme.accentText} style={{ opacity: 0.9 }} />
+                <View style={{ gap: 2 }}>
+                  <ThemedText style={{ color: theme.accentText, fontSize: 24, fontWeight: '800' }}>
+                    Start a Match
+                  </ThemedText>
+                  <ThemedText style={{ color: theme.accentText, opacity: 0.9 }}>
+                    Challenge someone at the mat
+                  </ThemedText>
+                </View>
+              </View>
+            </Pressable>
 
-      <Button label="New Challenge" icon="add-circle" onPress={() => router.push('/match/new')} />
+            <Pressable onPress={() => router.push('/(tabs)/leaderboard')}>
+              <View style={[styles.hero, { width: HERO_W, backgroundColor: theme.tile, borderColor: theme.tileBorder, borderWidth: 1 }]}>
+                <ThemedText type="smallBold" themeColor="textSecondary">
+                  YOUR RATING
+                </ThemedText>
+                <ThemedText style={{ fontSize: 48, fontWeight: '800', lineHeight: 50 }}>
+                  {profile.rating}
+                </ThemedText>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+                  <BeltChip belt={profile.belt_rank} size="sm" />
+                  <ThemedText type="small" themeColor="textSecondary">
+                    View rankings ›
+                  </ThemedText>
+                </View>
+              </View>
+            </Pressable>
+          </ScrollView>
 
-      {needsMe.length > 0 && (
-        <View style={styles.section}>
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Needs your attention
-          </ThemedText>
-          {needsMe.map((m) => (
-            <MatchCard key={m.id} match={m} currentUserId={userId!} />
-          ))}
-        </View>
-      )}
+          {/* Stats tiles */}
+          <SectionLabel>Your Stats</SectionLabel>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tileRow}>
+            <StatTile icon="trending-up" value={profile.rating} label="Rating" />
+            <StatTile icon="trophy" value={profile.wins} label="Wins" />
+            <StatTile icon="pie-chart" value={`${winRate}%`} label="Win rate" />
+            <StatTile icon="albums" value={total} label="Matches" />
+          </ScrollView>
 
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Recent matches
-          </ThemedText>
-          {matches.length > 5 && (
-            <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} onPress={() => router.push('/(tabs)/matches')} />
+          {/* Needs attention */}
+          {needsMe.length > 0 && (
+            <>
+              <SectionLabel>Needs your attention</SectionLabel>
+              <View style={{ gap: Spacing.two }}>
+                {needsMe.map((m) => (
+                  <MatchCard key={m.id} match={m} currentUserId={userId!} />
+                ))}
+              </View>
+            </>
           )}
-        </View>
-        {recent.length === 0 ? (
-          <EmptyState
-            icon="hand-left-outline"
-            title="No matches yet"
-            subtitle="Start a challenge at the next open mat to get on the board."
-          />
-        ) : (
-          recent.map((m) => <MatchCard key={m.id} match={m} currentUserId={userId!} />)
-        )}
-      </View>
-    </Screen>
-  );
-}
 
-function Stat({ label, value, tint }: { label: string; value: number; tint: string }) {
-  return (
-    <View style={{ alignItems: 'center', flex: 1 }}>
-      <ThemedText style={{ color: tint, fontSize: 22, fontWeight: '800' }}>{value}</ThemedText>
-      <ThemedText style={{ color: tint, opacity: 0.85, fontSize: 13 }}>{label}</ThemedText>
+          {/* Recent matches */}
+          <SectionLabel>Recent matches</SectionLabel>
+          {recent.length === 0 ? (
+            <EmptyState
+              icon="hand-left-outline"
+              title="No matches yet"
+              subtitle="Start a challenge at the next open mat to get on the board."
+            />
+          ) : (
+            <View style={{ gap: Spacing.two }}>
+              {recent.map((m) => (
+                <MatchCard key={m.id} match={m} currentUserId={userId!} />
+              ))}
+            </View>
+          )}
+        </ScrollView>
+
+        {/* Pinned action button */}
+        <View style={styles.pinned} pointerEvents="box-none">
+          <Button label="New Challenge" icon="add-circle" onPress={() => router.push('/match/new')} />
+        </View>
+      </SafeAreaView>
     </View>
   );
 }
 
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <ThemedText style={styles.sectionLabel}>{children}</ThemedText>
+  );
+}
+
+function StatTile({
+  icon,
+  value,
+  label,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  value: string | number;
+  label: string;
+}) {
+  const theme = useTheme();
+  return (
+    <Card style={styles.tile}>
+      <Ionicons name={icon} size={22} color={theme.accent} />
+      <ThemedText style={{ fontSize: 22, fontWeight: '800' }}>{value}</ThemedText>
+      <ThemedText type="small" themeColor="textSecondary">
+        {label}
+      </ThemedText>
+    </Card>
+  );
+}
+
 const styles = StyleSheet.create({
-  greetRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  record: { flexDirection: 'row', marginTop: Spacing.three },
-  section: { gap: Spacing.three },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  sectionTitle: { fontSize: 20 },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+  },
+  topSide: { flex: 1, justifyContent: 'center' },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  logoMark: { width: 26, height: 26, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
+  brandText: { fontSize: 20, fontWeight: '800', letterSpacing: 0.3 },
+  scroll: { padding: Spacing.three, gap: Spacing.three, paddingBottom: 110 },
+  heroRow: { gap: Spacing.two, paddingRight: Spacing.three },
+  hero: {
+    height: 150,
+    borderRadius: 14,
+    padding: Spacing.three,
+    justifyContent: 'space-between',
+  },
+  sectionLabel: { fontSize: 18, fontWeight: '800', marginTop: Spacing.one },
+  tileRow: { gap: Spacing.two, paddingRight: Spacing.three },
+  tile: { width: 104, height: 104, alignItems: 'center', justifyContent: 'center', gap: 4 },
+  pinned: {
+    position: 'absolute',
+    left: Spacing.three,
+    right: Spacing.three,
+    bottom: Spacing.three,
+  },
 });
