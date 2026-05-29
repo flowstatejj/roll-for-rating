@@ -48,6 +48,7 @@ function RootNavigator() {
       />
       <Stack.Screen name="match/[id]" options={{ headerShown: true, title: 'Match' }} />
       <Stack.Screen name="puzzle/solve" options={{ headerShown: true, title: 'Puzzle' }} />
+      <Stack.Screen name="competitions" options={{ headerShown: true, title: 'Competition Record' }} />
     </Stack>
   );
 }

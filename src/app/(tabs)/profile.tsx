@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
@@ -18,6 +18,7 @@ const BELTS: BeltRank[] = ['white', 'blue', 'purple', 'brown', 'black'];
 export default function ProfileScreen() {
   const { profile, session, signOut, refreshProfile } = useAuth();
   const theme = useTheme();
+  const router = useRouter();
   const userId = session?.user.id;
 
   const [editing, setEditing] = useState(false);
@@ -180,6 +181,13 @@ export default function ProfileScreen() {
       ) : (
         <Button label="Edit profile" variant="secondary" icon="create-outline" onPress={startEdit} />
       )}
+
+      <Button
+        label="Import competition record"
+        variant="secondary"
+        icon="ribbon-outline"
+        onPress={() => router.push('/competitions')}
+      />
 
       <Button label="Sign out" variant="ghost" icon="log-out-outline" onPress={signOut} />
     </Screen>
