@@ -21,6 +21,8 @@ export const Colors = {
     border: '#e2dfd9',
     success: '#5c9a3a',
     danger: '#ca3431',
+    tile: 'rgba(255,255,255,0.72)',
+    tileBorder: 'rgba(0,0,0,0.06)',
   },
   dark: {
     text: '#ffffff',
@@ -34,6 +36,9 @@ export const Colors = {
     border: '#3d3a37',
     success: '#9bce5b',
     danger: '#e0564b',
+    // translucent panel that floats over the tatami texture
+    tile: 'rgba(15,16,18,0.55)',
+    tileBorder: 'rgba(255,255,255,0.08)',
   },
 } as const;
 

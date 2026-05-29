@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { TatamiBackground } from '@/components/tatami-background';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -99,7 +100,7 @@ export function Card({ style, ...rest }: ViewProps) {
     <View
       style={[
         styles.card,
-        { backgroundColor: theme.backgroundElement, borderColor: theme.border },
+        { backgroundColor: theme.tile, borderColor: theme.tileBorder },
         style,
       ]}
       {...rest}
@@ -205,22 +206,22 @@ export function Screen({
   refreshControl?: React.ReactElement<any>;
 }) {
   const theme = useTheme();
-  if (!scroll) {
-    return (
-      <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]} edges={['top']}>
-        {children}
-      </SafeAreaView>
-    );
-  }
   return (
-    <SafeAreaView style={[styles.screen, { backgroundColor: theme.background }]} edges={['top']}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        refreshControl={refreshControl}>
-        {children}
-      </ScrollView>
-    </SafeAreaView>
+    <View style={[styles.screen, { backgroundColor: theme.background }]}>
+      <TatamiBackground />
+      <SafeAreaView style={[styles.screen, { backgroundColor: 'transparent' }]} edges={['top']}>
+        {scroll ? (
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            refreshControl={refreshControl}>
+            {children}
+          </ScrollView>
+        ) : (
+          children
+        )}
+      </SafeAreaView>
+    </View>
   );
 }
 
