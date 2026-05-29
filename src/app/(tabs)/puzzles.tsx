@@ -67,23 +67,21 @@ export default function PuzzlesScreen() {
         </Card>
       </Pressable>
 
-      {/* Written mode — Phase 2 (needs AI grader deployed) */}
-      <Card style={[styles.modeCard, { opacity: 0.6 }]}>
-        <View style={[styles.modeIcon, { backgroundColor: theme.backgroundSelected }]}>
-          <Ionicons name="create" size={24} color={theme.text} />
-        </View>
-        <View style={{ flex: 1, gap: 2 }}>
-          <ThemedText style={{ fontSize: 18, fontWeight: '800' }}>Written answer</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            Explain your answer; an AI coach grades it. Hard mode.
-          </ThemedText>
-        </View>
-        <View style={[styles.soon, { borderColor: theme.border }]}>
-          <ThemedText type="small" themeColor="textSecondary" style={{ fontWeight: '700' }}>
-            Coming soon
-          </ThemedText>
-        </View>
-      </Card>
+      {/* Written mode — AI-graded */}
+      <Pressable onPress={() => router.push('/puzzle/solve?kind=written')}>
+        <Card style={styles.modeCard}>
+          <View style={[styles.modeIcon, { backgroundColor: theme.backgroundSelected }]}>
+            <Ionicons name="create" size={24} color={theme.text} />
+          </View>
+          <View style={{ flex: 1, gap: 2 }}>
+            <ThemedText style={{ fontSize: 18, fontWeight: '800' }}>Written answer</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              Explain your answer; an AI coach grades it. Hard mode.
+            </ThemedText>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
+        </Card>
+      </Pressable>
     </Screen>
   );
 }

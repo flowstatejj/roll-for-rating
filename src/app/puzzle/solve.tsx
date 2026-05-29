@@ -5,11 +5,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Button, Card, EmptyState, Loading, Screen } from '@/components/ui/kit';
+import { Button, Card, EmptyState, Loading, Screen, TextField } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
-import { fetchNextPuzzle, submitMc } from '@/lib/puzzles';
+import { fetchNextPuzzle, submitMc, submitWritten } from '@/lib/puzzles';
 import type { Puzzle, PuzzleKind, PuzzleResult } from '@/lib/types';
 
 export default function SolvePuzzleScreen() {
@@ -21,12 +21,14 @@ export default function SolvePuzzleScreen() {
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<number | null>(null);
+  const [answer, setAnswer] = useState('');
   const [result, setResult] = useState<PuzzleResult | null>(null);
   const [busy, setBusy] = useState(false);
 
   const loadNext = useCallback(async () => {
     setLoading(true);
     setSelected(null);
+    setAnswer('');
     setResult(null);
     try {
       setPuzzle(await fetchNextPuzzle(userId, kind));
@@ -55,6 +57,24 @@ export default function SolvePuzzleScreen() {
     }
   }
 
+  async function submitWrittenAnswer() {
+    if (result || busy || !puzzle) return;
+    if (!answer.trim()) {
+      Alert.alert('Write an answer', 'Type your answer before submitting.');
+      return;
+    }
+    setBusy(true);
+    try {
+      const r = await submitWritten(puzzle.id, answer.trim());
+      setResult(r);
+      if (r.rated) refreshProfile();
+    } catch (e: any) {
+      Alert.alert('Grading unavailable', e.message ?? 'Could not grade your answer.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (loading) return <Loading />;
 
   if (!puzzle) {
@@ -76,6 +96,21 @@ export default function SolvePuzzleScreen() {
 
       <ThemedText style={{ fontSize: 18, fontWeight: '700' }}>{puzzle.question}</ThemedText>
 
+      {puzzle.kind === 'written' && !result && (
+        <View style={{ gap: Spacing.two }}>
+          <TextField
+            label="Your answer"
+            value={answer}
+            onChangeText={setAnswer}
+            multiline
+            placeholder="Explain your answer in a few sentences…"
+            style={{ minHeight: 120, textAlignVertical: 'top' }}
+          />
+          <Button label="Submit for grading" icon="sparkles" loading={busy} onPress={submitWrittenAnswer} />
+        </View>
+      )}
+
+      {puzzle.kind === 'multiple_choice' && (
       <View style={{ gap: Spacing.two }}>
         {(puzzle.choices ?? []).map((choice, i) => {
           const isCorrect = result?.correct_index === i;
@@ -108,6 +143,7 @@ export default function SolvePuzzleScreen() {
           );
         })}
       </View>
+      )}
 
       {/* Result */}
       {result && (
@@ -133,7 +169,13 @@ export default function SolvePuzzleScreen() {
               </ThemedText>
             )}
           </View>
-          {result.explanation && <ThemedText themeColor="textSecondary">{result.explanation}</ThemedText>}
+          {puzzle.kind === 'written' && result.score != null && (
+            <ThemedText style={{ fontWeight: '700' }}>Score: {result.score}/100</ThemedText>
+          )}
+          {result.feedback && <ThemedText>{result.feedback}</ThemedText>}
+          {result.explanation && (
+            <ThemedText themeColor="textSecondary">{result.explanation}</ThemedText>
+          )}
           {result.rated && (
             <ThemedText type="small" themeColor="textSecondary">
               Rating {result.rating_before} → {result.rating_after}
