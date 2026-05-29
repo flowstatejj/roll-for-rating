@@ -110,3 +110,14 @@ export interface PuzzleStats {
   solved: number; // distinct puzzles answered correctly
   accuracy: number; // 0..100
 }
+
+// ---------------------------------------------------------------------------
+// Match videos
+// ---------------------------------------------------------------------------
+export interface MatchVideo {
+  id: string;
+  match_id: string;
+  uploader_id: string;
+  path: string;
+  created_at: string;
+}

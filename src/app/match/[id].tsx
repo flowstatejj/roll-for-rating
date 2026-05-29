@@ -3,6 +3,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
+import { MatchVideos } from '@/components/match-videos';
 import { ThemedText } from '@/components/themed-text';
 import { Avatar, BeltChip, Button, Card, Loading, Screen, TextField } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
@@ -124,6 +125,9 @@ export default function MatchDetailScreen() {
         </View>
         <Ionicons name="eye-outline" size={20} color={theme.textSecondary} />
       </Card>
+
+      {/* Match video */}
+      <MatchVideos matchId={match.id} uploaderId={userId} isParticipant={amCompetitor || amReferee} />
 
       {/* Completed result summary */}
       {match.status === 'completed' && match.result && (
