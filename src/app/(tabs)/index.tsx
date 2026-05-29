@@ -5,6 +5,7 @@ import { Dimensions, Pressable, RefreshControl, ScrollView, StyleSheet, View } f
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MatchCard } from '@/components/match-card';
+import { MatchRow } from '@/components/match-row';
 import { TatamiBackground } from '@/components/tatami-background';
 import { ThemedText } from '@/components/themed-text';
 import { Avatar, BeltChip, Button, Card, EmptyState, Loading } from '@/components/ui/kit';
@@ -164,7 +165,7 @@ export default function HomeScreen() {
             </>
           )}
 
-          {/* Recent matches */}
+          {/* Recent matches — chess.com Game History style */}
           <SectionLabel>Recent matches</SectionLabel>
           {recent.length === 0 ? (
             <EmptyState
@@ -173,11 +174,18 @@ export default function HomeScreen() {
               subtitle="Start a challenge at the next open mat to get on the board."
             />
           ) : (
-            <View style={{ gap: Spacing.two }}>
-              {recent.map((m) => (
-                <MatchCard key={m.id} match={m} currentUserId={userId!} />
+            <Card style={{ paddingVertical: Spacing.one }}>
+              {recent.map((m, i) => (
+                <View key={m.id}>
+                  {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
+                  <MatchRow match={m} currentUserId={userId!} />
+                </View>
               ))}
-            </View>
+              <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />
+              <Pressable onPress={() => router.push('/(tabs)/matches')} style={styles.viewAll}>
+                <ThemedText style={{ fontWeight: '700', color: theme.accent }}>View all matches</ThemedText>
+              </Pressable>
+            </Card>
           )}
         </ScrollView>
 
@@ -239,6 +247,8 @@ const styles = StyleSheet.create({
   sectionLabel: { fontSize: 18, fontWeight: '800', marginTop: Spacing.one },
   tileRow: { gap: Spacing.two, paddingRight: Spacing.three },
   tile: { width: 104, height: 104, alignItems: 'center', justifyContent: 'center', gap: 4 },
+  divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.one },
+  viewAll: { alignItems: 'center', paddingVertical: Spacing.two },
   pinned: {
     position: 'absolute',
     left: Spacing.three,
