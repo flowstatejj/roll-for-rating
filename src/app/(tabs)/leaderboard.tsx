@@ -39,7 +39,7 @@ export default function LeaderboardScreen() {
   if (loading) return <Loading />;
 
   return (
-    <Screen refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+    <Screen refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.text} />}>
       <ThemedText type="subtitle" style={{ fontSize: 28 }}>
         Rankings
       </ThemedText>
@@ -47,44 +47,46 @@ export default function LeaderboardScreen() {
       {rows.length === 0 ? (
         <EmptyState icon="podium-outline" title="No grapplers yet" subtitle="Be the first to climb the ladder." />
       ) : (
-        rows.map((p, i) => {
-          const isMe = p.id === userId;
-          const rank = i + 1;
-          const medal = rank === 1 ? '#E5B53A' : rank === 2 ? '#A7AAB0' : rank === 3 ? '#B07A45' : null;
-          return (
-            <Card
-              key={p.id}
-              style={[
-                styles.row,
-                isMe && { borderColor: theme.accent, borderWidth: 1.5 },
-              ]}>
-              <View style={[styles.rank, { backgroundColor: medal ?? theme.backgroundSelected }]}>
-                <ThemedText style={{ fontWeight: '800', color: medal ? '#1a1a1a' : theme.text }}>
-                  {rank}
-                </ThemedText>
-              </View>
-              <Avatar name={p.display_name} size={40} />
-              <View style={{ flex: 1, gap: 2 }}>
-                <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>
-                  {p.display_name} {isMe ? '(you)' : ''}
-                </ThemedText>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
-                  <BeltChip belt={p.belt_rank} size="sm" />
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {p.wins}W · {p.losses}L · {p.draws}D
-                  </ThemedText>
+        <Card style={{ paddingVertical: Spacing.one, paddingHorizontal: Spacing.one }}>
+          {rows.map((p, i) => {
+            const isMe = p.id === userId;
+            const rank = i + 1;
+            const medal = rank === 1 ? '#E5B53A' : rank === 2 ? '#A7AAB0' : rank === 3 ? '#B07A45' : null;
+            return (
+              <View key={p.id}>
+                {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
+                <View style={[styles.row, isMe && { backgroundColor: theme.accent + '22', borderRadius: 8 }]}>
+                  <View style={[styles.rank, { backgroundColor: medal ?? 'transparent' }]}>
+                    <ThemedText style={{ fontWeight: '800', color: medal ? '#1a1a1a' : theme.textSecondary }}>
+                      {rank}
+                    </ThemedText>
+                  </View>
+                  <Avatar name={p.display_name} size={40} />
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>
+                      {p.display_name}
+                      {isMe ? ' (you)' : ''}
+                    </ThemedText>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+                      <BeltChip belt={p.belt_rank} size="sm" />
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {p.wins}W · {p.losses}L · {p.draws}D
+                      </ThemedText>
+                    </View>
+                  </View>
+                  <ThemedText style={{ fontWeight: '800', fontSize: 20 }}>{p.rating}</ThemedText>
                 </View>
               </View>
-              <ThemedText style={{ fontWeight: '800', fontSize: 20 }}>{p.rating}</ThemedText>
-            </Card>
-          );
-        })
+            );
+          })}
+        </Card>
       )}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  rank: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.two, paddingHorizontal: Spacing.two },
+  rank: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.two },
 });

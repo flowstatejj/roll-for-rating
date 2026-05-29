@@ -2,9 +2,9 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 
-import { MatchCard } from '@/components/match-card';
+import { MatchRow } from '@/components/match-row';
 import { ThemedText } from '@/components/themed-text';
-import { EmptyState, Loading, Screen } from '@/components/ui/kit';
+import { Card, EmptyState, Loading, Screen } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
@@ -64,7 +64,7 @@ export default function MatchesScreen() {
   });
 
   return (
-    <Screen refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+    <Screen refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.text} />}>
       <ThemedText type="subtitle" style={{ fontSize: 28 }}>
         Matches
       </ThemedText>
@@ -79,8 +79,8 @@ export default function MatchesScreen() {
               style={[
                 styles.chip,
                 {
-                  backgroundColor: active ? theme.accent : theme.backgroundElement,
-                  borderColor: active ? theme.accent : theme.border,
+                  backgroundColor: active ? theme.accent : theme.tile,
+                  borderColor: active ? theme.accent : theme.tileBorder,
                 },
               ]}>
               <ThemedText style={{ color: active ? theme.accentText : theme.text, fontWeight: '700', fontSize: 13 }}>
@@ -94,7 +94,14 @@ export default function MatchesScreen() {
       {filtered.length === 0 ? (
         <EmptyState icon="list-outline" title="Nothing here yet" subtitle="Matches you compete in or referee will show up here." />
       ) : (
-        filtered.map((m) => <MatchCard key={m.id} match={m} currentUserId={userId!} />)
+        <Card style={{ paddingVertical: Spacing.one }}>
+          {filtered.map((m, i) => (
+            <View key={m.id}>
+              {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
+              <MatchRow match={m} currentUserId={userId!} />
+            </View>
+          ))}
+        </Card>
       )}
     </Screen>
   );
@@ -103,4 +110,5 @@ export default function MatchesScreen() {
 const styles = StyleSheet.create({
   filters: { flexDirection: 'row', gap: Spacing.two },
   chip: { paddingVertical: Spacing.two, paddingHorizontal: Spacing.three, borderRadius: 999, borderWidth: 1 },
+  divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.one },
 });
