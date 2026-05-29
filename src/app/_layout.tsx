@@ -1,12 +1,25 @@
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider, useRouter, useSegments } from 'expo-router';
+import { DarkTheme, Stack, ThemeProvider, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { Colors } from '@/constants/theme';
 import { Loading } from '@/components/ui/kit';
 import { AuthProvider, useAuth } from '@/lib/auth';
+
+// chess.com-style dark navigation chrome.
+const NavTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    background: Colors.dark.background,
+    card: Colors.dark.background,
+    text: Colors.dark.text,
+    border: Colors.dark.border,
+    primary: Colors.dark.accent,
+  },
+};
 
 function RootNavigator() {
   const { session, initializing } = useAuth();
@@ -39,14 +52,13 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: Colors.dark.background }}>
       <SafeAreaProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <ThemeProvider value={NavTheme}>
           <AuthProvider>
             <RootNavigator />
-            <StatusBar style="auto" />
+            <StatusBar style="light" />
           </AuthProvider>
         </ThemeProvider>
       </SafeAreaProvider>

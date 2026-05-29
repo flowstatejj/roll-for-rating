@@ -7,30 +7,33 @@ import '@/global.css';
 
 import { Platform } from 'react-native';
 
+// chess.com-inspired palette: deep charcoal surfaces + signature green.
 export const Colors = {
   light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
-    accent: '#208AEF',
+    text: '#1b1a17',
+    background: '#f7f6f4',
+    backgroundElement: '#ffffff',
+    backgroundSelected: '#eceae6',
+    textSecondary: '#6b6862',
+    accent: '#81b64c',
+    accentDark: '#5d8636',
     accentText: '#ffffff',
-    border: '#E2E3E8',
-    success: '#1A8245',
-    danger: '#DC2626',
+    border: '#e2dfd9',
+    success: '#5c9a3a',
+    danger: '#ca3431',
   },
   dark: {
     text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
-    accent: '#3C97FF',
+    background: '#262421',
+    backgroundElement: '#312e2b',
+    backgroundSelected: '#3d3a37',
+    textSecondary: '#b6b3ad',
+    accent: '#81b64c',
+    accentDark: '#5d8636',
     accentText: '#ffffff',
-    border: '#2A2C30',
-    success: '#3DD68C',
-    danger: '#F87171',
+    border: '#3d3a37',
+    success: '#9bce5b',
+    danger: '#e0564b',
   },
 } as const;
 

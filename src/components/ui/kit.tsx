@@ -46,10 +46,21 @@ export function Button({
       : variant === 'danger'
         ? theme.danger
         : variant === 'secondary'
-          ? theme.backgroundElement
+          ? theme.backgroundSelected
           : 'transparent';
   const fg =
     variant === 'primary' || variant === 'danger' ? theme.accentText : theme.text;
+
+  // The darker bottom edge that gives chess.com buttons their chunky 3D feel.
+  const edge =
+    variant === 'primary'
+      ? theme.accentDark
+      : variant === 'danger'
+        ? '#9e352e'
+        : variant === 'secondary'
+          ? '#1f1d1b'
+          : 'transparent';
+  const is3d = variant !== 'ghost';
 
   return (
     <Pressable
@@ -57,7 +68,12 @@ export function Button({
       disabled={isDisabled}
       style={({ pressed }) => [
         styles.button,
-        { backgroundColor: bg, opacity: isDisabled ? 0.5 : pressed ? 0.85 : 1 },
+        { backgroundColor: bg, opacity: isDisabled ? 0.5 : 1 },
+        is3d && {
+          borderBottomWidth: pressed ? 1 : 4,
+          borderBottomColor: edge,
+          transform: [{ translateY: pressed ? 2 : 0 }],
+        },
         variant === 'ghost' && { paddingVertical: Spacing.two },
       ]}>
       {loading ? (
@@ -65,7 +81,9 @@ export function Button({
       ) : (
         <View style={styles.buttonInner}>
           {icon && <Ionicons name={icon} size={18} color={fg} />}
-          <ThemedText style={{ color: fg, fontWeight: '700', fontSize: 16 }}>{label}</ThemedText>
+          <ThemedText style={{ color: fg, fontWeight: '800', fontSize: 16, letterSpacing: 0.2 }}>
+            {label}
+          </ThemedText>
         </View>
       )}
     </Pressable>
@@ -237,7 +255,7 @@ export function EmptyState({ icon, title, subtitle }: { icon: keyof typeof Ionic
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: 12,
+    borderRadius: 8,
     paddingVertical: Spacing.three,
     paddingHorizontal: Spacing.four,
     alignItems: 'center',
@@ -246,12 +264,12 @@ const styles = StyleSheet.create({
   },
   buttonInner: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   card: {
-    borderRadius: 16,
+    borderRadius: 10,
     padding: Spacing.three,
     borderWidth: StyleSheet.hairlineWidth,
   },
   input: {
-    borderRadius: 12,
+    borderRadius: 8,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.three,
     fontSize: 16,
