@@ -72,3 +72,41 @@ export const RESULT_LABELS: Record<ResultType, string> = {
   decision: "Referee's decision",
   draw: 'Draw',
 };
+
+// ---------------------------------------------------------------------------
+// Puzzles
+// ---------------------------------------------------------------------------
+export type PuzzleKind = 'multiple_choice' | 'written';
+
+// Note: correct_index / rubric / explanation are intentionally NOT here —
+// the database hides them from clients so answers can't be peeked.
+export interface Puzzle {
+  id: string;
+  kind: PuzzleKind;
+  title: string | null;
+  image_url: string | null;
+  question: string;
+  choices: string[] | null;
+  rating: number;
+  created_at: string;
+}
+
+// Returned by the grading functions/edge function after an answer is submitted.
+export interface PuzzleResult {
+  is_correct: boolean;
+  correct_index?: number; // multiple choice
+  score?: number; // 0..100 (written)
+  feedback?: string; // AI feedback (written)
+  explanation: string | null;
+  rating_before: number;
+  rating_after: number;
+  delta: number;
+  rated: boolean;
+}
+
+export interface PuzzleStats {
+  attempts: number;
+  correct: number;
+  solved: number; // distinct puzzles answered correctly
+  accuracy: number; // 0..100
+}
