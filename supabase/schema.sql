@@ -196,8 +196,10 @@ begin
   select rating into c_rating from public.profiles where id = m.challenger_id for update;
   select rating into o_rating from public.profiles where id = m.opponent_id for update;
 
+  -- House rule: a DRAW is penalised like a LOSS for BOTH players,
+  -- so each competitor scores 0.0 (same rating hit as losing).
   if p_result = 'draw' then
-    c_score := 0.5; o_score := 0.5;
+    c_score := 0.0; o_score := 0.0;
   elsif p_winner_id = m.challenger_id then
     c_score := 1.0; o_score := 0.0;
   else
@@ -209,19 +211,21 @@ begin
   c_new := round(c_rating + k * (c_score - c_expected));
   o_new := round(o_rating + k * (o_score - o_expected));
 
-  -- apply rating + win/loss/draw tallies
+  -- apply rating + win/loss/draw tallies.
+  -- (Tally is based on the actual result, NOT the rating score — a draw still
+  -- counts as a draw in the W/L/D record even though it scores like a loss.)
   update public.profiles
      set rating = c_new,
-         wins   = wins   + (case when c_score = 1.0 then 1 else 0 end),
-         losses = losses + (case when c_score = 0.0 then 1 else 0 end),
-         draws  = draws  + (case when c_score = 0.5 then 1 else 0 end)
+         wins   = wins   + (case when p_result <> 'draw' and p_winner_id = m.challenger_id then 1 else 0 end),
+         losses = losses + (case when p_result <> 'draw' and p_winner_id = m.opponent_id  then 1 else 0 end),
+         draws  = draws  + (case when p_result = 'draw' then 1 else 0 end)
    where id = m.challenger_id;
 
   update public.profiles
      set rating = o_new,
-         wins   = wins   + (case when o_score = 1.0 then 1 else 0 end),
-         losses = losses + (case when o_score = 0.0 then 1 else 0 end),
-         draws  = draws  + (case when o_score = 0.5 then 1 else 0 end)
+         wins   = wins   + (case when p_result <> 'draw' and p_winner_id = m.opponent_id  then 1 else 0 end),
+         losses = losses + (case when p_result <> 'draw' and p_winner_id = m.challenger_id then 1 else 0 end),
+         draws  = draws  + (case when p_result = 'draw' then 1 else 0 end)
    where id = m.opponent_id;
 
   update public.matches

@@ -11,8 +11,6 @@ import { useAuth } from '@/lib/auth';
 import { cancelMatch, fetchMatch, recordResult, respondToMatch } from '@/lib/matches';
 import { RESULT_LABELS, type MatchWithPeople, type ResultType } from '@/lib/types';
 
-const RESULT_OPTIONS: ResultType[] = ['submission', 'points', 'advantage', 'decision', 'draw'];
-
 export default function MatchDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useAuth();
@@ -22,9 +20,8 @@ export default function MatchDetailScreen() {
   const [match, setMatch] = useState<MatchWithPeople | null>(null);
   const [busy, setBusy] = useState(false);
 
-  // Referee result form state
+  // Referee result form state (submission-only: winner, or a draw)
   const [winner, setWinner] = useState<'challenger' | 'opponent' | 'draw' | null>(null);
-  const [result, setResult] = useState<ResultType | null>(null);
   const [method, setMethod] = useState('');
   const [notes, setNotes] = useState('');
 
@@ -59,13 +56,14 @@ export default function MatchDetailScreen() {
   }
 
   function submitResult() {
-    if (!winner || !result) {
-      Alert.alert('Incomplete', 'Pick a winner and how the match ended.');
+    if (!winner) {
+      Alert.alert('Incomplete', 'Pick the winner, or mark it a draw.');
       return;
     }
     const winnerId =
       winner === 'draw' ? null : winner === 'challenger' ? match!.challenger_id : match!.opponent_id;
-    const finalResult: ResultType = winner === 'draw' ? 'draw' : result;
+    // Submission-only for now: a win is always by submission.
+    const finalResult: ResultType = winner === 'draw' ? 'draw' : 'submission';
     act(
       () =>
         recordResult({
@@ -170,26 +168,24 @@ export default function MatchDetailScreen() {
           </ThemedText>
 
           <View style={{ gap: Spacing.one }}>
-            <ThemedText type="smallBold" themeColor="textSecondary">Winner</ThemedText>
+            <ThemedText type="smallBold" themeColor="textSecondary">Who won by submission?</ThemedText>
             <View style={{ gap: Spacing.two }}>
               <Choice label={`${match.challenger.display_name} (Challenger)`} selected={winner === 'challenger'} onPress={() => setWinner('challenger')} />
               <Choice label={`${match.opponent.display_name} (Opponent)`} selected={winner === 'opponent'} onPress={() => setWinner('opponent')} />
-              <Choice label="Draw" selected={winner === 'draw'} onPress={() => { setWinner('draw'); setResult('draw'); }} />
+              <Choice label="Draw — no submission" selected={winner === 'draw'} onPress={() => setWinner('draw')} />
             </View>
           </View>
 
-          {winner && winner !== 'draw' && (
-            <View style={{ gap: Spacing.one }}>
-              <ThemedText type="smallBold" themeColor="textSecondary">How did it end?</ThemedText>
-              <View style={styles.resultChips}>
-                {RESULT_OPTIONS.filter((r) => r !== 'draw').map((r) => (
-                  <Choice key={r} compact label={RESULT_LABELS[r]} selected={result === r} onPress={() => setResult(r)} />
-                ))}
-              </View>
+          {winner === 'draw' && (
+            <View style={[styles.drawNote, { borderColor: theme.danger }]}>
+              <Ionicons name="warning-outline" size={16} color={theme.danger} />
+              <ThemedText type="small" style={{ color: theme.danger, flex: 1 }}>
+                A draw deducts rating from BOTH players — same as a loss.
+              </ThemedText>
             </View>
           )}
 
-          {winner && winner !== 'draw' && result === 'submission' && (
+          {winner && winner !== 'draw' && (
             <TextField label="Submission (optional)" value={method} onChangeText={setMethod} placeholder="e.g. Rear naked choke" />
           )}
 
@@ -324,6 +320,13 @@ const styles = StyleSheet.create({
   personRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   deltaPill: { borderRadius: 999, paddingHorizontal: Spacing.two, paddingVertical: 1 },
   refCard: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  resultChips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   choice: { borderRadius: 10, borderWidth: 1, paddingVertical: Spacing.three, paddingHorizontal: Spacing.three },
+  drawNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: Spacing.two,
+  },
 });
