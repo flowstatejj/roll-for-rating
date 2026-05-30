@@ -52,6 +52,32 @@ export interface SeasonStanding {
   profile: { id: string; display_name: string; belt_rank: BeltRank; rating: number } | null;
 }
 
+export interface GymPower {
+  gym_id: string;
+  name: string;
+  city: string | null;
+  member_count: number;
+  avg_rating: number;
+  total_wins: number;
+}
+
+export interface Tournament {
+  id: string;
+  name: string;
+  host_id: string;
+  starts_at: string;
+  ends_at: string;
+  created_at: string;
+}
+
+export interface TournamentStanding {
+  user_id: string;
+  display_name: string;
+  belt_rank: BeltRank;
+  rating: number;
+  wins: number;
+}
+
 // ---------------------------------------------------------------------------
 // Community: gyms, gym friendships, open mats
 // ---------------------------------------------------------------------------

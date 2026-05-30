@@ -123,6 +123,18 @@ export default function CommunityScreen() {
         onPress={() => router.push('/seasons')}
       />
       <ActionRow
+        icon="trophy"
+        title="Tournaments"
+        subtitle="Join events and race for wins"
+        onPress={() => router.push('/tournaments')}
+      />
+      <ActionRow
+        icon="barbell"
+        title="Gym Rankings"
+        subtitle="Which academy is strongest"
+        onPress={() => router.push('/gym-rankings')}
+      />
+      <ActionRow
         icon="lock-open"
         title="Submission Hunt"
         subtitle="Collect submissions for bonus Elo"

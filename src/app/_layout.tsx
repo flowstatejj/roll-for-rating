@@ -68,6 +68,9 @@ function RootNavigator() {
       <Stack.Screen name="submission-hunt" options={{ headerShown: true, title: 'Submission Hunt' }} />
       <Stack.Screen name="quests" options={{ headerShown: true, title: 'Quests' }} />
       <Stack.Screen name="seasons" options={{ headerShown: true, title: 'Seasons' }} />
+      <Stack.Screen name="tournaments" options={{ headerShown: true, title: 'Tournaments' }} />
+      <Stack.Screen name="tournament/[id]" options={{ headerShown: true, title: 'Tournament' }} />
+      <Stack.Screen name="gym-rankings" options={{ headerShown: true, title: 'Gym Rankings' }} />
     </Stack>
   );
 }
