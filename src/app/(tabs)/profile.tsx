@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { MatchRow } from '@/components/match-row';
@@ -8,10 +8,15 @@ import { ThemedText } from '@/components/themed-text';
 import { Avatar, BeltChip, Button, Card, EmptyState, Loading, Screen, TextField } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { computeAchievements } from '@/lib/achievements';
 import { useAuth } from '@/lib/auth';
+import { winStreak } from '@/lib/elo';
 import { fetchMyMatches } from '@/lib/matches';
+import { fetchPuzzleStats } from '@/lib/puzzles';
 import { setOpenForChallenge } from '@/lib/social';
 import { supabase } from '@/lib/supabase';
+import { tierFor } from '@/lib/tiers';
+import { fetchChampions, heldTitles, type Champion } from '@/lib/titles';
 import { BELT_COLORS, BELT_LABELS, type BeltRank, type MatchWithPeople } from '@/lib/types';
 
 const BELTS: BeltRank[] = ['white', 'blue', 'purple', 'brown', 'black'];
@@ -29,6 +34,8 @@ export default function ProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [togglingOpen, setTogglingOpen] = useState(false);
   const [matches, setMatches] = useState<MatchWithPeople[]>([]);
+  const [solved, setSolved] = useState(0);
+  const [champions, setChampions] = useState<Champion[]>([]);
 
   async function toggleOpen(value: boolean) {
     if (!userId) return;
@@ -46,9 +53,11 @@ export default function ProfileScreen() {
   const loadMatches = useCallback(async () => {
     if (!userId) return;
     try {
-      setMatches(await fetchMyMatches(userId));
+      const [ms, ps] = await Promise.all([fetchMyMatches(userId), fetchPuzzleStats(userId)]);
+      setMatches(ms);
+      setSolved(ps.solved);
     } catch (e) {
-      console.warn('Failed to load matches', e);
+      console.warn('Failed to load profile data', e);
     }
   }, [userId]);
 
@@ -58,6 +67,12 @@ export default function ProfileScreen() {
       refreshProfile();
     }, [loadMatches, refreshProfile]),
   );
+
+  // Champion titles depend on rating/gym/city/belt.
+  useEffect(() => {
+    if (!profile) return;
+    fetchChampions(profile).then(setChampions).catch(() => {});
+  }, [profile?.rating, profile?.gym_id, profile?.city, profile?.belt_rank]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!profile) return <Loading />;
 
@@ -97,6 +112,11 @@ export default function ProfileScreen() {
     year: 'numeric',
   });
   const recent = matches.slice(0, 5);
+  const streak = winStreak(matches, profile.id);
+  const achievements = computeAchievements(profile, matches, solved, streak);
+  const earnedCount = achievements.filter((a) => a.earned).length;
+  const tier = tierFor(profile.rating);
+  const titles = heldTitles(champions);
 
   return (
     <Screen>
@@ -117,12 +137,37 @@ export default function ProfileScreen() {
         </View>
       </Card>
 
+      {/* Held titles */}
+      {titles.length > 0 && (
+        <View style={styles.titleRow}>
+          {titles.map((t) => (
+            <View key={t} style={[styles.titleChip, { borderColor: theme.accent, backgroundColor: theme.accent + '22' }]}>
+              <ThemedText style={{ fontSize: 13 }}>👑</ThemedText>
+              <ThemedText style={{ color: theme.accent, fontWeight: '800', fontSize: 13 }}>{t}</ThemedText>
+            </View>
+          ))}
+        </View>
+      )}
+
       {/* Rating panel */}
       <Card style={{ backgroundColor: theme.accent }}>
         <ThemedText style={{ color: theme.accentText, opacity: 0.85, fontWeight: '700' }}>RATING</ThemedText>
         <ThemedText style={{ color: theme.accentText, fontSize: 52, fontWeight: '800', lineHeight: 56 }}>
           {profile.rating}
         </ThemedText>
+        <View style={{ gap: 4, marginTop: Spacing.one }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <ThemedText style={{ color: theme.accentText, fontWeight: '800' }}>{tier.tier.name}</ThemedText>
+            {tier.next && (
+              <ThemedText type="small" style={{ color: theme.accentText, opacity: 0.85 }}>
+                {tier.toNext} to {tier.next.name}
+              </ThemedText>
+            )}
+          </View>
+          <View style={styles.tierTrack}>
+            <View style={[styles.tierFill, { width: `${Math.round(tier.progress * 100)}%` }]} />
+          </View>
+        </View>
         <View style={styles.recordRow}>
           <MiniStat label="Wins" value={profile.wins} tint={theme.accentText} />
           <MiniStat label="Losses" value={profile.losses} tint={theme.accentText} />
@@ -158,6 +203,30 @@ export default function ProfileScreen() {
         <GridTile icon="pie-chart-outline" value={`${drawRate}%`} label="Draw rate" />
         <GridTile icon="albums" value={total} label="Matches" />
       </View>
+
+      {/* Trophy case */}
+      <ThemedText style={styles.sectionLabel}>
+        Trophy case · {earnedCount}/{achievements.length}
+      </ThemedText>
+      <View style={styles.grid}>
+        {achievements.map((a) => (
+          <Pressable
+            key={a.id}
+            onPress={() => Alert.alert(a.name, `${a.description}\n\n${a.earned ? '✓ Earned' : 'Locked'}`)}
+            style={[
+              styles.achv,
+              { backgroundColor: theme.tile, borderColor: a.earned ? theme.accent : theme.tileBorder, opacity: a.earned ? 1 : 0.45 },
+            ]}>
+            <Ionicons name={a.icon} size={22} color={a.earned ? theme.accent : theme.textSecondary} />
+            <ThemedText style={{ fontWeight: '700', fontSize: 12, textAlign: 'center' }} numberOfLines={1}>
+              {a.name}
+            </ThemedText>
+          </Pressable>
+        ))}
+      </View>
+
+      <Button label="Rivalries" variant="secondary" icon="git-compare" onPress={() => router.push('/rivalries')} />
+      <Button label="Champions" variant="secondary" icon="trophy" onPress={() => router.push('/champions')} />
 
       {/* Match history */}
       <ThemedText style={styles.sectionLabel}>Match history</ThemedText>
@@ -261,6 +330,11 @@ function GridTile({
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  titleRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
+  titleChip: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderRadius: 999, paddingHorizontal: Spacing.three, paddingVertical: 4 },
+  tierTrack: { height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.25)', overflow: 'hidden' },
+  tierFill: { height: 6, borderRadius: 3, backgroundColor: '#fff' },
+  achv: { flexBasis: '31%', flexGrow: 1, alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: Spacing.three, borderRadius: 10, borderWidth: 1 },
   openRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   recordRow: { flexDirection: 'row', marginTop: Spacing.three },
   sectionLabel: { fontSize: 18, fontWeight: '800', marginTop: Spacing.one },

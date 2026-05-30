@@ -14,6 +14,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
 import { winStreak } from '@/lib/elo';
 import { fetchMyMatches } from '@/lib/matches';
+import { tierFor } from '@/lib/tiers';
 import { supabase } from '@/lib/supabase';
 import type { MatchWithPeople } from '@/lib/types';
 
@@ -79,6 +80,7 @@ export default function HomeScreen() {
   const winRate = total > 0 ? Math.round((profile.wins / total) * 100) : 0;
   const drawRate = total > 0 ? Math.round((profile.draws / total) * 100) : 0;
   const streak = winStreak(matches, userId!);
+  const tier = tierFor(profile.rating);
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
@@ -148,6 +150,10 @@ export default function HomeScreen() {
                 </View>
                 <ThemedText style={{ fontSize: 48, fontWeight: '800', lineHeight: 50 }}>
                   {profile.rating}
+                </ThemedText>
+                <ThemedText type="small" style={{ color: tier.tier.color, fontWeight: '800' }}>
+                  {tier.tier.name}
+                  {tier.next ? ` · ${tier.toNext} to ${tier.next.name}` : ''}
                 </ThemedText>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
                   <BeltChip belt={profile.belt_rank} size="sm" />
