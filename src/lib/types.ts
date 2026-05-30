@@ -76,12 +76,23 @@ export interface Match {
   method: string | null;
   notes: string | null;
   wager: number;
+  meet_when: string | null;
+  meet_where: string | null;
   challenger_rating_before: number | null;
   opponent_rating_before: number | null;
   challenger_rating_after: number | null;
   opponent_rating_after: number | null;
   created_at: string;
   completed_at: string | null;
+}
+
+export interface MatchMessage {
+  id: string;
+  match_id: string;
+  sender_id: string;
+  body: string;
+  created_at: string;
+  sender: { display_name: string } | null;
 }
 
 // A match row joined with the three people's profiles (used in lists / detail).

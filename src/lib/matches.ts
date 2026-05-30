@@ -10,6 +10,35 @@ export interface WagerLeader {
   wagered_wins: number;
 }
 
+// ---------------------------------------------------------------------------
+// Per-match chat + plan
+// ---------------------------------------------------------------------------
+export async function fetchMatchMessages(matchId: string) {
+  const { data, error } = await supabase
+    .from('match_messages')
+    .select('*, sender:profiles!match_messages_sender_id_fkey(display_name)')
+    .eq('match_id', matchId)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as unknown as import('./types').MatchMessage[];
+}
+
+export async function sendMatchMessage(matchId: string, senderId: string, body: string) {
+  const { error } = await supabase
+    .from('match_messages')
+    .insert({ match_id: matchId, sender_id: senderId, body: body.trim() });
+  if (error) throw error;
+}
+
+export async function setMatchPlan(matchId: string, when: string, where: string) {
+  const { error } = await supabase.rpc('set_match_plan', {
+    p_match_id: matchId,
+    p_when: when,
+    p_where: where,
+  });
+  if (error) throw error;
+}
+
 /** Top players by total Elo won through wagers ("Biggest Pots"). */
 export async function fetchWagerLeaderboard(): Promise<WagerLeader[]> {
   const { data, error } = await supabase.rpc('wager_leaderboard', { p_limit: 50 });

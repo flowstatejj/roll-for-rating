@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Animated, Pressable, StyleSheet, View } from 'react-native';
 
@@ -17,6 +17,7 @@ export default function MatchDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useAuth();
   const theme = useTheme();
+  const router = useRouter();
   const userId = session!.user.id;
 
   const [match, setMatch] = useState<MatchWithPeople | null>(null);
@@ -183,6 +184,25 @@ export default function MatchDetailScreen() {
         </View>
         <Ionicons name="eye-outline" size={20} color={theme.textSecondary} />
       </Card>
+
+      {/* When & where (set in chat) */}
+      {(match.meet_when || match.meet_where) && (
+        <Card style={{ gap: 2 }}>
+          <ThemedText type="smallBold" themeColor="textSecondary">
+            WHEN &amp; WHERE
+          </ThemedText>
+          {match.meet_when ? <ThemedText>🕒 {match.meet_when}</ThemedText> : null}
+          {match.meet_where ? <ThemedText>📍 {match.meet_where}</ThemedText> : null}
+        </Card>
+      )}
+
+      {/* Chat */}
+      <Button
+        label="Message participants"
+        variant="secondary"
+        icon="chatbubbles"
+        onPress={() => router.push(`/chat/${match.id}`)}
+      />
 
       {/* Match video */}
       <MatchVideos matchId={match.id} uploaderId={userId} isParticipant={amCompetitor || amReferee} />
