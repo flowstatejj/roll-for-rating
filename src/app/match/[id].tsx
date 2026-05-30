@@ -10,8 +10,17 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
 import { projectSwing } from '@/lib/elo';
-import { cancelMatch, fetchMatch, recordResult, respondToMatch } from '@/lib/matches';
-import { RESULT_LABELS, type MatchWithPeople, type ResultType } from '@/lib/types';
+import {
+  cancelMatch,
+  fetchMatch,
+  fetchMatchReactions,
+  fetchMatchViewCount,
+  recordMatchView,
+  recordResult,
+  respondToMatch,
+  setMatchReaction,
+} from '@/lib/matches';
+import { REACTIONS, RESULT_LABELS, type MatchWithPeople, type ReactionSummary, type ResultType } from '@/lib/types';
 
 export default function MatchDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -38,6 +47,37 @@ export default function MatchDetailScreen() {
   }, [id]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Public match: record a view + load views/reactions.
+  const [viewCount, setViewCount] = useState(0);
+  const [reactions, setReactions] = useState<ReactionSummary>({ counts: {}, mine: null });
+  useEffect(() => {
+    if (!match?.is_public) return;
+    (async () => {
+      try {
+        await recordMatchView(match.id, userId);
+        const [vc, rx] = await Promise.all([
+          fetchMatchViewCount(match.id),
+          fetchMatchReactions(match.id, userId),
+        ]);
+        setViewCount(vc);
+        setReactions(rx);
+      } catch (e) {
+        console.warn('public load failed', e);
+      }
+    })();
+  }, [match?.is_public, match?.id, userId]);
+
+  async function react(emoji: string) {
+    if (!match) return;
+    const next = reactions.mine === emoji ? null : emoji;
+    try {
+      await setMatchReaction(match.id, userId, next);
+      setReactions(await fetchMatchReactions(match.id, userId));
+    } catch (e: any) {
+      Alert.alert('Could not react', e.message ?? 'Try again.');
+    }
+  }
 
   // Pot pop-in when a wagered match resolves.
   const potAnim = useRef(new Animated.Value(0)).current;
@@ -206,6 +246,51 @@ export default function MatchDetailScreen() {
 
       {/* Match video */}
       <MatchVideos matchId={match.id} uploaderId={userId} isParticipant={amCompetitor || amReferee} />
+
+      {/* Public: views + reactions */}
+      {match.is_public && (
+        <Card style={{ gap: Spacing.two }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+            <View style={[styles.publicBadge, { backgroundColor: theme.accent }]}>
+              <Ionicons name="globe" size={12} color={theme.accentText} />
+              <ThemedText style={{ color: theme.accentText, fontWeight: '800', fontSize: 11 }}>PUBLIC</ThemedText>
+            </View>
+            <View style={{ flex: 1 }} />
+            <Ionicons name="eye" size={15} color={theme.textSecondary} />
+            <ThemedText type="small" themeColor="textSecondary">
+              {viewCount} view{viewCount === 1 ? '' : 's'}
+            </ThemedText>
+          </View>
+          {match.status === 'completed' ? (
+            <View style={styles.reactRow}>
+              {REACTIONS.map((e) => {
+                const count = reactions.counts[e] ?? 0;
+                const active = reactions.mine === e;
+                return (
+                  <Pressable
+                    key={e}
+                    onPress={() => react(e)}
+                    style={[
+                      styles.reactBtn,
+                      { borderColor: active ? theme.accent : theme.border, backgroundColor: active ? theme.accent + '22' : 'transparent' },
+                    ]}>
+                    <ThemedText style={{ fontSize: 18 }}>{e}</ThemedText>
+                    {count > 0 && (
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {count}
+                      </ThemedText>
+                    )}
+                  </Pressable>
+                );
+              })}
+            </View>
+          ) : (
+            <ThemedText type="small" themeColor="textSecondary">
+              This match will appear in Watch once the referee records the result.
+            </ThemedText>
+          )}
+        </Card>
+      )}
 
       {/* Completed result summary */}
       {match.status === 'completed' && match.result && (
@@ -420,6 +505,9 @@ const styles = StyleSheet.create({
   banner: { borderRadius: 12, paddingVertical: Spacing.two, paddingHorizontal: Spacing.three, alignItems: 'center' },
   potBanner: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.two },
   stakePill: { borderRadius: 999, paddingHorizontal: Spacing.two, paddingVertical: 2 },
+  publicBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 999, paddingHorizontal: Spacing.two, paddingVertical: 3 },
+  reactRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
+  reactBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 999, borderWidth: 1, paddingHorizontal: Spacing.three, paddingVertical: Spacing.one },
   vsRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   line: { flex: 1, height: StyleSheet.hairlineWidth },
   personRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },

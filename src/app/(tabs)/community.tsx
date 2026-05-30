@@ -87,6 +87,12 @@ export default function CommunityScreen() {
 
       {/* Actions */}
       <ActionRow
+        icon="play-circle"
+        title="Watch"
+        subtitle="Public matches — view counts and reactions"
+        onPress={() => router.push('/watch')}
+      />
+      <ActionRow
         icon="flame"
         title="Roll Finder"
         subtitle="Find people open for a challenge in your area"

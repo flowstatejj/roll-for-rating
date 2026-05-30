@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Avatar, BeltChip, Button, Card, Screen, TextField } from '@/components/ui/kit';
@@ -28,6 +28,7 @@ export default function NewMatchScreen() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Profile[]>([]);
   const [wager, setWager] = useState('');
+  const [isPublic, setIsPublic] = useState(false);
   const [creating, setCreating] = useState(false);
 
   // Preselect an opponent when arriving from "Find opponents".
@@ -90,6 +91,7 @@ export default function NewMatchScreen() {
         opponentId: opponent.id,
         refereeId: referee.id,
         wager: parseInt(wager, 10) || 0,
+        isPublic,
       });
       router.replace(`/match/${id}`);
     } catch (e: any) {
@@ -173,6 +175,17 @@ export default function NewMatchScreen() {
         challenge means agreeing to the wager.
       </ThemedText>
 
+      <Card style={styles.publicRow}>
+        <Ionicons name="globe-outline" size={20} color={isPublic ? theme.accent : theme.textSecondary} />
+        <View style={{ flex: 1 }}>
+          <ThemedText style={{ fontWeight: '800' }}>Publish publicly</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            If both fighters agree, the match shows in Watch for everyone to view &amp; react.
+          </ThemedText>
+        </View>
+        <Switch value={isPublic} onValueChange={setIsPublic} trackColor={{ true: theme.accent }} />
+      </Card>
+
       <Button
         label="Send challenge"
         icon="send"
@@ -248,5 +261,6 @@ const styles = StyleSheet.create({
   slots: { flexDirection: 'row', gap: Spacing.two },
   wagerChips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   wagerChip: { paddingVertical: Spacing.two, paddingHorizontal: Spacing.three, borderRadius: 999, borderWidth: 1 },
+  publicRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   resultRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
 });

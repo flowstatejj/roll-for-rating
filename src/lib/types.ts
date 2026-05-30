@@ -76,6 +76,7 @@ export interface Match {
   method: string | null;
   notes: string | null;
   wager: number;
+  is_public: boolean;
   meet_when: string | null;
   meet_where: string | null;
   challenger_rating_before: number | null;
@@ -93,6 +94,15 @@ export interface MatchMessage {
   body: string;
   created_at: string;
   sender: { display_name: string } | null;
+}
+
+// Emoji reactions members can leave on a public match (no comments).
+export const REACTIONS = ['🔥', '👏', '💪', '🥋', '😮'] as const;
+export type Reaction = (typeof REACTIONS)[number];
+
+export interface ReactionSummary {
+  counts: Record<string, number>;
+  mine: string | null;
 }
 
 // A match row joined with the three people's profiles (used in lists / detail).

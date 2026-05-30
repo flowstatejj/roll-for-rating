@@ -11,6 +11,68 @@ export interface WagerLeader {
 }
 
 // ---------------------------------------------------------------------------
+// Public matches: feed, views, reactions
+// ---------------------------------------------------------------------------
+export async function fetchPublicMatches(): Promise<MatchWithPeople[]> {
+  const { data, error } = await supabase
+    .from('matches')
+    .select(MATCH_WITH_PEOPLE)
+    .eq('is_public', true)
+    .eq('status', 'completed')
+    .order('completed_at', { ascending: false })
+    .limit(50);
+  if (error) throw error;
+  return (data ?? []) as unknown as MatchWithPeople[];
+}
+
+/** Record one unique view (no-op if this viewer already viewed). */
+export async function recordMatchView(matchId: string, viewerId: string) {
+  await supabase
+    .from('match_views')
+    .upsert({ match_id: matchId, viewer_id: viewerId }, { onConflict: 'match_id,viewer_id', ignoreDuplicates: true });
+}
+
+export async function fetchMatchViewCount(matchId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('match_views')
+    .select('viewer_id', { count: 'exact', head: true })
+    .eq('match_id', matchId);
+  if (error) throw error;
+  return count ?? 0;
+}
+
+export async function fetchMatchReactions(
+  matchId: string,
+  userId: string,
+): Promise<import('./types').ReactionSummary> {
+  const { data, error } = await supabase
+    .from('match_reactions')
+    .select('user_id,reaction')
+    .eq('match_id', matchId);
+  if (error) throw error;
+  const counts: Record<string, number> = {};
+  let mine: string | null = null;
+  for (const r of (data ?? []) as { user_id: string; reaction: string }[]) {
+    counts[r.reaction] = (counts[r.reaction] ?? 0) + 1;
+    if (r.user_id === userId) mine = r.reaction;
+  }
+  return { counts, mine };
+}
+
+/** Set (or clear, when reaction is null) the user's reaction on a match. */
+export async function setMatchReaction(matchId: string, userId: string, reaction: string | null) {
+  if (reaction === null) {
+    const { error } = await supabase.from('match_reactions').delete().eq('match_id', matchId).eq('user_id', userId);
+    if (error) throw error;
+    return;
+  }
+  const { error } = await supabase
+    .from('match_reactions')
+    .upsert({ match_id: matchId, user_id: userId, reaction }, { onConflict: 'match_id,user_id' });
+  if (error) throw error;
+}
+
+// ---------------------------------------------------------------------------
 // Per-match chat + plan
 // ---------------------------------------------------------------------------
 export async function fetchMatchMessages(matchId: string) {
@@ -89,6 +151,7 @@ export async function createMatch(args: {
   opponentId: string;
   refereeId: string;
   wager?: number;
+  isPublic?: boolean;
 }): Promise<string> {
   const { data, error } = await supabase
     .from('matches')
@@ -97,6 +160,7 @@ export async function createMatch(args: {
       opponent_id: args.opponentId,
       referee_id: args.refereeId,
       wager: Math.max(0, Math.round(args.wager ?? 0)),
+      is_public: !!args.isPublic,
     })
     .select('id')
     .single();
