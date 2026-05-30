@@ -105,6 +105,17 @@ export interface ReactionSummary {
   mine: string | null;
 }
 
+export interface AppNotification {
+  id: string;
+  user_id: string;
+  type: string;
+  title: string;
+  body: string | null;
+  match_id: string | null;
+  read: boolean;
+  created_at: string;
+}
+
 // A match row joined with the three people's profiles (used in lists / detail).
 export interface MatchWithPeople extends Match {
   challenger: Pick<Profile, 'id' | 'username' | 'display_name' | 'belt_rank' | 'rating'>;

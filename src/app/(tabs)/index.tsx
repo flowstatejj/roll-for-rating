@@ -11,6 +11,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Avatar, BeltChip, Button, Card, EmptyState, ErrorState, Loading } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useUnread } from '@/hooks/use-unread';
 import { useAuth } from '@/lib/auth';
 import { winStreak } from '@/lib/elo';
 import { fetchMyMatches } from '@/lib/matches';
@@ -29,6 +30,7 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(false);
+  const unread = useUnread();
 
   const userId = session?.user.id;
 
@@ -104,8 +106,18 @@ export default function HomeScreen() {
               Roll for Rating
             </ThemedText>
           </View>
-          <View style={[styles.topSide, { alignItems: 'flex-end' }]}>
-            <Pressable onPress={() => router.push('/(tabs)/leaderboard')}>
+          <View style={[styles.topSide, styles.topRight]}>
+            <Pressable onPress={() => router.push('/notifications')} hitSlop={8}>
+              <Ionicons name="notifications" size={24} color={theme.text} />
+              {unread > 0 && (
+                <View style={[styles.bellBadge, { backgroundColor: theme.danger }]}>
+                  <ThemedText style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>
+                    {unread > 9 ? '9+' : unread}
+                  </ThemedText>
+                </View>
+              )}
+            </Pressable>
+            <Pressable onPress={() => router.push('/(tabs)/leaderboard')} hitSlop={8}>
               <Ionicons name="podium" size={24} color={theme.text} />
             </Pressable>
           </View>
@@ -260,6 +272,8 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
   },
   topSide: { flex: 1, justifyContent: 'center' },
+  topRight: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: Spacing.three },
+  bellBadge: { position: 'absolute', top: -6, right: -8, minWidth: 16, height: 16, borderRadius: 8, paddingHorizontal: 3, alignItems: 'center', justifyContent: 'center' },
   brand: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   logoMark: { width: 26, height: 26, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
   brandText: { fontSize: 17, fontWeight: '800', letterSpacing: 0.2 },
