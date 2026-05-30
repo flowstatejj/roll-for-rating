@@ -67,6 +67,7 @@ function RootNavigator() {
       <Stack.Screen name="notifications" options={{ headerShown: true, title: 'Notifications' }} />
       <Stack.Screen name="submission-hunt" options={{ headerShown: true, title: 'Submission Hunt' }} />
       <Stack.Screen name="quests" options={{ headerShown: true, title: 'Quests' }} />
+      <Stack.Screen name="seasons" options={{ headerShown: true, title: 'Seasons' }} />
     </Stack>
   );
 }

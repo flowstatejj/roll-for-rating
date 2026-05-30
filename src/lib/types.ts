@@ -38,6 +38,20 @@ export interface Quest {
   claimed: boolean;
 }
 
+export interface Season {
+  id: string;
+  name: string;
+  starts_at: string;
+  ends_at: string;
+}
+
+export interface SeasonStanding {
+  user_id: string;
+  points: number;
+  wins: number;
+  profile: { id: string; display_name: string; belt_rank: BeltRank; rating: number } | null;
+}
+
 // ---------------------------------------------------------------------------
 // Community: gyms, gym friendships, open mats
 // ---------------------------------------------------------------------------

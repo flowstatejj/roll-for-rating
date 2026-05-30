@@ -117,6 +117,12 @@ export default function CommunityScreen() {
         onPress={() => router.push('/quests')}
       />
       <ActionRow
+        icon="calendar-number"
+        title="Seasons"
+        subtitle="The seasonal points race + champions"
+        onPress={() => router.push('/seasons')}
+      />
+      <ActionRow
         icon="lock-open"
         title="Submission Hunt"
         subtitle="Collect submissions for bonus Elo"
