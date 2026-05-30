@@ -8,9 +8,12 @@
     "scheme": "rollcall",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.flowstatejj.rollforrating",
+      "supportsTablet": true
     },
     "android": {
+      "package": "com.flowstatejj.rollforrating",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -35,7 +38,14 @@
           }
         }
       ],
-      "expo-video"
+      "expo-video",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Roll for Rating uses your photos so you can attach match videos.",
+          "cameraPermission": "Roll for Rating uses your camera so you can record match videos."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
