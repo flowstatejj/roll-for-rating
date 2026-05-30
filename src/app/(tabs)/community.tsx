@@ -111,6 +111,12 @@ export default function CommunityScreen() {
         onPress={() => router.push('/open-mats')}
       />
       <ActionRow
+        icon="checkbox"
+        title="Quests"
+        subtitle="Weekly challenges + your daily streak"
+        onPress={() => router.push('/quests')}
+      />
+      <ActionRow
         icon="lock-open"
         title="Submission Hunt"
         subtitle="Collect submissions for bonus Elo"

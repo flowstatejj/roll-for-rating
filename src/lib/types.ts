@@ -24,7 +24,18 @@ export interface Profile {
   gym_id: string | null;
   open_for_challenge: boolean;
   city: string | null;
+  activity_streak: number;
+  last_active_date: string | null;
   created_at: string;
+}
+
+export interface Quest {
+  key: string;
+  title: string;
+  progress: number;
+  target: number;
+  reward: number;
+  claimed: boolean;
 }
 
 // ---------------------------------------------------------------------------

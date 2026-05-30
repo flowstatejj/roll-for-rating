@@ -15,6 +15,7 @@ import { useUnread } from '@/hooks/use-unread';
 import { useAuth } from '@/lib/auth';
 import { winStreak } from '@/lib/elo';
 import { fetchMyMatches } from '@/lib/matches';
+import { pingActivity } from '@/lib/quests';
 import { tierFor } from '@/lib/tiers';
 import { supabase } from '@/lib/supabase';
 import type { MatchWithPeople } from '@/lib/types';
@@ -51,6 +52,7 @@ export default function HomeScreen() {
     useCallback(() => {
       load();
       refreshProfile();
+      pingActivity().catch(() => {});
     }, [load, refreshProfile]),
   );
 
