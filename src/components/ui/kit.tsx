@@ -2,6 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { forwardRef } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -210,17 +212,33 @@ export function Screen({
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
       <TatamiBackground />
       <SafeAreaView style={[styles.screen, { backgroundColor: 'transparent' }]} edges={['top']}>
-        {scroll ? (
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-            refreshControl={refreshControl}>
-            {children}
-          </ScrollView>
-        ) : (
-          children
-        )}
+        <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          {scroll ? (
+            <ScrollView
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="interactive"
+              refreshControl={refreshControl}>
+              {children}
+            </ScrollView>
+          ) : (
+            children
+          )}
+        </KeyboardAvoidingView>
       </SafeAreaView>
+    </View>
+  );
+}
+
+export function ErrorState({ message, onRetry }: { message?: string; onRetry: () => void }) {
+  const theme = useTheme();
+  return (
+    <View style={[styles.center, { gap: Spacing.three, paddingVertical: Spacing.six }]}>
+      <Ionicons name="cloud-offline-outline" size={48} color={theme.textSecondary} />
+      <ThemedText themeColor="textSecondary" style={{ textAlign: 'center', paddingHorizontal: Spacing.four }}>
+        {message ?? "Couldn't load — check your connection and try again."}
+      </ThemedText>
+      <Button label="Retry" icon="refresh" variant="secondary" onPress={onRetry} />
     </View>
   );
 }

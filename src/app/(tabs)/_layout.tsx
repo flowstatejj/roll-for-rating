@@ -1,10 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 
+import { usePendingCount } from '@/hooks/use-pending';
 import { useTheme } from '@/hooks/use-theme';
 
 export default function TabsLayout() {
   const theme = useTheme();
+  const pending = usePendingCount();
   return (
     <Tabs
       screenOptions={{
@@ -31,16 +33,12 @@ export default function TabsLayout() {
         name="matches"
         options={{
           title: 'Matches',
+          tabBarBadge: pending > 0 ? pending : undefined,
           tabBarIcon: ({ color, size }) => <Ionicons name="list" size={size} color={color} />,
         }}
       />
-      <Tabs.Screen
-        name="leaderboard"
-        options={{
-          title: 'Ranks',
-          tabBarIcon: ({ color, size }) => <Ionicons name="podium" size={size} color={color} />,
-        }}
-      />
+      {/* Ranks reachable from Home + Community; hidden from the bar to keep it to 5 */}
+      <Tabs.Screen name="leaderboard" options={{ href: null, title: 'Ranks' }} />
       <Tabs.Screen
         name="community"
         options={{

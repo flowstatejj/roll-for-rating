@@ -94,16 +94,15 @@ export default function CommunityScreen() {
       />
       <ActionRow
         icon="flame"
-        title="Roll Finder"
-        subtitle="Find people open for a challenge in your area"
-        onPress={() => router.push('/roll-finder')}
+        title="Find a roll"
+        subtitle="Your gym network, or anyone open for a challenge nearby"
+        onPress={() => router.push('/find')}
       />
       <ActionRow
-        icon="people"
-        title="Find opponents"
-        subtitle="Challenge competitors from your gym + friendly gyms"
-        onPress={() => router.push('/find-opponents')}
-        disabled={!profile.gym_id}
+        icon="podium"
+        title="Rankings"
+        subtitle="The global leaderboard"
+        onPress={() => router.push('/(tabs)/leaderboard')}
       />
       <ActionRow
         icon="calendar"

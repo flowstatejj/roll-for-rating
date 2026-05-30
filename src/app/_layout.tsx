@@ -22,19 +22,24 @@ const NavTheme = {
 };
 
 function RootNavigator() {
-  const { session, initializing } = useAuth();
+  const { session, initializing, onboarded } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
     if (initializing) return;
     const inAuthGroup = segments[0] === '(auth)';
+    const inOnboarding = segments[0] === 'onboarding';
     if (!session && !inAuthGroup) {
       router.replace('/(auth)/sign-in');
     } else if (session && inAuthGroup) {
+      router.replace(onboarded === false ? '/onboarding' : '/(tabs)');
+    } else if (session && onboarded === false && !inOnboarding) {
+      router.replace('/onboarding');
+    } else if (session && onboarded && inOnboarding) {
       router.replace('/(tabs)');
     }
-  }, [session, initializing, segments, router]);
+  }, [session, initializing, onboarded, segments, router]);
 
   if (initializing) return <Loading />;
 
@@ -42,6 +47,7 @@ function RootNavigator() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="onboarding" />
       <Stack.Screen
         name="match/new"
         options={{ presentation: 'modal', headerShown: true, title: 'New Challenge' }}
@@ -51,9 +57,8 @@ function RootNavigator() {
       <Stack.Screen name="competitions" options={{ headerShown: true, title: 'Competition Record' }} />
       <Stack.Screen name="gyms" options={{ headerShown: true, title: 'Gyms' }} />
       <Stack.Screen name="gym/[id]" options={{ headerShown: true, title: 'Gym' }} />
-      <Stack.Screen name="find-opponents" options={{ headerShown: true, title: 'Find Opponents' }} />
+      <Stack.Screen name="find" options={{ headerShown: true, title: 'Find a Roll' }} />
       <Stack.Screen name="open-mats" options={{ headerShown: true, title: 'Open Mats' }} />
-      <Stack.Screen name="roll-finder" options={{ headerShown: true, title: 'Roll Finder' }} />
       <Stack.Screen name="high-rollers" options={{ headerShown: true, title: 'Biggest Pots' }} />
       <Stack.Screen name="chat/[id]" options={{ headerShown: true, title: 'Match chat' }} />
       <Stack.Screen name="watch" options={{ headerShown: true, title: 'Watch' }} />

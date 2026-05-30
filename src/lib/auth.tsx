@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Session } from '@supabase/supabase-js';
 import {
   createContext,
@@ -12,6 +13,8 @@ import {
 import { supabase } from './supabase';
 import type { BeltRank, Profile } from './types';
 
+const onboardKey = (uid: string) => `onboarded:${uid}`;
+
 interface SignUpArgs {
   email: string;
   password: string;
@@ -25,6 +28,9 @@ interface AuthContextValue {
   profile: Profile | null;
   /** true until we've checked for an existing session on launch */
   initializing: boolean;
+  /** null while unknown; false = should see onboarding */
+  onboarded: boolean | null;
+  markOnboarded: () => Promise<void>;
   signUp: (args: SignUpArgs) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -37,6 +43,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [initializing, setInitializing] = useState(true);
+  const [onboarded, setOnboarded] = useState<boolean | null>(null);
+
+  const loadOnboarded = useCallback(async (userId: string) => {
+    try {
+      const v = await AsyncStorage.getItem(onboardKey(userId));
+      setOnboarded(v === '1');
+    } catch {
+      setOnboarded(true); // fail open — don't trap users
+    }
+  }, []);
 
   const loadProfile = useCallback(async (userId: string) => {
     const { data, error } = await supabase
@@ -59,7 +75,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(async ({ data }) => {
       if (!active) return;
       setSession(data.session);
-      if (data.session?.user) await loadProfile(data.session.user.id);
+      if (data.session?.user) {
+        await loadProfile(data.session.user.id);
+        loadOnboarded(data.session.user.id);
+      }
       setInitializing(false);
     });
 
@@ -67,8 +86,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(newSession);
       if (newSession?.user) {
         loadProfile(newSession.user.id);
+        loadOnboarded(newSession.user.id);
       } else {
         setProfile(null);
+        setOnboarded(null);
       }
     });
 
@@ -76,7 +97,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       active = false;
       sub.subscription.unsubscribe();
     };
-  }, [loadProfile]);
+  }, [loadProfile, loadOnboarded]);
+
+  const markOnboarded = useCallback(async () => {
+    if (session?.user) await AsyncStorage.setItem(onboardKey(session.user.id), '1');
+    setOnboarded(true);
+  }, [session]);
 
   const signUp = useCallback(
     async ({ email, password, username, displayName, beltRank }: SignUpArgs) => {
@@ -112,8 +138,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [session, loadProfile]);
 
   const value = useMemo(
-    () => ({ session, profile, initializing, signUp, signIn, signOut, refreshProfile }),
-    [session, profile, initializing, signUp, signIn, signOut, refreshProfile],
+    () => ({ session, profile, initializing, onboarded, markOnboarded, signUp, signIn, signOut, refreshProfile }),
+    [session, profile, initializing, onboarded, markOnboarded, signUp, signIn, signOut, refreshProfile],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

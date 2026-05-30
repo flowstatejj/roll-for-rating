@@ -8,7 +8,7 @@ import { MatchCard } from '@/components/match-card';
 import { MatchRow } from '@/components/match-row';
 import { TatamiBackground } from '@/components/tatami-background';
 import { ThemedText } from '@/components/themed-text';
-import { Avatar, BeltChip, Button, Card, EmptyState, Loading } from '@/components/ui/kit';
+import { Avatar, BeltChip, Button, Card, EmptyState, ErrorState, Loading } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
@@ -28,6 +28,7 @@ export default function HomeScreen() {
   const [matches, setMatches] = useState<MatchWithPeople[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(false);
 
   const userId = session?.user.id;
 
@@ -35,8 +36,10 @@ export default function HomeScreen() {
     if (!userId) return;
     try {
       setMatches(await fetchMyMatches(userId));
+      setError(false);
     } catch (e) {
       console.warn('Failed to load matches', e);
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -189,7 +192,9 @@ export default function HomeScreen() {
 
           {/* Recent matches — chess.com Game History style */}
           <SectionLabel>Recent matches</SectionLabel>
-          {recent.length === 0 ? (
+          {error ? (
+            <ErrorState onRetry={load} />
+          ) : recent.length === 0 ? (
             <EmptyState
               icon="hand-left-outline"
               title="No matches yet"

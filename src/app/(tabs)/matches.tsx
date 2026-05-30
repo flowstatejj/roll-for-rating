@@ -4,7 +4,7 @@ import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 
 import { MatchRow } from '@/components/match-row';
 import { ThemedText } from '@/components/themed-text';
-import { Card, EmptyState, Loading, Screen } from '@/components/ui/kit';
+import { Card, EmptyState, ErrorState, Loading, Screen } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
@@ -25,6 +25,7 @@ export default function MatchesScreen() {
   const userId = session?.user.id;
   const [matches, setMatches] = useState<MatchWithPeople[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<Filter>('all');
 
@@ -32,8 +33,10 @@ export default function MatchesScreen() {
     if (!userId) return;
     try {
       setMatches(await fetchMyMatches(userId));
+      setError(false);
     } catch (e) {
       console.warn('Failed to load matches', e);
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -91,7 +94,9 @@ export default function MatchesScreen() {
         })}
       </View>
 
-      {filtered.length === 0 ? (
+      {error ? (
+        <ErrorState onRetry={load} />
+      ) : filtered.length === 0 ? (
         <EmptyState icon="list-outline" title="Nothing here yet" subtitle="Matches you compete in or referee will show up here." />
       ) : (
         <Card style={{ paddingVertical: Spacing.one }}>
