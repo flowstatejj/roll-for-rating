@@ -87,6 +87,12 @@ export default function CommunityScreen() {
 
       {/* Actions */}
       <ActionRow
+        icon="flame"
+        title="Roll Finder"
+        subtitle="Find people open for a challenge in your area"
+        onPress={() => router.push('/roll-finder')}
+      />
+      <ActionRow
         icon="people"
         title="Find opponents"
         subtitle="Challenge competitors from your gym + friendly gyms"

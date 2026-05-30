@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Gym, GymFriend, GymWithMeta, OpenMat, Profile } from './types';
+import type { BeltRank, Gym, GymFriend, GymWithMeta, OpenMat, Profile } from './types';
 
 // ---------------------------------------------------------------------------
 // Gyms
@@ -177,4 +177,35 @@ export async function createOpenMat(args: {
 export async function deleteOpenMat(id: string): Promise<void> {
   const { error } = await supabase.from('open_mats').delete().eq('id', id);
   if (error) throw error;
+}
+
+// ---------------------------------------------------------------------------
+// "Open for a challenge" matchmaking
+// ---------------------------------------------------------------------------
+export async function setOpenForChallenge(userId: string, open: boolean) {
+  const { error } = await supabase.from('profiles').update({ open_for_challenge: open }).eq('id', userId);
+  if (error) throw error;
+}
+
+export async function fetchOpenChallengers(
+  userId: string,
+  filters: { city?: string; belt?: BeltRank | null; minRating?: number; maxRating?: number },
+): Promise<Profile[]> {
+  let req = supabase
+    .from('profiles')
+    .select('*')
+    .eq('open_for_challenge', true)
+    .neq('id', userId)
+    .order('rating', { ascending: false })
+    .limit(50);
+
+  const city = filters.city?.trim();
+  if (city) req = req.ilike('city', `%${city}%`);
+  if (filters.belt) req = req.eq('belt_rank', filters.belt);
+  if (filters.minRating != null) req = req.gte('rating', filters.minRating);
+  if (filters.maxRating != null) req = req.lte('rating', filters.maxRating);
+
+  const { data, error } = await req;
+  if (error) throw error;
+  return (data ?? []) as Profile[];
 }

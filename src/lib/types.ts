@@ -22,6 +22,8 @@ export interface Profile {
   losses: number;
   draws: number;
   gym_id: string | null;
+  open_for_challenge: boolean;
+  city: string | null;
   created_at: string;
 }
 
@@ -73,6 +75,7 @@ export interface Match {
   result: ResultType | null;
   method: string | null;
   notes: string | null;
+  wager: number;
   challenger_rating_before: number | null;
   opponent_rating_before: number | null;
   challenger_rating_after: number | null;

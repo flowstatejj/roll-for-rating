@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { MatchRow } from '@/components/match-row';
 import { ThemedText } from '@/components/themed-text';
@@ -10,6 +10,7 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
 import { fetchMyMatches } from '@/lib/matches';
+import { setOpenForChallenge } from '@/lib/social';
 import { supabase } from '@/lib/supabase';
 import { BELT_COLORS, BELT_LABELS, type BeltRank, type MatchWithPeople } from '@/lib/types';
 
@@ -24,8 +25,23 @@ export default function ProfileScreen() {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState('');
   const [belt, setBelt] = useState<BeltRank>('white');
+  const [city, setCity] = useState('');
   const [saving, setSaving] = useState(false);
+  const [togglingOpen, setTogglingOpen] = useState(false);
   const [matches, setMatches] = useState<MatchWithPeople[]>([]);
+
+  async function toggleOpen(value: boolean) {
+    if (!userId) return;
+    setTogglingOpen(true);
+    try {
+      await setOpenForChallenge(userId, value);
+      await refreshProfile();
+    } catch (e: any) {
+      Alert.alert('Could not update', e.message ?? 'Try again.');
+    } finally {
+      setTogglingOpen(false);
+    }
+  }
 
   const loadMatches = useCallback(async () => {
     if (!userId) return;
@@ -48,6 +64,7 @@ export default function ProfileScreen() {
   function startEdit() {
     setName(profile!.display_name);
     setBelt(profile!.belt_rank);
+    setCity(profile!.city ?? '');
     setEditing(true);
   }
 
@@ -60,7 +77,7 @@ export default function ProfileScreen() {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ display_name: name.trim(), belt_rank: belt })
+        .update({ display_name: name.trim(), belt_rank: belt, city: city.trim() || null })
         .eq('id', profile!.id);
       if (error) throw error;
       await refreshProfile();
@@ -114,6 +131,23 @@ export default function ProfileScreen() {
         </View>
       </Card>
 
+      {/* Open for a challenge */}
+      <Card style={styles.openRow}>
+        <Ionicons name="flame" size={22} color={profile.open_for_challenge ? theme.accent : theme.textSecondary} />
+        <View style={{ flex: 1 }}>
+          <ThemedText style={{ fontWeight: '800' }}>Open for a challenge</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {profile.open_for_challenge ? 'You appear in the Roll Finder' : 'Turn on to be found by nearby rollers'}
+          </ThemedText>
+        </View>
+        <Switch
+          value={profile.open_for_challenge}
+          onValueChange={toggleOpen}
+          disabled={togglingOpen}
+          trackColor={{ true: theme.accent }}
+        />
+      </Card>
+
       {/* Stat grid */}
       <ThemedText style={styles.sectionLabel}>Stats</ThemedText>
       <View style={styles.grid}>
@@ -144,6 +178,7 @@ export default function ProfileScreen() {
       {editing ? (
         <Card style={{ gap: Spacing.three }}>
           <TextField label="Display name" value={name} onChangeText={setName} />
+          <TextField label="City / area" value={city} onChangeText={setCity} placeholder="Your city (for the Roll Finder)" />
           <View style={{ gap: Spacing.one }}>
             <ThemedText type="smallBold" themeColor="textSecondary">
               Belt rank
@@ -226,6 +261,7 @@ function GridTile({
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  openRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   recordRow: { flexDirection: 'row', marginTop: Spacing.three },
   sectionLabel: { fontSize: 18, fontWeight: '800', marginTop: Spacing.one },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },

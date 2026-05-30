@@ -39,6 +39,7 @@ export async function createMatch(args: {
   challengerId: string;
   opponentId: string;
   refereeId: string;
+  wager?: number;
 }): Promise<string> {
   const { data, error } = await supabase
     .from('matches')
@@ -46,6 +47,7 @@ export async function createMatch(args: {
       challenger_id: args.challengerId,
       opponent_id: args.opponentId,
       referee_id: args.refereeId,
+      wager: Math.max(0, Math.round(args.wager ?? 0)),
     })
     .select('id')
     .single();

@@ -26,6 +26,7 @@ export default function NewMatchScreen() {
   const [active, setActive] = useState<Slot>('opponent');
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Profile[]>([]);
+  const [wager, setWager] = useState('');
   const [creating, setCreating] = useState(false);
 
   // Preselect an opponent when arriving from "Find opponents".
@@ -83,7 +84,12 @@ export default function NewMatchScreen() {
     }
     setCreating(true);
     try {
-      const id = await createMatch({ challengerId: userId, opponentId: opponent.id, refereeId: referee.id });
+      const id = await createMatch({
+        challengerId: userId,
+        opponentId: opponent.id,
+        refereeId: referee.id,
+        wager: parseInt(wager, 10) || 0,
+      });
       router.replace(`/match/${id}`);
     } catch (e: any) {
       Alert.alert('Could not create match', e.message ?? 'Try again.');
@@ -146,6 +152,18 @@ export default function NewMatchScreen() {
           </ThemedText>
         )}
       </View>
+
+      <TextField
+        label="Wager (optional)"
+        value={wager}
+        onChangeText={setWager}
+        keyboardType="number-pad"
+        placeholder="Extra Elo staked — winner takes it"
+      />
+      <ThemedText type="small" themeColor="textSecondary">
+        On a decisive result the winner takes the wagered rating from the loser, on top of normal Elo. Accepting the
+        challenge means agreeing to the wager.
+      </ThemedText>
 
       <Button
         label="Send challenge"

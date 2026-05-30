@@ -84,6 +84,15 @@ export default function MatchDetailScreen() {
 
       <StatusBanner match={match} />
 
+      {match.wager > 0 && (
+        <View style={[styles.banner, { backgroundColor: theme.accent + '22', flexDirection: 'row', gap: Spacing.two }]}>
+          <Ionicons name="cash" size={18} color={theme.accent} />
+          <ThemedText style={{ color: theme.accent, fontWeight: '800' }}>
+            {match.wager} Elo wagered — winner takes it
+          </ThemedText>
+        </View>
+      )}
+
       {/* Competitors */}
       <Card style={{ gap: Spacing.three }}>
         <PersonRow
