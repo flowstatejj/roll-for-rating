@@ -49,6 +49,10 @@ function RootNavigator() {
       <Stack.Screen name="match/[id]" options={{ headerShown: true, title: 'Match' }} />
       <Stack.Screen name="puzzle/solve" options={{ headerShown: true, title: 'Puzzle' }} />
       <Stack.Screen name="competitions" options={{ headerShown: true, title: 'Competition Record' }} />
+      <Stack.Screen name="gyms" options={{ headerShown: true, title: 'Gyms' }} />
+      <Stack.Screen name="gym/[id]" options={{ headerShown: true, title: 'Gym' }} />
+      <Stack.Screen name="find-opponents" options={{ headerShown: true, title: 'Find Opponents' }} />
+      <Stack.Screen name="open-mats" options={{ headerShown: true, title: 'Open Mats' }} />
     </Stack>
   );
 }

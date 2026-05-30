@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
@@ -9,6 +9,7 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
 import { createMatch, searchProfiles } from '@/lib/matches';
+import { supabase } from '@/lib/supabase';
 import type { Profile } from '@/lib/types';
 
 type Slot = 'opponent' | 'referee';
@@ -19,12 +20,29 @@ export default function NewMatchScreen() {
   const router = useRouter();
   const userId = session!.user.id;
 
+  const { opponent: opponentParam } = useLocalSearchParams<{ opponent?: string }>();
   const [opponent, setOpponent] = useState<Profile | null>(null);
   const [referee, setReferee] = useState<Profile | null>(null);
   const [active, setActive] = useState<Slot>('opponent');
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Profile[]>([]);
   const [creating, setCreating] = useState(false);
+
+  // Preselect an opponent when arriving from "Find opponents".
+  useEffect(() => {
+    if (!opponentParam) return;
+    supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', opponentParam)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setOpponent(data as Profile);
+          setActive('referee');
+        }
+      });
+  }, [opponentParam]);
 
   // Exclude me + whoever is already chosen for the other role.
   const excludeIds = [

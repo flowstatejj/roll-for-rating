@@ -21,6 +21,45 @@ export interface Profile {
   wins: number;
   losses: number;
   draws: number;
+  gym_id: string | null;
+  created_at: string;
+}
+
+// ---------------------------------------------------------------------------
+// Community: gyms, gym friendships, open mats
+// ---------------------------------------------------------------------------
+export interface Gym {
+  id: string;
+  name: string;
+  city: string | null;
+  description: string | null;
+  owner_id: string;
+  created_at: string;
+}
+
+export interface GymWithMeta extends Gym {
+  member_count: number;
+  is_owner: boolean;
+  is_member: boolean;
+}
+
+export interface GymFriend {
+  friendship_id: string;
+  gym: Gym;
+  status: 'pending' | 'accepted';
+  /** true when the OTHER gym sent it and we (our owned gym) can accept */
+  incoming: boolean;
+}
+
+export interface OpenMat {
+  id: string;
+  title: string;
+  gym_id: string | null;
+  city: string | null;
+  address: string | null;
+  schedule: string | null;
+  notes: string | null;
+  created_by: string;
   created_at: string;
 }
 
