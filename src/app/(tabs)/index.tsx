@@ -12,6 +12,7 @@ import { Avatar, BeltChip, Button, Card, EmptyState, Loading } from '@/component
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { winStreak } from '@/lib/elo';
 import { fetchMyMatches } from '@/lib/matches';
 import { supabase } from '@/lib/supabase';
 import type { MatchWithPeople } from '@/lib/types';
@@ -77,6 +78,7 @@ export default function HomeScreen() {
   const total = profile.wins + profile.losses + profile.draws;
   const winRate = total > 0 ? Math.round((profile.wins / total) * 100) : 0;
   const drawRate = total > 0 ? Math.round((profile.draws / total) * 100) : 0;
+  const streak = winStreak(matches, userId!);
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
@@ -131,9 +133,19 @@ export default function HomeScreen() {
 
             <Pressable onPress={() => router.push('/(tabs)/leaderboard')}>
               <View style={[styles.hero, { width: HERO_W, backgroundColor: theme.tile, borderColor: theme.tileBorder, borderWidth: 1 }]}>
-                <ThemedText type="smallBold" themeColor="textSecondary">
-                  YOUR RATING
-                </ThemedText>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <ThemedText type="smallBold" themeColor="textSecondary">
+                    YOUR RATING
+                  </ThemedText>
+                  {streak >= 2 && (
+                    <View style={styles.streak}>
+                      <Ionicons name="flame" size={14} color="#ff7a1a" />
+                      <ThemedText style={{ color: '#ff7a1a', fontWeight: '800', fontSize: 13 }}>
+                        {streak} win streak
+                      </ThemedText>
+                    </View>
+                  )}
+                </View>
                 <ThemedText style={{ fontSize: 48, fontWeight: '800', lineHeight: 50 }}>
                   {profile.rating}
                 </ThemedText>
@@ -251,6 +263,7 @@ const styles = StyleSheet.create({
   sectionLabel: { fontSize: 18, fontWeight: '800', marginTop: Spacing.one },
   tileRow: { gap: Spacing.two, paddingRight: Spacing.three },
   tile: { width: 104, height: 104, alignItems: 'center', justifyContent: 'center', gap: 4 },
+  streak: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#ff7a1a22', borderRadius: 999, paddingHorizontal: Spacing.two, paddingVertical: 2 },
   divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.one },
   viewAll: { alignItems: 'center', paddingVertical: Spacing.two },
   pinned: {

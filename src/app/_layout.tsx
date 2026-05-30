@@ -54,6 +54,7 @@ function RootNavigator() {
       <Stack.Screen name="find-opponents" options={{ headerShown: true, title: 'Find Opponents' }} />
       <Stack.Screen name="open-mats" options={{ headerShown: true, title: 'Open Mats' }} />
       <Stack.Screen name="roll-finder" options={{ headerShown: true, title: 'Roll Finder' }} />
+      <Stack.Screen name="high-rollers" options={{ headerShown: true, title: 'Biggest Pots' }} />
     </Stack>
   );
 }

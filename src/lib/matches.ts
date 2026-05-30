@@ -1,5 +1,25 @@
 import { supabase } from './supabase';
-import type { MatchWithPeople, Profile, ResultType } from './types';
+import type { BeltRank, MatchWithPeople, Profile, ResultType } from './types';
+
+export interface WagerLeader {
+  user_id: string;
+  display_name: string;
+  belt_rank: BeltRank;
+  rating: number;
+  pot_won: number;
+  wagered_wins: number;
+}
+
+/** Top players by total Elo won through wagers ("Biggest Pots"). */
+export async function fetchWagerLeaderboard(): Promise<WagerLeader[]> {
+  const { data, error } = await supabase.rpc('wager_leaderboard', { p_limit: 50 });
+  if (error) throw error;
+  return (data ?? []).map((r: any) => ({
+    ...r,
+    pot_won: Number(r.pot_won),
+    wagered_wins: Number(r.wagered_wins),
+  })) as WagerLeader[];
+}
 
 // Column list used when embedding a person on a match row.
 const PERSON = 'id,username,display_name,belt_rank,rating';

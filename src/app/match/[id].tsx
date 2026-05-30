@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, Animated, Pressable, StyleSheet, View } from 'react-native';
 
 import { MatchVideos } from '@/components/match-videos';
 import { ThemedText } from '@/components/themed-text';
@@ -9,6 +9,7 @@ import { Avatar, BeltChip, Button, Card, Loading, Screen, TextField } from '@/co
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { projectSwing } from '@/lib/elo';
 import { cancelMatch, fetchMatch, recordResult, respondToMatch } from '@/lib/matches';
 import { RESULT_LABELS, type MatchWithPeople, type ResultType } from '@/lib/types';
 
@@ -37,6 +38,15 @@ export default function MatchDetailScreen() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Pot pop-in when a wagered match resolves.
+  const potAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (match?.status === 'completed' && (match.wager ?? 0) > 0) {
+      potAnim.setValue(0);
+      Animated.spring(potAnim, { toValue: 1, useNativeDriver: true, friction: 5, tension: 120 }).start();
+    }
+  }, [match?.status, match?.wager, potAnim]);
+
   if (!match) return <Loading />;
 
   const amOpponent = match.opponent_id === userId;
@@ -53,6 +63,21 @@ export default function MatchDetailScreen() {
       Alert.alert('Error', e.message ?? 'Try again.');
     } finally {
       setBusy(false);
+    }
+  }
+
+  function confirmAccept() {
+    if ((match?.wager ?? 0) > 0) {
+      Alert.alert(
+        'Accept the wager?',
+        `You're staking ${match!.wager} Elo. Win and you take it; lose and it's gone.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Accept', onPress: () => act(() => respondToMatch(match!.id, true)) },
+        ],
+      );
+    } else {
+      act(() => respondToMatch(match!.id, true));
     }
   }
 
@@ -84,13 +109,37 @@ export default function MatchDetailScreen() {
 
       <StatusBanner match={match} />
 
-      {match.wager > 0 && (
+      {match.wager > 0 && match.status !== 'completed' && (
         <View style={[styles.banner, { backgroundColor: theme.accent + '22', flexDirection: 'row', gap: Spacing.two }]}>
           <Ionicons name="cash" size={18} color={theme.accent} />
           <ThemedText style={{ color: theme.accent, fontWeight: '800' }}>
             {match.wager} Elo wagered — winner takes it
           </ThemedText>
         </View>
+      )}
+
+      {match.status === 'completed' && match.wager > 0 && (
+        <Animated.View
+          style={[
+            styles.banner,
+            styles.potBanner,
+            { backgroundColor: theme.success + '22', transform: [{ scale: potAnim }], opacity: potAnim },
+          ]}>
+          <Ionicons name="cash" size={22} color={theme.success} />
+          <ThemedText style={{ color: theme.success, fontWeight: '800' }}>
+            {(match.winner_id === match.challenger_id ? match.challenger.display_name : match.opponent.display_name)} won the {match.wager} Elo pot!
+          </ThemedText>
+        </Animated.View>
+      )}
+
+      {(match.status === 'pending_opponent' || match.status === 'pending_referee') && (
+        <Card style={{ gap: Spacing.two }}>
+          <ThemedText type="smallBold" themeColor="textSecondary">
+            STAKES{match.wager > 0 ? ` · ${match.wager} wagered` : ''}
+          </ThemedText>
+          <StakeRow name={match.challenger.display_name} swing={projectSwing(match.challenger.rating, match.opponent.rating, match.wager)} />
+          <StakeRow name={match.opponent.display_name} swing={projectSwing(match.opponent.rating, match.challenger.rating, match.wager)} />
+        </Card>
       )}
 
       {/* Competitors */}
@@ -162,7 +211,7 @@ export default function MatchDetailScreen() {
       {/* Opponent accept/decline */}
       {match.status === 'pending_opponent' && amOpponent && (
         <View style={{ gap: Spacing.two }}>
-          <Button label="Accept challenge" icon="checkmark-circle" onPress={() => act(() => respondToMatch(match.id, true))} loading={busy} />
+          <Button label="Accept challenge" icon="checkmark-circle" onPress={confirmAccept} loading={busy} />
           <Button label="Decline" variant="danger" onPress={() => act(() => respondToMatch(match.id, false))} loading={busy} />
         </View>
       )}
@@ -221,6 +270,27 @@ export default function MatchDetailScreen() {
         <Button label="Cancel match" variant="ghost" onPress={() => act(() => cancelMatch(match.id))} loading={busy} />
       )}
     </Screen>
+  );
+}
+
+function StakeRow({ name, swing }: { name: string; swing: { win: number; loss: number } }) {
+  const theme = useTheme();
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+      <ThemedText style={{ flex: 1, fontWeight: '700' }} numberOfLines={1}>
+        {name}
+      </ThemedText>
+      <View style={[styles.stakePill, { backgroundColor: theme.success + '22' }]}>
+        <ThemedText type="small" style={{ color: theme.success, fontWeight: '800' }}>
+          Win +{swing.win}
+        </ThemedText>
+      </View>
+      <View style={[styles.stakePill, { backgroundColor: theme.danger + '22' }]}>
+        <ThemedText type="small" style={{ color: theme.danger, fontWeight: '800' }}>
+          Lose {swing.loss}
+        </ThemedText>
+      </View>
+    </View>
   );
 }
 
@@ -328,6 +398,8 @@ function Choice({
 
 const styles = StyleSheet.create({
   banner: { borderRadius: 12, paddingVertical: Spacing.two, paddingHorizontal: Spacing.three, alignItems: 'center' },
+  potBanner: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.two },
+  stakePill: { borderRadius: 999, paddingHorizontal: Spacing.two, paddingVertical: 2 },
   vsRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   line: { flex: 1, height: StyleSheet.hairlineWidth },
   personRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },

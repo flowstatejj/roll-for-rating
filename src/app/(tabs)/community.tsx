@@ -106,6 +106,12 @@ export default function CommunityScreen() {
         onPress={() => router.push('/open-mats')}
       />
       <ActionRow
+        icon="cash"
+        title="Biggest Pots"
+        subtitle="High rollers — most Elo won via wagers"
+        onPress={() => router.push('/high-rollers')}
+      />
+      <ActionRow
         icon="search"
         title="Browse gyms"
         subtitle="Explore academies and switch gyms"

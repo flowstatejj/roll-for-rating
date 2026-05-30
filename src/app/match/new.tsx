@@ -15,10 +15,11 @@ import type { Profile } from '@/lib/types';
 type Slot = 'opponent' | 'referee';
 
 export default function NewMatchScreen() {
-  const { session } = useAuth();
+  const { session, profile } = useAuth();
   const theme = useTheme();
   const router = useRouter();
   const userId = session!.user.id;
+  const allIn = Math.max(0, (profile?.rating ?? 0) - 100);
 
   const { opponent: opponentParam } = useLocalSearchParams<{ opponent?: string }>();
   const [opponent, setOpponent] = useState<Profile | null>(null);
@@ -160,6 +161,13 @@ export default function NewMatchScreen() {
         keyboardType="number-pad"
         placeholder="Extra Elo staked — winner takes it"
       />
+      <View style={styles.wagerChips}>
+        {['25', '50', '100'].map((v) => (
+          <WagerChip key={v} label={v} active={wager === v} onPress={() => setWager(v)} />
+        ))}
+        <WagerChip label={`All-in (${allIn})`} active={wager === String(allIn)} onPress={() => setWager(String(allIn))} />
+        <WagerChip label="None" active={wager === '' || wager === '0'} onPress={() => setWager('')} />
+      </View>
       <ThemedText type="small" themeColor="textSecondary">
         On a decisive result the winner takes the wagered rating from the loser, on top of normal Elo. Accepting the
         challenge means agreeing to the wager.
@@ -173,6 +181,22 @@ export default function NewMatchScreen() {
         disabled={!opponent || !referee}
       />
     </Screen>
+  );
+}
+
+function WagerChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  const theme = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[
+        styles.wagerChip,
+        { backgroundColor: active ? theme.accent : theme.tile, borderColor: active ? theme.accent : theme.tileBorder },
+      ]}>
+      <ThemedText style={{ color: active ? theme.accentText : theme.text, fontWeight: '700', fontSize: 13 }}>
+        {label}
+      </ThemedText>
+    </Pressable>
   );
 }
 
@@ -222,5 +246,7 @@ function SlotButton({
 
 const styles = StyleSheet.create({
   slots: { flexDirection: 'row', gap: Spacing.two },
+  wagerChips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
+  wagerChip: { paddingVertical: Spacing.two, paddingHorizontal: Spacing.three, borderRadius: 999, borderWidth: 1 },
   resultRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
 });
