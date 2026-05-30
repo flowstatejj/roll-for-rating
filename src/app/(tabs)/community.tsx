@@ -111,6 +111,12 @@ export default function CommunityScreen() {
         onPress={() => router.push('/open-mats')}
       />
       <ActionRow
+        icon="lock-open"
+        title="Submission Hunt"
+        subtitle="Collect submissions for bonus Elo"
+        onPress={() => router.push('/submission-hunt')}
+      />
+      <ActionRow
         icon="cash"
         title="Biggest Pots"
         subtitle="High rollers — most Elo won via wagers"

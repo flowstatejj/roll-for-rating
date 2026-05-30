@@ -183,6 +183,36 @@ export async function cancelMatch(matchId: string) {
   if (error) throw error;
 }
 
+/** Referee tags the canonical submission type after recording a finish. */
+export async function setSubmissionType(matchId: string, type: string) {
+  const { error } = await supabase.rpc('set_submission_type', { p_match_id: matchId, p_type: type });
+  if (error) throw error;
+}
+
+/** Submission types the user has won with, and which have been rewarded. */
+export async function fetchSubmissionCollection(userId: string): Promise<{ won: string[]; rewarded: string[] }> {
+  const [{ data: wins, error: wErr }, { data: rewards, error: rErr }] = await Promise.all([
+    supabase
+      .from('matches')
+      .select('submission_type')
+      .eq('status', 'completed')
+      .eq('winner_id', userId)
+      .not('submission_type', 'is', null),
+    supabase.from('submission_rewards').select('submission_type').eq('user_id', userId),
+  ]);
+  if (wErr) throw wErr;
+  if (rErr) throw rErr;
+  const won = [...new Set((wins ?? []).map((w: { submission_type: string }) => w.submission_type))];
+  const rewarded = (rewards ?? []).map((r: { submission_type: string }) => r.submission_type);
+  return { won, rewarded };
+}
+
+export async function claimSubmissionRewards(): Promise<{ gained: number; claimed: string[]; new_rating: number }> {
+  const { data, error } = await supabase.rpc('claim_submission_rewards');
+  if (error) throw error;
+  return data as { gained: number; claimed: string[]; new_rating: number };
+}
+
 /** Referee records the outcome; ratings are applied server-side. */
 export async function recordResult(args: {
   matchId: string;

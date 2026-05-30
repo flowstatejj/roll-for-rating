@@ -19,8 +19,9 @@ import {
   recordResult,
   respondToMatch,
   setMatchReaction,
+  setSubmissionType,
 } from '@/lib/matches';
-import { REACTIONS, RESULT_LABELS, type MatchWithPeople, type ReactionSummary, type ResultType } from '@/lib/types';
+import { REACTIONS, RESULT_LABELS, SUBMISSIONS, type MatchWithPeople, type ReactionSummary, type ResultType } from '@/lib/types';
 
 export default function MatchDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -34,6 +35,7 @@ export default function MatchDetailScreen() {
 
   // Referee result form state (submission-only: winner, or a draw)
   const [winner, setWinner] = useState<'challenger' | 'opponent' | 'draw' | null>(null);
+  const [subType, setSubType] = useState<string | null>(null);
   const [method, setMethod] = useState('');
   const [notes, setNotes] = useState('');
 
@@ -131,17 +133,22 @@ export default function MatchDetailScreen() {
       winner === 'draw' ? null : winner === 'challenger' ? match!.challenger_id : match!.opponent_id;
     // Submission-only for now: a win is always by submission.
     const finalResult: ResultType = winner === 'draw' ? 'draw' : 'submission';
-    act(
-      () =>
-        recordResult({
-          matchId: match!.id,
-          winnerId,
-          result: finalResult,
-          method: method.trim() || null,
-          notes: notes.trim() || null,
-        }),
-      'Result recorded and ratings updated.',
-    );
+    act(async () => {
+      await recordResult({
+        matchId: match!.id,
+        winnerId,
+        result: finalResult,
+        method: method.trim() || null,
+        notes: notes.trim() || null,
+      });
+      if (winner !== 'draw' && subType) {
+        try {
+          await setSubmissionType(match!.id, subType);
+        } catch {
+          /* non-fatal */
+        }
+      }
+    }, 'Result recorded and ratings updated.');
   }
 
   return (
@@ -353,7 +360,16 @@ export default function MatchDetailScreen() {
           )}
 
           {winner && winner !== 'draw' && (
-            <TextField label="Submission (optional)" value={method} onChangeText={setMethod} placeholder="e.g. Rear naked choke" />
+            <View style={{ gap: Spacing.one }}>
+              <ThemedText type="smallBold" themeColor="textSecondary">
+                Finish (counts toward the winner&apos;s Submission Hunt)
+              </ThemedText>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two }}>
+                {SUBMISSIONS.map((s) => (
+                  <Choice key={s} compact label={s} selected={subType === s} onPress={() => setSubType(subType === s ? null : s)} />
+                ))}
+              </View>
+            </View>
           )}
 
           <TextField label="Notes (optional)" value={notes} onChangeText={setNotes} placeholder="Anything notable about the roll" multiline />

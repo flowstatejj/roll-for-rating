@@ -96,6 +96,20 @@ export interface MatchMessage {
   sender: { display_name: string } | null;
 }
 
+// Huntable submission types for the Submission Hunt.
+export const SUBMISSIONS = [
+  'Rear naked choke',
+  'Armbar',
+  'Triangle',
+  'Kimura',
+  'Guillotine',
+  'Americana',
+  'Omoplata',
+  'Heel hook',
+  'Ezekiel',
+  'Bow and arrow',
+] as const;
+
 // Emoji reactions members can leave on a public match (no comments).
 export const REACTIONS = ['🔥', '👏', '💪', '🥋', '😮'] as const;
 export type Reaction = (typeof REACTIONS)[number];
