@@ -21,6 +21,7 @@ export default function SignUpScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [belt, setBelt] = useState<BeltRank>('white');
+  const [adult, setAdult] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function onSubmit() {
@@ -32,6 +33,10 @@ export default function SignUpScreen() {
       Alert.alert('Weak password', 'Use at least 6 characters.');
       return;
     }
+    if (adult === null) {
+      Alert.alert('One more thing', 'Please tell us your age group.');
+      return;
+    }
     setLoading(true);
     try {
       await signUp({
@@ -40,6 +45,7 @@ export default function SignUpScreen() {
         username: username.trim(),
         displayName: displayName.trim(),
         beltRank: belt,
+        isMinor: !adult,
       });
       Alert.alert(
         'Account created',
@@ -109,6 +115,38 @@ export default function SignUpScreen() {
                 );
               })}
             </View>
+          </View>
+
+          <View style={{ gap: Spacing.one }}>
+            <ThemedText type="smallBold" themeColor="textSecondary">
+              Age
+            </ThemedText>
+            <View style={styles.belts}>
+              {[
+                { label: '18 or older', val: true },
+                { label: 'Under 18', val: false },
+              ].map((o) => {
+                const selected = adult === o.val;
+                return (
+                  <Pressable
+                    key={o.label}
+                    onPress={() => setAdult(o.val)}
+                    style={[
+                      styles.beltOption,
+                      { backgroundColor: selected ? theme.accent : theme.backgroundElement, borderColor: selected ? theme.accent : theme.border },
+                    ]}>
+                    <ThemedText style={{ fontWeight: '700', fontSize: 13, color: selected ? theme.accentText : theme.text }}>
+                      {o.label}
+                    </ThemedText>
+                  </Pressable>
+                );
+              })}
+            </View>
+            {adult === false && (
+              <ThemedText type="small" themeColor="textSecondary">
+                Under-18 accounts are protected: no wagering, not publicly searchable, and matches stay within your gym.
+              </ThemedText>
+            )}
           </View>
 
           <Button label="Create account" onPress={onSubmit} loading={loading} />

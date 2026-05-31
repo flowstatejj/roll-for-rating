@@ -156,35 +156,40 @@ export default function NewMatchScreen() {
         )}
       </View>
 
-      <TextField
-        label="Wager (optional)"
-        value={wager}
-        onChangeText={setWager}
-        keyboardType="number-pad"
-        placeholder="Extra Elo staked — winner takes it"
-      />
-      <View style={styles.wagerChips}>
-        {['25', '50', '100'].map((v) => (
-          <WagerChip key={v} label={v} active={wager === v} onPress={() => setWager(v)} />
-        ))}
-        <WagerChip label={`All-in (${allIn})`} active={wager === String(allIn)} onPress={() => setWager(String(allIn))} />
-        <WagerChip label="None" active={wager === '' || wager === '0'} onPress={() => setWager('')} />
-      </View>
-      <ThemedText type="small" themeColor="textSecondary">
-        On a decisive result the winner takes the wagered rating from the loser, on top of normal Elo. Accepting the
-        challenge means agreeing to the wager.
-      </ThemedText>
-
-      <Card style={styles.publicRow}>
-        <Ionicons name="globe-outline" size={20} color={isPublic ? theme.accent : theme.textSecondary} />
-        <View style={{ flex: 1 }}>
-          <ThemedText style={{ fontWeight: '800' }}>Publish publicly</ThemedText>
+      {/* Wagering + public publishing are hidden for protected (under-18) accounts */}
+      {!profile?.is_minor && (
+        <>
+          <TextField
+            label="Wager (optional)"
+            value={wager}
+            onChangeText={setWager}
+            keyboardType="number-pad"
+            placeholder="Extra Elo staked — winner takes it"
+          />
+          <View style={styles.wagerChips}>
+            {['25', '50', '100'].map((v) => (
+              <WagerChip key={v} label={v} active={wager === v} onPress={() => setWager(v)} />
+            ))}
+            <WagerChip label={`All-in (${allIn})`} active={wager === String(allIn)} onPress={() => setWager(String(allIn))} />
+            <WagerChip label="None" active={wager === '' || wager === '0'} onPress={() => setWager('')} />
+          </View>
           <ThemedText type="small" themeColor="textSecondary">
-            If both fighters agree, the match shows in Watch for everyone to view &amp; react.
+            On a decisive result the winner takes the wagered rating from the loser, on top of normal Elo. Accepting the
+            challenge means agreeing to the wager.
           </ThemedText>
-        </View>
-        <Switch value={isPublic} onValueChange={setIsPublic} trackColor={{ true: theme.accent }} />
-      </Card>
+
+          <Card style={styles.publicRow}>
+            <Ionicons name="globe-outline" size={20} color={isPublic ? theme.accent : theme.textSecondary} />
+            <View style={{ flex: 1 }}>
+              <ThemedText style={{ fontWeight: '800' }}>Publish publicly</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                If both fighters agree, the match shows in Watch for everyone to view &amp; react.
+              </ThemedText>
+            </View>
+            <Switch value={isPublic} onValueChange={setIsPublic} trackColor={{ true: theme.accent }} />
+          </Card>
+        </>
+      )}
 
       <Button
         label="Send challenge"

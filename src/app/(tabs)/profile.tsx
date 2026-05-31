@@ -176,22 +176,34 @@ export default function ProfileScreen() {
         </View>
       </Card>
 
-      {/* Open for a challenge */}
-      <Card style={styles.openRow}>
-        <Ionicons name="flame" size={22} color={profile.open_for_challenge ? theme.accent : theme.textSecondary} />
-        <View style={{ flex: 1 }}>
-          <ThemedText style={{ fontWeight: '800' }}>Open for a challenge</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            {profile.open_for_challenge ? 'You appear in the Roll Finder' : 'Turn on to be found by nearby rollers'}
-          </ThemedText>
-        </View>
-        <Switch
-          value={profile.open_for_challenge}
-          onValueChange={toggleOpen}
-          disabled={togglingOpen}
-          trackColor={{ true: theme.accent }}
-        />
-      </Card>
+      {/* Open for a challenge — hidden for protected (under-18) accounts */}
+      {profile.is_minor ? (
+        <Card style={styles.openRow}>
+          <Ionicons name="shield-checkmark" size={22} color={theme.accent} />
+          <View style={{ flex: 1 }}>
+            <ThemedText style={{ fontWeight: '800' }}>Protected account</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              Your profile isn&apos;t publicly searchable and your matches stay within your gym.
+            </ThemedText>
+          </View>
+        </Card>
+      ) : (
+        <Card style={styles.openRow}>
+          <Ionicons name="flame" size={22} color={profile.open_for_challenge ? theme.accent : theme.textSecondary} />
+          <View style={{ flex: 1 }}>
+            <ThemedText style={{ fontWeight: '800' }}>Open for a challenge</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              {profile.open_for_challenge ? 'You appear in the Roll Finder' : 'Turn on to be found by nearby rollers'}
+            </ThemedText>
+          </View>
+          <Switch
+            value={profile.open_for_challenge}
+            onValueChange={toggleOpen}
+            disabled={togglingOpen}
+            trackColor={{ true: theme.accent }}
+          />
+        </Card>
+      )}
 
       {/* Stat grid */}
       <ThemedText style={styles.sectionLabel}>Stats</ThemedText>

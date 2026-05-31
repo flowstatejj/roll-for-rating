@@ -21,6 +21,7 @@ interface SignUpArgs {
   username: string;
   displayName: string;
   beltRank: BeltRank;
+  isMinor: boolean;
 }
 
 interface AuthContextValue {
@@ -105,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [session]);
 
   const signUp = useCallback(
-    async ({ email, password, username, displayName, beltRank }: SignUpArgs) => {
+    async ({ email, password, username, displayName, beltRank, isMinor }: SignUpArgs) => {
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -115,6 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             username: username.trim().toLowerCase(),
             display_name: displayName.trim(),
             belt_rank: beltRank,
+            is_minor: isMinor,
           },
         },
       });

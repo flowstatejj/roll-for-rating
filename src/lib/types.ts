@@ -26,6 +26,7 @@ export interface Profile {
   city: string | null;
   activity_streak: number;
   last_active_date: string | null;
+  is_minor: boolean;
   created_at: string;
 }
 
