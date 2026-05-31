@@ -1,14 +1,17 @@
-import { useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Alert, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 
+import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
-import { Avatar, BeltChip, Card, EmptyState, Loading, Screen } from '@/components/ui/kit';
+import { Avatar, BeltChip, Button, Card, EmptyState, Loading, Screen } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { GEO_LEVELS, geoMatches, type Geo, type GeoLevel } from '@/lib/geo';
+import { createMatchRequest } from '@/lib/invites';
 import { fetchJuniors } from '@/lib/juniors';
-import { fetchKidsLeaderboard, fetchLeaderboard, type KidsLeaderRow } from '@/lib/matches';
+import { fetchKidsLeaderboard, fetchLeaderboard, fetchMyGeo, type KidsLeaderRow, type LeaderRow } from '@/lib/matches';
 import type { Profile } from '@/lib/types';
 
 type Tab = 'overall' | 'kids';
@@ -16,27 +19,31 @@ type Tab = 'overall' | 'kids';
 export default function LeaderboardScreen() {
   const { session, profile } = useAuth();
   const theme = useTheme();
-  const [tab, setTab] = useState<Tab>('overall');
-  const [rows, setRows] = useState<Profile[]>([]);
-  const [kids, setKids] = useState<KidsLeaderRow[]>([]);
-  const [hasJuniors, setHasJuniors] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const router = useRouter();
   const userId = session?.user.id;
 
-  // The 13-&-under board is only for minors + adults who manage a junior.
-  const canSeeKids = !!profile?.is_minor || hasJuniors;
+  const [tab, setTab] = useState<Tab>('overall');
+  const [level, setLevel] = useState<GeoLevel>('world');
+  const [rows, setRows] = useState<LeaderRow[]>([]);
+  const [kids, setKids] = useState<KidsLeaderRow[]>([]);
+  const [juniors, setJuniors] = useState<Profile[]>([]);
+  const [myGeo, setMyGeo] = useState<Geo | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const canSeeKids = !!profile?.is_minor || juniors.length > 0;
+  const myJuniorIds = useMemo(() => new Set(juniors.map((j) => j.id)), [juniors]);
 
   const load = useCallback(async () => {
     try {
-      const [overall, kidsRows, juniors] = await Promise.all([
+      const [overall, juniorList, geo] = await Promise.all([
         fetchLeaderboard(),
-        fetchKidsLeaderboard(),
         userId ? fetchJuniors(userId).catch(() => []) : Promise.resolve([]),
+        userId ? fetchMyGeo(userId).catch(() => null) : Promise.resolve(null),
       ]);
       setRows(overall);
-      setKids(kidsRows);
-      setHasJuniors(juniors.length > 0);
+      setJuniors(juniorList);
+      setMyGeo(geo);
     } catch (e) {
       console.warn('Failed to load leaderboard', e);
     } finally {
@@ -46,11 +53,42 @@ export default function LeaderboardScreen() {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
+  // Kids board re-fetches per level (server filters by geography).
+  useEffect(() => {
+    if (!canSeeKids) return;
+    fetchKidsLeaderboard(level).then(setKids).catch((e) => console.warn('kids board', e));
+  }, [level, canSeeKids]);
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await load();
+    if (canSeeKids) await fetchKidsLeaderboard(level).then(setKids).catch(() => {});
     setRefreshing(false);
-  }, [load]);
+  }, [load, canSeeKids, level]);
+
+  const overallFiltered = useMemo(
+    () => rows.filter((r) => geoMatches(myGeo, r.gym ?? null, level)).slice(0, 100),
+    [rows, myGeo, level],
+  );
+
+  function challenge(row: KidsLeaderRow) {
+    if (juniors.length === 0) return;
+    const send = (jr: Profile) =>
+      createMatchRequest(jr.id, row.junior_id)
+        .then(() => Alert.alert('Challenge sent', `${row.first_name}'s guardian will be notified to accept and arrange the match.`))
+        .catch((e: any) => Alert.alert('Could not send', e.message ?? 'Try again.'));
+    if (juniors.length === 1) {
+      Alert.alert('Send challenge?', `Challenge ${row.first_name} on behalf of ${juniors[0].display_name}?`, [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Send', onPress: () => send(juniors[0]) },
+      ]);
+    } else {
+      Alert.alert('Challenge as which junior?', `Challenging ${row.first_name}`, [
+        ...juniors.slice(0, 5).map((j) => ({ text: j.display_name, onPress: () => send(j) })),
+        { text: 'Cancel', style: 'cancel' as const },
+      ]);
+    }
+  }
 
   if (loading) return <Loading />;
 
@@ -67,19 +105,30 @@ export default function LeaderboardScreen() {
         </View>
       )}
 
+      {/* Geographic level */}
+      <View style={styles.levels}>
+        {GEO_LEVELS.map((l) => (
+          <Chip key={l.key} label={l.label} active={level === l.key} onPress={() => setLevel(l.key)} />
+        ))}
+      </View>
+      {level !== 'world' && !myGeo?.[level] && (
+        <ThemedText type="small" themeColor="textSecondary">
+          Set your gym&apos;s location to rank at this level. Showing nothing until then.
+        </ThemedText>
+      )}
+
       {tab === 'overall' || !canSeeKids ? (
-        rows.length === 0 ? (
-          <EmptyState icon="podium-outline" title="No grapplers yet" subtitle="Be the first to climb the ladder." />
+        overallFiltered.length === 0 ? (
+          <EmptyState icon="podium-outline" title="No grapplers here yet" subtitle="Try a wider level, or be the first to climb." />
         ) : (
           <Card style={styles.list}>
-            {rows.map((p, i) => {
+            {overallFiltered.map((p, i) => {
               const isMe = p.id === userId;
-              const rank = i + 1;
               return (
                 <View key={p.id}>
                   {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
                   <View style={[styles.row, isMe && { backgroundColor: theme.accent + '22', borderRadius: 8 }]}>
-                    <RankBadge rank={rank} />
+                    <RankBadge rank={i + 1} />
                     <Avatar name={p.display_name} size={40} />
                     <View style={{ flex: 1, gap: 2 }}>
                       <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>
@@ -100,27 +149,41 @@ export default function LeaderboardScreen() {
             })}
           </Card>
         )
-      ) : kids.length === 0 ? (
-        <EmptyState icon="happy-outline" title="No ranked juniors yet" subtitle="Under-14 members appear here once they've competed." />
       ) : (
         <>
+          {juniors.length > 0 && (
+            <Button label="Junior challenges" variant="secondary" icon="mail-outline" onPress={() => router.push('/invites')} />
+          )}
           <ThemedText type="small" themeColor="textSecondary">
-            Under-14 athletes, ranked by rating. For their privacy, only a first name is shown.
+            Under-14 athletes ranked by rating. For their privacy, only a first name is shown.
           </ThemedText>
-          <Card style={styles.list}>
-            {kids.map((k, i) => (
-              <View key={`${k.rank}-${k.first_name}`}>
-                {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
-                <View style={styles.row}>
-                  <RankBadge rank={k.rank} />
-                  <ThemedText style={{ flex: 1, fontWeight: '700' }} numberOfLines={1}>
-                    {k.first_name}
-                  </ThemedText>
-                  <ThemedText style={{ fontWeight: '800', fontSize: 20 }}>{k.rating}</ThemedText>
-                </View>
-              </View>
-            ))}
-          </Card>
+          {kids.length === 0 ? (
+            <EmptyState icon="happy-outline" title="No ranked juniors here" subtitle="Try a wider level, or once they've competed they'll show up." />
+          ) : (
+            <Card style={styles.list}>
+              {kids.map((k, i) => {
+                const mine = myJuniorIds.has(k.junior_id);
+                return (
+                  <View key={k.junior_id}>
+                    {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
+                    <View style={styles.row}>
+                      <RankBadge rank={k.rank} />
+                      <ThemedText style={{ flex: 1, fontWeight: '700' }} numberOfLines={1}>
+                        {k.first_name}
+                        {mine ? ' (yours)' : ''}
+                      </ThemedText>
+                      <ThemedText style={{ fontWeight: '800', fontSize: 20 }}>{k.rating}</ThemedText>
+                      {juniors.length > 0 && !mine && (
+                        <Pressable onPress={() => challenge(k)} hitSlop={8} style={{ marginLeft: Spacing.two }}>
+                          <Ionicons name="flash" size={20} color={theme.accent} />
+                        </Pressable>
+                      )}
+                    </View>
+                  </View>
+                );
+              })}
+            </Card>
+          )}
         </>
       )}
     </Screen>
@@ -142,11 +205,19 @@ function Seg({ label, active, onPress }: { label: string; active: boolean; onPre
   return (
     <Pressable
       onPress={onPress}
-      style={[
-        styles.seg,
-        { backgroundColor: active ? theme.accent : theme.tile, borderColor: active ? theme.accent : theme.tileBorder },
-      ]}>
+      style={[styles.seg, { backgroundColor: active ? theme.accent : theme.tile, borderColor: active ? theme.accent : theme.tileBorder }]}>
       <ThemedText style={{ color: active ? theme.accentText : theme.text, fontWeight: '700' }}>{label}</ThemedText>
+    </Pressable>
+  );
+}
+
+function Chip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  const theme = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[styles.chip, { backgroundColor: active ? theme.accent : theme.tile, borderColor: active ? theme.accent : theme.tileBorder }]}>
+      <ThemedText style={{ color: active ? theme.accentText : theme.text, fontWeight: '700', fontSize: 12 }}>{label}</ThemedText>
     </Pressable>
   );
 }
@@ -154,6 +225,8 @@ function Seg({ label, active, onPress }: { label: string; active: boolean; onPre
 const styles = StyleSheet.create({
   segment: { flexDirection: 'row', gap: Spacing.two },
   seg: { flex: 1, alignItems: 'center', paddingVertical: Spacing.two, borderRadius: 10, borderWidth: 1 },
+  levels: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.one },
+  chip: { paddingVertical: Spacing.one, paddingHorizontal: Spacing.three, borderRadius: 999, borderWidth: 1 },
   list: { paddingVertical: Spacing.one, paddingHorizontal: Spacing.one },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.two, paddingHorizontal: Spacing.two },
   rank: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },

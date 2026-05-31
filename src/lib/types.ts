@@ -96,6 +96,9 @@ export interface Gym {
   id: string;
   name: string;
   city: string | null;
+  state: string | null;
+  country: string | null;
+  continent: string | null;
   description: string | null;
   owner_id: string;
   created_at: string;

@@ -1,3 +1,4 @@
+import { continentForCountry } from './geo';
 import { supabase } from './supabase';
 import type { BeltRank, Gym, GymFriend, GymWithMeta, OpenMat, Profile } from './types';
 
@@ -41,10 +42,19 @@ export async function fetchGymMembers(gymId: string): Promise<Profile[]> {
   return (data ?? []) as Profile[];
 }
 
-export async function createGym(name: string, city: string, description: string): Promise<Gym> {
+export async function createGym(
+  name: string,
+  city: string,
+  state: string,
+  country: string,
+  description: string,
+): Promise<Gym> {
   const { data, error } = await supabase.rpc('create_gym', {
     p_name: name,
     p_city: city,
+    p_state: state,
+    p_country: country,
+    p_continent: continentForCountry(country) ?? '',
     p_description: description,
   });
   if (error) throw error;

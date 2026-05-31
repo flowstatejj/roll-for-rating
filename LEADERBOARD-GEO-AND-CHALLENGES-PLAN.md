@@ -1,7 +1,8 @@
 # Plan: geographic leaderboard levels + kid-vs-kid challenges
 
-Status: **DESIGN LOCKED — not built yet.** Build as the next focused unit (two
-phases). Decisions captured from the design discussion.
+Status: **BUILT (Phase A + B).** Needs SQL run: geo-leaderboard.sql + kid-challenges.sql
+(after the earlier minors/managed-juniors files), and a dev-server restart for the
+new /invites route. Decisions captured below.
 
 ## Phase A — Geographic leaderboard levels (from gym location)
 

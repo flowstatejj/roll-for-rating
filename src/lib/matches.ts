@@ -239,32 +239,56 @@ export async function recordResult(args: {
   if (error) throw error;
 }
 
-/** Top players by rating. Excludes under-14 juniors (they have their own board). */
-export async function fetchLeaderboard(limit = 100): Promise<Profile[]> {
+export interface LeaderRow extends Profile {
+  gym?: { city: string | null; state: string | null; country: string | null; continent: string | null } | null;
+}
+
+/**
+ * Top players by rating with their gym's location attached (for geographic
+ * level filtering). Excludes under-14 juniors (they have their own board).
+ */
+export async function fetchLeaderboard(limit = 200): Promise<LeaderRow[]> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('*')
+    .select('*, gym:gyms(city,state,country,continent)')
     .neq('age_tier', 'kid')
     .order('rating', { ascending: false })
     .limit(limit);
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []) as unknown as LeaderRow[];
+}
+
+/** The signed-in member's geography (from their gym), for level filtering. */
+export async function fetchMyGeo(userId: string): Promise<import('./geo').Geo | null> {
+  const { data } = await supabase
+    .from('profiles')
+    .select('gym:gyms(city,state,country,continent)')
+    .eq('id', userId)
+    .single();
+  const g = (data as any)?.gym;
+  return g ? { city: g.city, state: g.state, country: g.country, continent: g.continent } : null;
 }
 
 export interface KidsLeaderRow {
+  junior_id: string;
   rank: number;
   first_name: string;
   rating: number;
 }
 
 /**
- * Global 13-and-under leaderboard — first name + rating only (kid profiles stay
- * private; the server returns just this sanitized projection).
+ * 13-and-under leaderboard — first name + rating only (+ an opaque junior_id so
+ * a guardian can challenge a row; the kid's profile stays private). Filterable
+ * by geographic level.
  */
-export async function fetchKidsLeaderboard(limit = 100): Promise<KidsLeaderRow[]> {
-  const { data, error } = await supabase.rpc('kids_leaderboard', { p_limit: limit });
+export async function fetchKidsLeaderboard(
+  level: import('./geo').GeoLevel = 'world',
+  limit = 100,
+): Promise<KidsLeaderRow[]> {
+  const { data, error } = await supabase.rpc('kids_leaderboard', { p_level: level, p_limit: limit });
   if (error) throw error;
   return ((data ?? []) as any[]).map((r) => ({
+    junior_id: r.junior_id,
     rank: Number(r.rank),
     first_name: r.first_name,
     rating: r.rating,

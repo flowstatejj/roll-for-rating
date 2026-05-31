@@ -21,6 +21,8 @@ export default function GymsScreen() {
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState('');
   const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [country, setCountry] = useState('');
   const [description, setDescription] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -46,7 +48,7 @@ export default function GymsScreen() {
     }
     setBusy(true);
     try {
-      const gym = await createGym(name.trim(), city.trim(), description.trim());
+      const gym = await createGym(name.trim(), city.trim(), state.trim(), country.trim(), description.trim());
       await refreshProfile();
       router.replace(`/gym/${gym.id}`);
     } catch (e: any) {
@@ -65,6 +67,11 @@ export default function GymsScreen() {
           <ThemedText style={{ fontSize: 18, fontWeight: '800' }}>Create a gym</ThemedText>
           <TextField label="Gym name" value={name} onChangeText={setName} placeholder="Gracie Barra Springfield" />
           <TextField label="City" value={city} onChangeText={setCity} placeholder="Springfield" />
+          <TextField label="State / region" value={state} onChangeText={setState} placeholder="Illinois" />
+          <TextField label="Country" value={country} onChangeText={setCountry} placeholder="United States" />
+          <ThemedText type="small" themeColor="textSecondary">
+            Location powers the City / State / Country / Continent / World leaderboards.
+          </ThemedText>
           <TextField label="Description (optional)" value={description} onChangeText={setDescription} multiline placeholder="A bit about the academy" />
           <Button label="Create gym" icon="add-circle" loading={busy} onPress={submitCreate} />
           <Button label="Cancel" variant="ghost" onPress={() => setCreating(false)} />

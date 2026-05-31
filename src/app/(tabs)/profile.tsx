@@ -384,12 +384,20 @@ export default function ProfileScreen() {
       />
 
       {!profile.is_minor && (
-        <Button
-          label="My juniors"
-          variant="secondary"
-          icon="people-outline"
-          onPress={() => router.push('/juniors')}
-        />
+        <>
+          <Button
+            label="My juniors"
+            variant="secondary"
+            icon="people-outline"
+            onPress={() => router.push('/juniors')}
+          />
+          <Button
+            label="Junior challenges"
+            variant="secondary"
+            icon="mail-outline"
+            onPress={() => router.push('/invites')}
+          />
+        </>
       )}
 
       <Button label="Sign out" variant="ghost" icon="log-out-outline" onPress={signOut} />
