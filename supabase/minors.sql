@@ -137,13 +137,12 @@ create policy "profiles_read_visible" on public.profiles
 create or replace function public.enforce_minor_match()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare
-  c record; o record; rgym uuid;
+  c record; o record;
 begin
-  select is_minor, age_tier, gym_id, consent_status into c
+  select is_minor, age_tier, consent_status into c
     from public.profiles where id = new.challenger_id;
-  select is_minor, age_tier, gym_id, consent_status into o
+  select is_minor, age_tier, consent_status into o
     from public.profiles where id = new.opponent_id;
-  select gym_id into rgym from public.profiles where id = new.referee_id;
 
   -- A minor can't compete until a parent has verified consent.
   if c.is_minor and c.consent_status <> 'verified' then
@@ -158,11 +157,11 @@ begin
     new.wager := 0;
   end if;
 
-  -- Under-14 (kid): never public, and only within their own gym.
+  -- Under-14 (kid): never public, and can only face other minors (never an adult).
   if c.age_tier = 'kid' or o.age_tier = 'kid' then
     new.is_public := false;
-    if c.gym_id is null or c.gym_id <> o.gym_id or c.gym_id <> rgym then
-      raise exception 'Under-14 members can only match teammates from their own gym, with a referee from that gym.';
+    if not (c.is_minor and o.is_minor) then
+      raise exception 'Under-14 members can only be matched against other under-18 members.';
     end if;
   end if;
 

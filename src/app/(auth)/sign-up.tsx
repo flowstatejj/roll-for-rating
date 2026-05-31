@@ -202,7 +202,7 @@ export default function SignUpScreen() {
               />
               <ThemedText type="small" themeColor="textSecondary">
                 {isKid
-                  ? "Under 14: we'll email your parent/guardian to approve the account. Until then it stays locked. No wagering, not publicly searchable, and matches stay within your own gym."
+                  ? "Under 14: we'll email your parent/guardian to approve the account. Until then it stays locked. No wagering, not publicly searchable, and you can only be matched against other under-18 members."
                   : "Under 18: we'll email your parent/guardian a link to approve the account. Once approved you can match anyone and appear on leaderboards — wagering stays adults-only."}
               </ThemedText>
             </View>

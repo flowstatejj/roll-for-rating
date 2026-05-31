@@ -12,7 +12,8 @@ provider key, and there's a manual fallback until you add one.
   - **teen (14–17)** — after a parent approves: public matches, leaderboard,
     match anyone. **Never wagering.**
   - **kid (<14)** — locked down: no public matches, no leaderboard, not
-    searchable, no wagering, matches only within their own gym.
+    searchable, no wagering, and can only be matched against other under-18
+    members (never an adult).
 - A minor also enters a **parent/guardian email**. The account is created but
   **restricted** (`consent_status = 'pending'`) until the parent clicks an
   approval link. Minors can't start matches and aren't publicly visible until

@@ -228,7 +228,7 @@ export default function ProfileScreen() {
           <View style={{ flex: 1 }}>
             <ThemedText style={{ fontWeight: '800' }}>Protected account</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              Your profile isn&apos;t publicly searchable and your matches stay within your gym.
+              Your profile isn&apos;t publicly searchable and you can only be matched against other under-18 members.
             </ThemedText>
           </View>
         </Card>
