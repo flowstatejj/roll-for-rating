@@ -156,7 +156,7 @@ export default function NewMatchScreen() {
         )}
       </View>
 
-      {/* Wagering + public publishing are hidden for protected (under-18) accounts */}
+      {/* Wagering is adults-only (hidden for every minor) */}
       {!profile?.is_minor && (
         <>
           <TextField
@@ -177,18 +177,30 @@ export default function NewMatchScreen() {
             On a decisive result the winner takes the wagered rating from the loser, on top of normal Elo. Accepting the
             challenge means agreeing to the wager.
           </ThemedText>
-
-          <Card style={styles.publicRow}>
-            <Ionicons name="globe-outline" size={20} color={isPublic ? theme.accent : theme.textSecondary} />
-            <View style={{ flex: 1 }}>
-              <ThemedText style={{ fontWeight: '800' }}>Publish publicly</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                If both fighters agree, the match shows in Watch for everyone to view &amp; react.
-              </ThemedText>
-            </View>
-            <Switch value={isPublic} onValueChange={setIsPublic} trackColor={{ true: theme.accent }} />
-          </Card>
         </>
+      )}
+
+      {/* Public publishing — hidden for under-14 (kids), allowed for verified teens + adults */}
+      {profile?.age_tier !== 'kid' && (
+        <Card style={styles.publicRow}>
+          <Ionicons name="globe-outline" size={20} color={isPublic ? theme.accent : theme.textSecondary} />
+          <View style={{ flex: 1 }}>
+            <ThemedText style={{ fontWeight: '800' }}>Publish publicly</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              If both fighters agree, the match shows in Watch for everyone to view &amp; react.
+            </ThemedText>
+          </View>
+          <Switch value={isPublic} onValueChange={setIsPublic} trackColor={{ true: theme.accent }} />
+        </Card>
+      )}
+
+      {profile?.is_minor && profile.consent_status !== 'verified' && (
+        <Card style={styles.publicRow}>
+          <Ionicons name="lock-closed" size={20} color={theme.textSecondary} />
+          <ThemedText type="small" themeColor="textSecondary" style={{ flex: 1 }}>
+            Your account is waiting for a parent/guardian to approve it. You can set up a match once it&apos;s approved.
+          </ThemedText>
+        </Card>
       )}
 
       <Button
@@ -196,7 +208,7 @@ export default function NewMatchScreen() {
         icon="send"
         onPress={create}
         loading={creating}
-        disabled={!opponent || !referee}
+        disabled={!opponent || !referee || (!!profile?.is_minor && profile.consent_status !== 'verified')}
       />
     </Screen>
   );

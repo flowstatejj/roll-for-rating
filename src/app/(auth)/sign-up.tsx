@@ -11,6 +11,26 @@ import { BELT_COLORS, BELT_LABELS, type BeltRank } from '@/lib/types';
 
 const BELTS: BeltRank[] = ['white', 'blue', 'purple', 'brown', 'black'];
 
+/** Validate MM/DD/YYYY parts and return the ISO date + current age, or null. */
+function parseDob(mm: string, dd: string, yyyy: string): { iso: string; age: number } | null {
+  const m = Number(mm);
+  const d = Number(dd);
+  const y = Number(yyyy);
+  if (!mm || !dd || yyyy.length !== 4) return null;
+  if (m < 1 || m > 12 || d < 1 || d > 31 || y < 1900) return null;
+  const date = new Date(y, m - 1, d);
+  // Reject impossible dates (e.g. Feb 30 rolls over).
+  if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) return null;
+  const now = new Date();
+  let age = now.getFullYear() - y;
+  const beforeBirthday = now.getMonth() < m - 1 || (now.getMonth() === m - 1 && now.getDate() < d);
+  if (beforeBirthday) age -= 1;
+  const iso = `${y.toString().padStart(4, '0')}-${m.toString().padStart(2, '0')}-${d
+    .toString()
+    .padStart(2, '0')}`;
+  return { iso, age };
+}
+
 export default function SignUpScreen() {
   const { signUp } = useAuth();
   const theme = useTheme();
@@ -21,8 +41,15 @@ export default function SignUpScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [belt, setBelt] = useState<BeltRank>('white');
-  const [adult, setAdult] = useState<boolean | null>(null);
+  const [dobM, setDobM] = useState('');
+  const [dobD, setDobD] = useState('');
+  const [dobY, setDobY] = useState('');
+  const [parentEmail, setParentEmail] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const dob = parseDob(dobM, dobD, dobY);
+  const isMinor = dob !== null && dob.age < 18;
+  const isKid = dob !== null && dob.age < 14;
 
   async function onSubmit() {
     if (!displayName.trim() || !username.trim() || !email.trim() || !password) {
@@ -33,8 +60,16 @@ export default function SignUpScreen() {
       Alert.alert('Weak password', 'Use at least 6 characters.');
       return;
     }
-    if (adult === null) {
-      Alert.alert('One more thing', 'Please tell us your age group.');
+    if (!dob) {
+      Alert.alert('Date of birth', 'Please enter a valid date of birth (MM / DD / YYYY).');
+      return;
+    }
+    if (dob.age < 0 || dob.age > 120) {
+      Alert.alert('Date of birth', "That date doesn't look right — please check it.");
+      return;
+    }
+    if (isMinor && !parentEmail.trim()) {
+      Alert.alert('Parent / guardian email', "Under-18 accounts need a parent or guardian's email so they can approve the account.");
       return;
     }
     setLoading(true);
@@ -45,11 +80,14 @@ export default function SignUpScreen() {
         username: username.trim(),
         displayName: displayName.trim(),
         beltRank: belt,
-        isMinor: !adult,
+        birthdate: dob.iso,
+        parentEmail: isMinor ? parentEmail.trim() : null,
       });
       Alert.alert(
         'Account created',
-        'If email confirmation is on, check your inbox to confirm — then sign in.',
+        isMinor
+          ? "We've set up the account. Your parent/guardian needs to approve it from the email we'll send before you can compete. If email confirmation is on, also check your inbox to confirm, then sign in."
+          : 'If email confirmation is on, check your inbox to confirm — then sign in.',
         [{ text: 'OK', onPress: () => router.replace('/(auth)/sign-in') }],
       );
     } catch (e: any) {
@@ -119,35 +157,56 @@ export default function SignUpScreen() {
 
           <View style={{ gap: Spacing.one }}>
             <ThemedText type="smallBold" themeColor="textSecondary">
-              Age
+              Date of birth
             </ThemedText>
-            <View style={styles.belts}>
-              {[
-                { label: '18 or older', val: true },
-                { label: 'Under 18', val: false },
-              ].map((o) => {
-                const selected = adult === o.val;
-                return (
-                  <Pressable
-                    key={o.label}
-                    onPress={() => setAdult(o.val)}
-                    style={[
-                      styles.beltOption,
-                      { backgroundColor: selected ? theme.accent : theme.backgroundElement, borderColor: selected ? theme.accent : theme.border },
-                    ]}>
-                    <ThemedText style={{ fontWeight: '700', fontSize: 13, color: selected ? theme.accentText : theme.text }}>
-                      {o.label}
-                    </ThemedText>
-                  </Pressable>
-                );
-              })}
+            <View style={styles.dobRow}>
+              <View style={{ flex: 1 }}>
+                <TextField
+                  label="MM"
+                  value={dobM}
+                  onChangeText={(t) => setDobM(t.replace(/\D/g, '').slice(0, 2))}
+                  keyboardType="number-pad"
+                  placeholder="MM"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <TextField
+                  label="DD"
+                  value={dobD}
+                  onChangeText={(t) => setDobD(t.replace(/\D/g, '').slice(0, 2))}
+                  keyboardType="number-pad"
+                  placeholder="DD"
+                />
+              </View>
+              <View style={{ flex: 1.6 }}>
+                <TextField
+                  label="YYYY"
+                  value={dobY}
+                  onChangeText={(t) => setDobY(t.replace(/\D/g, '').slice(0, 4))}
+                  keyboardType="number-pad"
+                  placeholder="YYYY"
+                />
+              </View>
             </View>
-            {adult === false && (
-              <ThemedText type="small" themeColor="textSecondary">
-                Under-18 accounts are protected: no wagering, not publicly searchable, and matches stay within your gym.
-              </ThemedText>
-            )}
           </View>
+
+          {isMinor && (
+            <View style={{ gap: Spacing.one }}>
+              <TextField
+                label="Parent / guardian email"
+                value={parentEmail}
+                onChangeText={setParentEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                placeholder="parent@example.com"
+              />
+              <ThemedText type="small" themeColor="textSecondary">
+                {isKid
+                  ? "Under 14: we'll email your parent/guardian to approve the account. Until then it stays locked. No wagering, not publicly searchable, and matches stay within your own gym."
+                  : "Under 18: we'll email your parent/guardian a link to approve the account. Once approved you can match anyone and appear on leaderboards — wagering stays adults-only."}
+              </ThemedText>
+            </View>
+          )}
 
           <Button label="Create account" onPress={onSubmit} loading={loading} />
 
@@ -166,6 +225,7 @@ export default function SignUpScreen() {
 const styles = StyleSheet.create({
   form: { gap: Spacing.three },
   belts: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
+  dobRow: { flexDirection: 'row', gap: Spacing.two, alignItems: 'flex-end' },
   beltOption: {
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,

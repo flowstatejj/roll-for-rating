@@ -10,6 +10,7 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { computeAchievements } from '@/lib/achievements';
 import { useAuth } from '@/lib/auth';
+import { requestParentConsent } from '@/lib/consent';
 import { winStreak } from '@/lib/elo';
 import { fetchMyMatches } from '@/lib/matches';
 import { fetchPuzzleStats } from '@/lib/puzzles';
@@ -33,6 +34,7 @@ export default function ProfileScreen() {
   const [city, setCity] = useState('');
   const [saving, setSaving] = useState(false);
   const [togglingOpen, setTogglingOpen] = useState(false);
+  const [sendingConsent, setSendingConsent] = useState(false);
   const [matches, setMatches] = useState<MatchWithPeople[]>([]);
   const [solved, setSolved] = useState(0);
   const [champions, setChampions] = useState<Champion[]>([]);
@@ -47,6 +49,31 @@ export default function ProfileScreen() {
       Alert.alert('Could not update', e.message ?? 'Try again.');
     } finally {
       setTogglingOpen(false);
+    }
+  }
+
+  async function resendConsent() {
+    setSendingConsent(true);
+    try {
+      const res = await requestParentConsent();
+      if (res.alreadyVerified) {
+        Alert.alert('Already approved', 'This account has already been approved.');
+        await refreshProfile();
+      } else if (res.sent) {
+        Alert.alert('Email sent', `We've emailed the approval link to ${res.parent_email ?? 'your parent/guardian'}.`);
+      } else if (res.link) {
+        // No email provider configured yet — let the user share the link directly.
+        Alert.alert(
+          'Approval link',
+          `Email sending isn't set up yet. Send this link to your parent/guardian to approve the account:\n\n${res.link}`,
+        );
+      } else {
+        Alert.alert('Hmm', 'Could not start the approval. Try again later.');
+      }
+    } catch (e: any) {
+      Alert.alert('Could not send', e.message ?? 'Try again later.');
+    } finally {
+      setSendingConsent(false);
     }
   }
 
@@ -176,8 +203,26 @@ export default function ProfileScreen() {
         </View>
       </Card>
 
-      {/* Open for a challenge — hidden for protected (under-18) accounts */}
-      {profile.is_minor ? (
+      {/* Open for a challenge / protected-account status (age-tier aware) */}
+      {profile.is_minor && profile.consent_status === 'pending' ? (
+        // Minor waiting on a parent to approve the account.
+        <Card style={[styles.openRow, { flexWrap: 'wrap' }]}>
+          <Ionicons name="time" size={22} color={theme.accent} />
+          <View style={{ flex: 1, minWidth: 160 }}>
+            <ThemedText style={{ fontWeight: '800' }}>Waiting for parent approval</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              A parent/guardian must approve this account before you can compete.
+            </ThemedText>
+          </View>
+          <Button
+            label={sendingConsent ? 'Sending…' : 'Resend email'}
+            variant="secondary"
+            onPress={resendConsent}
+            loading={sendingConsent}
+          />
+        </Card>
+      ) : profile.age_tier === 'kid' ? (
+        // Under-14: locked down regardless of approval.
         <Card style={styles.openRow}>
           <Ionicons name="shield-checkmark" size={22} color={theme.accent} />
           <View style={{ flex: 1 }}>
@@ -188,6 +233,7 @@ export default function ProfileScreen() {
           </View>
         </Card>
       ) : (
+        // Adults and approved teens: normal open-for-challenge toggle.
         <Card style={styles.openRow}>
           <Ionicons name="flame" size={22} color={profile.open_for_challenge ? theme.accent : theme.textSecondary} />
           <View style={{ flex: 1 }}>

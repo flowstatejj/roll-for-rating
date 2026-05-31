@@ -20,9 +20,9 @@ export default function FindScreen() {
   const router = useRouter();
   const userId = session!.user.id;
 
-  const isMinor = !!profile?.is_minor;
-  // Protected (under-18) accounts can only ever browse their own gym network.
-  const [mode, setMode] = useState<Mode>(isMinor || profile?.gym_id ? 'network' : 'area');
+  // Under-14 (kid) accounts can only ever browse their own gym network.
+  const isKid = profile?.age_tier === 'kid';
+  const [mode, setMode] = useState<Mode>(isKid || profile?.gym_id ? 'network' : 'area');
   const [city, setCity] = useState(profile?.city ?? '');
   const [belt, setBelt] = useState<BeltRank | 'any'>('any');
   const [results, setResults] = useState<Profile[]>([]);
@@ -50,8 +50,8 @@ export default function FindScreen() {
     <Screen>
       <Stack.Screen options={{ title: 'Find a Roll' }} />
 
-      {/* Mode toggle — minors are locked to their gym network */}
-      {!isMinor && (
+      {/* Mode toggle — under-14 accounts are locked to their gym network */}
+      {!isKid && (
         <View style={styles.segment}>
           <Seg label="My network" active={mode === 'network'} onPress={() => setMode('network')} />
           <Seg label="Open in area" active={mode === 'area'} onPress={() => setMode('area')} />

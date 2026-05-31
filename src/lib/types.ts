@@ -3,6 +3,11 @@
 
 export type BeltRank = 'white' | 'blue' | 'purple' | 'brown' | 'black';
 
+/** Age tier, computed server-side from the member's birthdate. */
+export type AgeTier = 'adult' | 'teen' | 'kid';
+/** Parental-consent state for minor accounts. */
+export type ConsentStatus = 'not_required' | 'pending' | 'verified';
+
 export type MatchStatus =
   | 'pending_opponent'
   | 'pending_referee'
@@ -27,6 +32,9 @@ export interface Profile {
   activity_streak: number;
   last_active_date: string | null;
   is_minor: boolean;
+  birthdate: string | null;
+  age_tier: AgeTier;
+  consent_status: ConsentStatus;
   created_at: string;
 }
 

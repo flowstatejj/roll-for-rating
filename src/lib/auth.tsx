@@ -21,7 +21,10 @@ interface SignUpArgs {
   username: string;
   displayName: string;
   beltRank: BeltRank;
-  isMinor: boolean;
+  /** ISO date 'YYYY-MM-DD'. Tier (adult/teen/kid) is computed server-side. */
+  birthdate: string;
+  /** Required for minors — the parent/guardian who must approve the account. */
+  parentEmail: string | null;
 }
 
 interface AuthContextValue {
@@ -106,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [session]);
 
   const signUp = useCallback(
-    async ({ email, password, username, displayName, beltRank, isMinor }: SignUpArgs) => {
+    async ({ email, password, username, displayName, beltRank, birthdate, parentEmail }: SignUpArgs) => {
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -116,7 +119,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             username: username.trim().toLowerCase(),
             display_name: displayName.trim(),
             belt_rank: beltRank,
-            is_minor: isMinor,
+            birthdate,
+            parent_email: parentEmail ?? '',
           },
         },
       });
