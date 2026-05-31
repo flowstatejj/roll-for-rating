@@ -10,6 +10,7 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { computeAchievements } from '@/lib/achievements';
 import { useAuth } from '@/lib/auth';
+import { deleteAccount } from '@/lib/account';
 import { requestParentConsent } from '@/lib/consent';
 import { winStreak } from '@/lib/elo';
 import { fetchMyMatches } from '@/lib/matches';
@@ -35,6 +36,7 @@ export default function ProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [togglingOpen, setTogglingOpen] = useState(false);
   const [sendingConsent, setSendingConsent] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [matches, setMatches] = useState<MatchWithPeople[]>([]);
   const [solved, setSolved] = useState(0);
   const [champions, setChampions] = useState<Champion[]>([]);
@@ -50,6 +52,36 @@ export default function ProfileScreen() {
     } finally {
       setTogglingOpen(false);
     }
+  }
+
+  async function doDeleteAccount() {
+    setDeleting(true);
+    try {
+      await deleteAccount(); // signs out on success; auth state routes to sign-in
+    } catch (e: any) {
+      Alert.alert('Could not delete', e.message ?? 'Try again later.');
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  function confirmDeleteAccount() {
+    Alert.alert(
+      'Delete account?',
+      'This permanently deletes your account, profile, matches, and stats. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () =>
+            Alert.alert('Are you sure?', 'Last chance — this is permanent.', [
+              { text: 'Keep my account', style: 'cancel' },
+              { text: 'Delete forever', style: 'destructive', onPress: doDeleteAccount },
+            ]),
+        },
+      ],
+    );
   }
 
   async function resendConsent() {
@@ -352,6 +384,13 @@ export default function ProfileScreen() {
       />
 
       <Button label="Sign out" variant="ghost" icon="log-out-outline" onPress={signOut} />
+      <Button
+        label={deleting ? 'Deleting…' : 'Delete account'}
+        variant="ghost"
+        icon="trash-outline"
+        loading={deleting}
+        onPress={confirmDeleteAccount}
+      />
     </Screen>
   );
 }
