@@ -300,6 +300,7 @@ export async function searchProfiles(query: string, excludeIds: string[]): Promi
   let req = supabase
     .from('profiles')
     .select('*')
+    .neq('age_tier', 'kid') // under-14 juniors are never searchable
     .order('rating', { ascending: false })
     .limit(25);
 

@@ -52,6 +52,8 @@ Flow: **invite → arrange → match.**
 - All existing kid rules still apply to the resulting match (no wager, not
   public, minors-only, parent can't ref).
 
-## Separate track — parent identity verification + offender screening
-See APP-STORE-PREP / discussion: needs a third-party vendor + legal, not code
-alone. Not part of A/B. Scaffolding can be added when a vendor is chosen.
+## Parent identity verification + offender screening — DROPPED
+Decided against it. Kid challenges run through gyms with a blue-belt-or-higher
+neutral referee (who can't be either kid's parent), so accountability is handled
+in the real world instead. Kid privacy is enforced by first-name-only records
+(supabase/kid-privacy.sql) + never-public/never-searchable rules.
