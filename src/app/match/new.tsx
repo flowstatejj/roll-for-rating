@@ -8,6 +8,7 @@ import { Avatar, BeltChip, Button, Card, Screen, TextField } from '@/components/
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { fetchJuniors } from '@/lib/juniors';
 import { createMatch, searchProfiles } from '@/lib/matches';
 import { supabase } from '@/lib/supabase';
 import type { Profile } from '@/lib/types';
@@ -22,6 +23,11 @@ export default function NewMatchScreen() {
   const allIn = Math.max(0, (profile?.rating ?? 0) - 100);
 
   const { opponent: opponentParam } = useLocalSearchParams<{ opponent?: string }>();
+  // Who's competing: null = the signed-in user, otherwise one of their managed juniors.
+  const [juniors, setJuniors] = useState<Profile[]>([]);
+  const [competitor, setCompetitor] = useState<Profile | null>(null);
+  const competingAsJunior = competitor !== null;
+  const challengerId = competitor?.id ?? userId;
   const [opponent, setOpponent] = useState<Profile | null>(null);
   const [referee, setReferee] = useState<Profile | null>(null);
   const [active, setActive] = useState<Slot>('opponent');
@@ -30,6 +36,12 @@ export default function NewMatchScreen() {
   const [wager, setWager] = useState('');
   const [isPublic, setIsPublic] = useState(false);
   const [creating, setCreating] = useState(false);
+
+  // Load any managed juniors so an adult can compete on their behalf.
+  useEffect(() => {
+    if (!profile || profile.is_minor) return;
+    fetchJuniors(profile.id).then(setJuniors).catch((e) => console.warn('load juniors', e));
+  }, [profile]);
 
   // Preselect an opponent when arriving from "Find opponents".
   useEffect(() => {
@@ -47,9 +59,12 @@ export default function NewMatchScreen() {
       });
   }, [opponentParam]);
 
-  // Exclude me + whoever is already chosen for the other role.
+  // Exclude the competitor (me or my junior) + whoever's chosen for the other
+  // role. When a junior competes, also exclude me — a guardian can't referee
+  // their own junior's match (and shouldn't be its opponent).
   const excludeIds = [
-    userId,
+    challengerId,
+    competingAsJunior ? userId : null,
     active === 'opponent' ? referee?.id : opponent?.id,
   ].filter(Boolean) as string[];
 
@@ -60,7 +75,7 @@ export default function NewMatchScreen() {
       console.warn('search failed', e);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, active, opponent?.id, referee?.id, userId]);
+  }, [query, active, opponent?.id, referee?.id, challengerId, competingAsJunior]);
 
   // Debounced search.
   useEffect(() => {
@@ -87,11 +102,12 @@ export default function NewMatchScreen() {
     setCreating(true);
     try {
       const id = await createMatch({
-        challengerId: userId,
+        challengerId,
         opponentId: opponent.id,
         refereeId: referee.id,
-        wager: parseInt(wager, 10) || 0,
-        isPublic,
+        // Juniors never wager / never publish (the DB enforces this too).
+        wager: competingAsJunior ? 0 : parseInt(wager, 10) || 0,
+        isPublic: competingAsJunior ? false : isPublic,
       });
       router.replace(`/match/${id}`);
     } catch (e: any) {
@@ -105,6 +121,35 @@ export default function NewMatchScreen() {
       <ThemedText themeColor="textSecondary">
         Pick who you&apos;re rolling against and who&apos;s refereeing. Both must accept/record for ratings to count.
       </ThemedText>
+
+      {/* Competing as — only shown when the adult manages junior(s) */}
+      {juniors.length > 0 && (
+        <View style={{ gap: Spacing.one }}>
+          <ThemedText type="smallBold" themeColor="textSecondary">Competing as</ThemedText>
+          <View style={styles.competingRow}>
+            <CompetingChip label="You" active={!competingAsJunior} onPress={() => setCompetitor(null)} />
+            {juniors.map((j) => (
+              <CompetingChip
+                key={j.id}
+                label={j.display_name}
+                active={competitor?.id === j.id}
+                onPress={() => {
+                  setCompetitor(j);
+                  // a junior just selected can't also be the opponent/referee
+                  if (opponent?.id === j.id) setOpponent(null);
+                  if (referee?.id === j.id) setReferee(null);
+                }}
+              />
+            ))}
+          </View>
+          {competingAsJunior && (
+            <ThemedText type="small" themeColor="textSecondary">
+              Setting up a match for {competitor?.display_name}. No wager, not public, opponent must be
+              under 18, and you can&apos;t be the referee.
+            </ThemedText>
+          )}
+        </View>
+      )}
 
       <View style={styles.slots}>
         <SlotButton
@@ -156,8 +201,8 @@ export default function NewMatchScreen() {
         )}
       </View>
 
-      {/* Wagering is adults-only (hidden for every minor) */}
-      {!profile?.is_minor && (
+      {/* Wagering is adults-only (hidden for every minor, and when a junior competes) */}
+      {!profile?.is_minor && !competingAsJunior && (
         <>
           <TextField
             label="Wager (optional)"
@@ -180,8 +225,8 @@ export default function NewMatchScreen() {
         </>
       )}
 
-      {/* Public publishing — hidden for under-14 (kids), allowed for verified teens + adults */}
-      {profile?.age_tier !== 'kid' && (
+      {/* Public publishing — hidden for under-14 (kids) and for junior matches */}
+      {profile?.age_tier !== 'kid' && !competingAsJunior && (
         <Card style={styles.publicRow}>
           <Ionicons name="globe-outline" size={20} color={isPublic ? theme.accent : theme.textSecondary} />
           <View style={{ flex: 1 }}>
@@ -211,6 +256,22 @@ export default function NewMatchScreen() {
         disabled={!opponent || !referee || (!!profile?.is_minor && profile.consent_status !== 'verified')}
       />
     </Screen>
+  );
+}
+
+function CompetingChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  const theme = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[
+        styles.competingChip,
+        { backgroundColor: active ? theme.accent : theme.tile, borderColor: active ? theme.accent : theme.tileBorder },
+      ]}>
+      <ThemedText style={{ color: active ? theme.accentText : theme.text, fontWeight: '700', fontSize: 13 }}>
+        {label}
+      </ThemedText>
+    </Pressable>
   );
 }
 
@@ -276,6 +337,8 @@ function SlotButton({
 
 const styles = StyleSheet.create({
   slots: { flexDirection: 'row', gap: Spacing.two },
+  competingRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
+  competingChip: { paddingVertical: Spacing.two, paddingHorizontal: Spacing.three, borderRadius: 999, borderWidth: 1 },
   wagerChips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   wagerChip: { paddingVertical: Spacing.two, paddingHorizontal: Spacing.three, borderRadius: 999, borderWidth: 1 },
   publicRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },

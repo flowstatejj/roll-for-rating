@@ -123,12 +123,20 @@ const MATCH_WITH_PEOPLE = `
   referee:profiles!matches_referee_id_fkey(${PERSON})
 `;
 
-/** Matches where the user is a competitor or the referee, newest first. */
+/**
+ * Matches where the user (or a junior they manage) is a competitor or referee,
+ * newest first — so a guardian sees and can act on their juniors' matches too.
+ */
 export async function fetchMyMatches(userId: string): Promise<MatchWithPeople[]> {
+  const { data: juniors } = await supabase.from('profiles').select('id').eq('managed_by', userId);
+  const ids = [userId, ...((juniors ?? []) as { id: string }[]).map((j) => j.id)];
+  const orClause = ids
+    .flatMap((id) => [`challenger_id.eq.${id}`, `opponent_id.eq.${id}`, `referee_id.eq.${id}`])
+    .join(',');
   const { data, error } = await supabase
     .from('matches')
     .select(MATCH_WITH_PEOPLE)
-    .or(`challenger_id.eq.${userId},opponent_id.eq.${userId},referee_id.eq.${userId}`)
+    .or(orClause)
     .order('created_at', { ascending: false });
   if (error) throw error;
   return (data ?? []) as unknown as MatchWithPeople[];

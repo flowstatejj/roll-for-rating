@@ -1,8 +1,9 @@
 # Plan: parent-managed junior (under-14) accounts
 
-Status: **PHASE 1 BUILT** (data model + management + guardrails). **PHASE 2 TODO**
-(wire juniors into the match flow). Replaces under-14 self-signup with a
-parent-managed model so the app stays clean for COPPA / Apple review.
+Status: **PHASE 1 + PHASE 2 BUILT.** Under-14 is a parent-managed, adult-operated
+model (no kid login). Needs the two SQL files run + a dev-server restart for the
+new /juniors route. Replaces under-14 self-signup so the app stays clean for
+COPPA / Apple review.
 
 ## Phase 1 — DONE (in code; needs `supabase/managed-juniors.sql` run + dev restart for the new /juniors route)
 - profiles.managed_by + self-FK; profiles can exist without an auth user
@@ -15,11 +16,14 @@ parent-managed model so the app stays clean for COPPA / Apple review.
   parent-email flow.
 - Profile → "My juniors" (adults): add (name/belt/DOB), list, delete a junior.
 
-## Phase 2 — TODO (operate juniors in matches)
-- matches insert RLS: allow guardian to create where challenger/opponent is a
-  managed junior. respond_to_match / cancel_match: allow guardian of the junior.
-- match/new: "who's competing" selector (self or a junior). Junior pending-
-  challenge acceptance from the guardian. Guardian's match list includes juniors.
+## Phase 2 — DONE (in code; needs `supabase/managed-juniors-phase2.sql` run)
+- is_my_junior(p) helper; matches insert RLS allows challenger = a managed
+  junior; respond_to_match / cancel_match allow the junior's guardian.
+- match/new: "Competing as" selector (You / each junior); junior matches force
+  no-wager + not-public and exclude the guardian from opponent/referee.
+- match/[id]: accept/decline/cancel recognise a guardian acting for a junior
+  (referee stays a real logged-in user).
+- fetchMyMatches includes the juniors' matches so the guardian sees them.
 
 ## Decisions
 - Under-14 ("kid" tier, = "13 and younger") accounts are **created and managed

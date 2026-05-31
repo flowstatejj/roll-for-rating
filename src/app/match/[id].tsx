@@ -10,6 +10,7 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
 import { projectSwing } from '@/lib/elo';
+import { fetchJuniors } from '@/lib/juniors';
 import {
   cancelMatch,
   fetchMatch,
@@ -32,6 +33,14 @@ export default function MatchDetailScreen() {
 
   const [match, setMatch] = useState<MatchWithPeople | null>(null);
   const [busy, setBusy] = useState(false);
+  // The viewer's own id plus any managed juniors — so a guardian can act on a
+  // junior's behalf (accept/decline/cancel).
+  const [myIds, setMyIds] = useState<Set<string>>(new Set([userId]));
+  useEffect(() => {
+    fetchJuniors(userId)
+      .then((js) => setMyIds(new Set([userId, ...js.map((j) => j.id)])))
+      .catch(() => {});
+  }, [userId]);
 
   // Referee result form state (submission-only: winner, or a draw)
   const [winner, setWinner] = useState<'challenger' | 'opponent' | 'draw' | null>(null);
@@ -92,9 +101,10 @@ export default function MatchDetailScreen() {
 
   if (!match) return <Loading />;
 
-  const amOpponent = match.opponent_id === userId;
+  // "am" = me or a junior I manage (the referee is always a real logged-in user).
+  const amOpponent = myIds.has(match.opponent_id);
   const amReferee = match.referee_id === userId;
-  const amCompetitor = match.challenger_id === userId || amOpponent;
+  const amCompetitor = myIds.has(match.challenger_id) || amOpponent;
 
   async function act(fn: () => Promise<void>, successMsg?: string) {
     setBusy(true);
@@ -213,7 +223,7 @@ export default function MatchDetailScreen() {
           ratingBefore={match.opponent_rating_before}
           ratingAfter={match.opponent_rating_after}
           won={match.winner_id === match.opponent_id}
-          isMe={amOpponent}
+          isMe={match.opponent_id === userId}
         />
       </Card>
 
