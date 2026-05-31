@@ -104,12 +104,18 @@ export default function InvitesScreen() {
                       {STATUS_LABEL[r.status]} · opponent rating {r.other_rating}
                     </ThemedText>
                   </View>
-                  {r.status === 'accepted' && (
+                  {/* Host (the challenged side) sets up the match and provides the referee. */}
+                  {r.status === 'accepted' && r.direction === 'incoming' && (
                     <Button
                       label="Set up match"
                       variant="secondary"
                       onPress={() => router.push(`/match/new?opponent=${r.other_id}`)}
                     />
+                  )}
+                  {r.status === 'accepted' && r.direction === 'outgoing' && (
+                    <ThemedText type="small" themeColor="textSecondary" style={{ maxWidth: 140, textAlign: 'right' }}>
+                      Accepted — the host sets up the match &amp; referee
+                    </ThemedText>
                   )}
                   {r.status === 'pending' && r.direction === 'outgoing' && (
                     <Button label="Cancel" variant="ghost" loading={busy} onPress={() => act(() => cancelMatchRequest(r.id))} />

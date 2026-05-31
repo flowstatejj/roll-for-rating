@@ -145,7 +145,7 @@ export default function NewMatchScreen() {
           {competingAsJunior && (
             <ThemedText type="small" themeColor="textSecondary">
               Setting up a match for {competitor?.display_name}. No wager, not public, opponent must be
-              under 18, and you can&apos;t be the referee.
+              under 18, and the referee must be a blue belt or higher who isn&apos;t either kid&apos;s parent.
             </ThemedText>
           )}
         </View>
