@@ -7,32 +7,42 @@ import { Avatar, BeltChip, Card, EmptyState, Loading, Screen } from '@/component
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { fetchJuniors } from '@/lib/juniors';
 import { fetchKidsLeaderboard, fetchLeaderboard, type KidsLeaderRow } from '@/lib/matches';
 import type { Profile } from '@/lib/types';
 
 type Tab = 'overall' | 'kids';
 
 export default function LeaderboardScreen() {
-  const { session } = useAuth();
+  const { session, profile } = useAuth();
   const theme = useTheme();
   const [tab, setTab] = useState<Tab>('overall');
   const [rows, setRows] = useState<Profile[]>([]);
   const [kids, setKids] = useState<KidsLeaderRow[]>([]);
+  const [hasJuniors, setHasJuniors] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const userId = session?.user.id;
 
+  // The 13-&-under board is only for minors + adults who manage a junior.
+  const canSeeKids = !!profile?.is_minor || hasJuniors;
+
   const load = useCallback(async () => {
     try {
-      const [overall, kidsRows] = await Promise.all([fetchLeaderboard(), fetchKidsLeaderboard()]);
+      const [overall, kidsRows, juniors] = await Promise.all([
+        fetchLeaderboard(),
+        fetchKidsLeaderboard(),
+        userId ? fetchJuniors(userId).catch(() => []) : Promise.resolve([]),
+      ]);
       setRows(overall);
       setKids(kidsRows);
+      setHasJuniors(juniors.length > 0);
     } catch (e) {
       console.warn('Failed to load leaderboard', e);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [userId]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
@@ -50,12 +60,14 @@ export default function LeaderboardScreen() {
         Rankings
       </ThemedText>
 
-      <View style={styles.segment}>
-        <Seg label="Overall" active={tab === 'overall'} onPress={() => setTab('overall')} />
-        <Seg label="13 & under" active={tab === 'kids'} onPress={() => setTab('kids')} />
-      </View>
+      {canSeeKids && (
+        <View style={styles.segment}>
+          <Seg label="Overall" active={tab === 'overall'} onPress={() => setTab('overall')} />
+          <Seg label="13 & under" active={tab === 'kids'} onPress={() => setTab('kids')} />
+        </View>
+      )}
 
-      {tab === 'overall' ? (
+      {tab === 'overall' || !canSeeKids ? (
         rows.length === 0 ? (
           <EmptyState icon="podium-outline" title="No grapplers yet" subtitle="Be the first to climb the ladder." />
         ) : (
