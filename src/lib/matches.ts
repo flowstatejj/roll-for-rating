@@ -239,15 +239,36 @@ export async function recordResult(args: {
   if (error) throw error;
 }
 
-/** Top players by rating. */
+/** Top players by rating. Excludes under-14 juniors (they have their own board). */
 export async function fetchLeaderboard(limit = 100): Promise<Profile[]> {
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
+    .neq('age_tier', 'kid')
     .order('rating', { ascending: false })
     .limit(limit);
   if (error) throw error;
   return data ?? [];
+}
+
+export interface KidsLeaderRow {
+  rank: number;
+  first_name: string;
+  rating: number;
+}
+
+/**
+ * Global 13-and-under leaderboard — first name + rating only (kid profiles stay
+ * private; the server returns just this sanitized projection).
+ */
+export async function fetchKidsLeaderboard(limit = 100): Promise<KidsLeaderRow[]> {
+  const { data, error } = await supabase.rpc('kids_leaderboard', { p_limit: limit });
+  if (error) throw error;
+  return ((data ?? []) as any[]).map((r) => ({
+    rank: Number(r.rank),
+    first_name: r.first_name,
+    rating: r.rating,
+  }));
 }
 
 /** Search people by username / display name, excluding the given ids. */

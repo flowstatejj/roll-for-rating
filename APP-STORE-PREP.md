@@ -50,9 +50,13 @@ the biggest review risk. How each tier works:
   emailed link. No wagering.
 - **Under-14 ("kid"):** **cannot self-sign-up** (blocked in-app). A parent/guardian
   creates and operates the profile from their own account. The child never logs
-  in or independently enters data. Not publicly searchable, no leaderboard, no
-  wagering, only matched against other minors, and a parent can't referee their
-  own junior's match. The parent can delete the junior anytime.
+  in or independently enters data. Not publicly searchable, no wagering, only
+  matched against other minors, and a parent can't referee their own junior's
+  match. The parent can delete the junior anytime. Under-14s appear on a
+  **13-and-under leaderboard that shows only a first name + rating** (no
+  username, last name, gym, photo, or any way to identify/contact the child —
+  the full profile stays private; a server function returns only that
+  projection).
 
 **Do NOT enrol in the "Kids Category."** Roll for Rating is a general grappling
 app that *supports* juniors, not a kids' app, and it uses third-party services
@@ -95,7 +99,9 @@ Minors: under-14 members do NOT create their own accounts. A parent/guardian
 adds and operates a junior profile from their own adult account (Profile → My
 juniors); the child never logs in. Under-14 self-signup is blocked in the app.
 Minors cannot wager, are not publicly searchable, and can only be matched
-against other under-18 members. This app is a general sports app and is NOT
+against other under-18 members. Under-14 athletes appear on a 13-and-under
+leaderboard that shows only a first name and rating (no other identifying or
+contact information). This app is a general sports app and is NOT
 intended for the Kids Category. Account deletion is available in-app at
 Profile → Delete account.
 
