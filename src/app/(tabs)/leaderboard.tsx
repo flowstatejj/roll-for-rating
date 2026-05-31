@@ -143,6 +143,14 @@ export default function LeaderboardScreen() {
                       </View>
                     </View>
                     <ThemedText style={{ fontWeight: '800', fontSize: 20 }}>{p.rating}</ThemedText>
+                    {!isMe && (
+                      <Pressable
+                        onPress={() => router.push(`/match/new?opponent=${p.id}`)}
+                        hitSlop={8}
+                        style={{ marginLeft: Spacing.two }}>
+                        <Ionicons name="flash" size={20} color={theme.accent} />
+                      </Pressable>
+                    )}
                   </View>
                 </View>
               );
