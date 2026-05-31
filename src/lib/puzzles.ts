@@ -43,7 +43,18 @@ export async function submitWritten(puzzleId: string, answer: string): Promise<P
   const { data, error } = await supabase.functions.invoke('grade-puzzle', {
     body: { puzzle_id: puzzleId, answer },
   });
-  if (error) throw new Error('AI grading isn’t set up yet. Deploy the grade-puzzle function first.');
+  if (error) {
+    // Surface the function's real message (validation / anti-gaming / API errors)
+    // when there is one; otherwise fall back to the "not deployed yet" hint.
+    let message = 'AI grading isn’t set up yet. Deploy the grade-puzzle function first.';
+    try {
+      const body = await (error as { context?: Response }).context?.json?.();
+      if (body?.error) message = body.error;
+    } catch {
+      // keep the fallback message
+    }
+    throw new Error(message);
+  }
   return data as PuzzleResult;
 }
 

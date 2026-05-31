@@ -172,9 +172,39 @@ export default function SolvePuzzleScreen() {
           {puzzle.kind === 'written' && result.score != null && (
             <ThemedText style={{ fontWeight: '700' }}>Score: {result.score}/100</ThemedText>
           )}
+          {result.low_effort && (
+            <ThemedText type="small" style={{ color: theme.danger, fontWeight: '700' }}>
+              That answer didn’t really address the question.
+            </ThemedText>
+          )}
           {result.feedback && <ThemedText>{result.feedback}</ThemedText>}
-          {result.explanation && (
-            <ThemedText themeColor="textSecondary">{result.explanation}</ThemedText>
+
+          {!!result.strengths?.length && (
+            <View style={{ gap: 4 }}>
+              {result.strengths.map((s, i) => (
+                <View key={`s${i}`} style={styles.point}>
+                  <Ionicons name="checkmark-circle" size={16} color={theme.success} style={{ marginTop: 2 }} />
+                  <ThemedText style={{ flex: 1 }}>{s}</ThemedText>
+                </View>
+              ))}
+            </View>
+          )}
+          {!!result.missing?.length && (
+            <View style={{ gap: 4 }}>
+              {result.missing.map((m, i) => (
+                <View key={`m${i}`} style={styles.point}>
+                  <Ionicons name="add-circle" size={16} color={theme.danger} style={{ marginTop: 2 }} />
+                  <ThemedText style={{ flex: 1 }} themeColor="textSecondary">{m}</ThemedText>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {(result.model_answer || result.explanation) && (
+            <View style={{ gap: 2, marginTop: Spacing.one }}>
+              <ThemedText type="smallBold" themeColor="textSecondary">Model answer</ThemedText>
+              <ThemedText themeColor="textSecondary">{result.model_answer ?? result.explanation}</ThemedText>
+            </View>
           )}
           {result.rated && (
             <ThemedText type="small" themeColor="textSecondary">
@@ -201,4 +231,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
   },
   delta: { borderRadius: 999, paddingHorizontal: Spacing.two, paddingVertical: 2 },
+  point: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.one },
 });

@@ -2,7 +2,11 @@
 
 This turns on two Claude-powered features that are already built in the app:
 
-1. **Written puzzles** — an AI coach grades typed answers (Puzzles → Written answer)
+1. **Written puzzles** — an AI coach grades typed answers (Puzzles → Written answer).
+   Grading is **belt-aware** (a white belt and a black belt are held to different
+   standards), and the student gets back a **score, what they got right, what they
+   missed, and a model answer**. Gibberish / off-topic / "just give me 100"
+   answers are detected and scored accordingly.
 2. **Competition link auto-read** — reads wins/losses off a pasted profile link
    (Profile → Import competition record → "Read from link")
 
@@ -107,6 +111,12 @@ on conflict do nothing;
 
 > This SQL is also saved at `supabase/written-puzzles.sql`.
 
+### More written puzzles (optional but recommended)
+
+Paste and run the contents of **`supabase/written-puzzles-extra.sql`** too — it
+adds a dozen more written puzzles (guard retention, mount/back escapes, passing,
+takedowns, leg-lock safety, grip fighting, etc.). It's safe to re-run.
+
 ---
 
 ## Then test it
@@ -122,7 +132,7 @@ Refresh the app (**localhost:8088**) →
 
 | Operation | ~Cost per call | Per 10,000 / month |
 | --- | --- | --- |
-| Grade a written puzzle | ~$0.0012 (⅛ cent) | ~$12 |
+| Grade a written puzzle | ~$0.003 (under ½ cent) | ~$30 |
 | Read a competition link | ~$0.008 (under a cent) | ~$80 (rare — once per import) |
 
 Supabase function hosting is free up to 500k calls/month.

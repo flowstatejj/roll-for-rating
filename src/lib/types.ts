@@ -250,6 +250,11 @@ export interface PuzzleResult {
   rating_after: number;
   delta: number;
   rated: boolean;
+  // Written-puzzle extras from the AI grader (display only):
+  strengths?: string[]; // what the answer got right
+  missing?: string[]; // key points missing or wrong
+  model_answer?: string | null; // a strong answer at the student's belt level
+  low_effort?: boolean; // gibberish / off-topic / gaming attempt
 }
 
 export interface PuzzleStats {
