@@ -35,6 +35,8 @@ export interface Profile {
   birthdate: string | null;
   age_tier: AgeTier;
   consent_status: ConsentStatus;
+  /** For a parent-managed junior: the guardian's profile id. Null otherwise. */
+  managed_by: string | null;
   created_at: string;
 }
 

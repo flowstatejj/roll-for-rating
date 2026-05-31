@@ -7,29 +7,10 @@ import { Button, Screen, TextField } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { parseDob } from '@/lib/dob';
 import { BELT_COLORS, BELT_LABELS, type BeltRank } from '@/lib/types';
 
 const BELTS: BeltRank[] = ['white', 'blue', 'purple', 'brown', 'black'];
-
-/** Validate MM/DD/YYYY parts and return the ISO date + current age, or null. */
-function parseDob(mm: string, dd: string, yyyy: string): { iso: string; age: number } | null {
-  const m = Number(mm);
-  const d = Number(dd);
-  const y = Number(yyyy);
-  if (!mm || !dd || yyyy.length !== 4) return null;
-  if (m < 1 || m > 12 || d < 1 || d > 31 || y < 1900) return null;
-  const date = new Date(y, m - 1, d);
-  // Reject impossible dates (e.g. Feb 30 rolls over).
-  if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) return null;
-  const now = new Date();
-  let age = now.getFullYear() - y;
-  const beforeBirthday = now.getMonth() < m - 1 || (now.getMonth() === m - 1 && now.getDate() < d);
-  if (beforeBirthday) age -= 1;
-  const iso = `${y.toString().padStart(4, '0')}-${m.toString().padStart(2, '0')}-${d
-    .toString()
-    .padStart(2, '0')}`;
-  return { iso, age };
-}
 
 export default function SignUpScreen() {
   const { signUp } = useAuth();
@@ -66,6 +47,13 @@ export default function SignUpScreen() {
     }
     if (dob.age < 0 || dob.age > 120) {
       Alert.alert('Date of birth', "That date doesn't look right — please check it.");
+      return;
+    }
+    if (isKid) {
+      Alert.alert(
+        'Ask a parent to add you',
+        'Under-14 accounts are created and managed by a parent or guardian from their own account. Ask them to add you under “My juniors”.',
+      );
       return;
     }
     if (isMinor && !parentEmail.trim()) {
@@ -190,7 +178,17 @@ export default function SignUpScreen() {
             </View>
           </View>
 
-          {isMinor && (
+          {isKid && (
+            <View style={[styles.kidNotice, { borderColor: theme.accent, backgroundColor: theme.accent + '14' }]}>
+              <ThemedText style={{ fontWeight: '800' }}>A parent needs to set this up</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                Under-14 accounts are created and managed by a parent or guardian from their own
+                account. Ask them to sign in (or sign up) and add you under “My juniors”.
+              </ThemedText>
+            </View>
+          )}
+
+          {isMinor && !isKid && (
             <View style={{ gap: Spacing.one }}>
               <TextField
                 label="Parent / guardian email"
@@ -201,14 +199,13 @@ export default function SignUpScreen() {
                 placeholder="parent@example.com"
               />
               <ThemedText type="small" themeColor="textSecondary">
-                {isKid
-                  ? "Under 14: we'll email your parent/guardian to approve the account. Until then it stays locked. No wagering, not publicly searchable, and you can only be matched against other under-18 members."
-                  : "Under 18: we'll email your parent/guardian a link to approve the account. Once approved you can match anyone and appear on leaderboards — wagering stays adults-only."}
+                Under 18: we&apos;ll email your parent/guardian a link to approve the account. Once
+                approved you can match anyone and appear on leaderboards — wagering stays adults-only.
               </ThemedText>
             </View>
           )}
 
-          <Button label="Create account" onPress={onSubmit} loading={loading} />
+          <Button label="Create account" onPress={onSubmit} loading={loading} disabled={isKid} />
 
           <View style={styles.footer}>
             <ThemedText themeColor="textSecondary">Already have an account?</ThemedText>
@@ -226,6 +223,7 @@ const styles = StyleSheet.create({
   form: { gap: Spacing.three },
   belts: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   dobRow: { flexDirection: 'row', gap: Spacing.two, alignItems: 'flex-end' },
+  kidNotice: { gap: 4, borderWidth: 1, borderRadius: 10, padding: Spacing.three },
   beltOption: {
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,

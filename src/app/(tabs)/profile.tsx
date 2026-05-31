@@ -383,6 +383,15 @@ export default function ProfileScreen() {
         onPress={() => router.push('/competitions')}
       />
 
+      {!profile.is_minor && (
+        <Button
+          label="My juniors"
+          variant="secondary"
+          icon="people-outline"
+          onPress={() => router.push('/juniors')}
+        />
+      )}
+
       <Button label="Sign out" variant="ghost" icon="log-out-outline" onPress={signOut} />
       <Button
         label={deleting ? 'Deleting…' : 'Delete account'}
