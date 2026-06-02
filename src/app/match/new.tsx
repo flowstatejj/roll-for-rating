@@ -8,6 +8,7 @@ import { Avatar, BeltChip, Button, Card, Screen, TextField } from '@/components/
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { fetchJuniors } from '@/lib/juniors';
 import { createMatch, searchProfiles } from '@/lib/matches';
 import { supabase } from '@/lib/supabase';
@@ -19,6 +20,7 @@ export default function NewMatchScreen() {
   const { session, profile } = useAuth();
   const theme = useTheme();
   const router = useRouter();
+  const { t } = useTranslation();
   const userId = session!.user.id;
   const allIn = Math.max(0, (profile?.rating ?? 0) - 100);
 
@@ -96,7 +98,7 @@ export default function NewMatchScreen() {
 
   async function create() {
     if (!opponent || !referee) {
-      Alert.alert('Pick both', 'Choose an opponent and a referee first.');
+      Alert.alert(t('mn.pickBothTitle'), t('mn.pickBothBody'));
       return;
     }
     setCreating(true);
@@ -111,7 +113,7 @@ export default function NewMatchScreen() {
       });
       router.replace(`/match/${id}`);
     } catch (e: any) {
-      Alert.alert('Could not create match', e.message ?? 'Try again.');
+      Alert.alert(t('mn.createFail'), e.message ?? 'Try again.');
       setCreating(false);
     }
   }
@@ -119,15 +121,15 @@ export default function NewMatchScreen() {
   return (
     <Screen>
       <ThemedText themeColor="textSecondary">
-        Pick who you&apos;re rolling against and who&apos;s refereeing. Both must accept/record for ratings to count.
+        {t('mn.intro')}
       </ThemedText>
 
       {/* Competing as — only shown when the adult manages junior(s) */}
       {juniors.length > 0 && (
         <View style={{ gap: Spacing.one }}>
-          <ThemedText type="smallBold" themeColor="textSecondary">Competing as</ThemedText>
+          <ThemedText type="smallBold" themeColor="textSecondary">{t('mn.competingAs')}</ThemedText>
           <View style={styles.competingRow}>
-            <CompetingChip label="You" active={!competingAsJunior} onPress={() => setCompetitor(null)} />
+            <CompetingChip label={t('mn.you')} active={!competingAsJunior} onPress={() => setCompetitor(null)} />
             {juniors.map((j) => (
               <CompetingChip
                 key={j.id}
@@ -144,8 +146,7 @@ export default function NewMatchScreen() {
           </View>
           {competingAsJunior && (
             <ThemedText type="small" themeColor="textSecondary">
-              Setting up a match for {competitor?.display_name}. No wager, not public, opponent must be
-              under 18, and the referee must be a blue belt or higher who isn&apos;t either kid&apos;s parent.
+              {t('mn.juniorNote')}
             </ThemedText>
           )}
         </View>
@@ -153,14 +154,14 @@ export default function NewMatchScreen() {
 
       <View style={styles.slots}>
         <SlotButton
-          label="Opponent"
+          label={t('mn.opponent')}
           person={opponent}
           active={active === 'opponent'}
           onPress={() => setActive('opponent')}
           onClear={() => setOpponent(null)}
         />
         <SlotButton
-          label="Referee"
+          label={t('mn.referee')}
           person={referee}
           active={active === 'referee'}
           onPress={() => setActive('referee')}
@@ -169,11 +170,11 @@ export default function NewMatchScreen() {
       </View>
 
       <TextField
-        label={`Search for ${active === 'opponent' ? 'an opponent' : 'a referee'}`}
+        label={active === 'opponent' ? t('mn.searchOpponent') : t('mn.searchReferee')}
         value={query}
         onChangeText={setQuery}
         autoCapitalize="none"
-        placeholder="Name or @username"
+        placeholder={t('mn.searchPlaceholder')}
       />
 
       <View style={{ gap: Spacing.two }}>
@@ -196,7 +197,7 @@ export default function NewMatchScreen() {
         ))}
         {results.length === 0 && (
           <ThemedText themeColor="textSecondary" style={{ textAlign: 'center', paddingVertical: Spacing.three }}>
-            No matching grapplers.
+            {t('mn.noMatches')}
           </ThemedText>
         )}
       </View>
@@ -205,22 +206,21 @@ export default function NewMatchScreen() {
       {!profile?.is_minor && !competingAsJunior && (
         <>
           <TextField
-            label="Wager (optional)"
+            label={t('mn.wagerLabel')}
             value={wager}
             onChangeText={setWager}
             keyboardType="number-pad"
-            placeholder="Extra Elo staked — winner takes it"
+            placeholder={t('mn.wagerPlaceholder')}
           />
           <View style={styles.wagerChips}>
             {['25', '50', '100'].map((v) => (
               <WagerChip key={v} label={v} active={wager === v} onPress={() => setWager(v)} />
             ))}
-            <WagerChip label={`All-in (${allIn})`} active={wager === String(allIn)} onPress={() => setWager(String(allIn))} />
-            <WagerChip label="None" active={wager === '' || wager === '0'} onPress={() => setWager('')} />
+            <WagerChip label={`${t('mn.allIn')} (${allIn})`} active={wager === String(allIn)} onPress={() => setWager(String(allIn))} />
+            <WagerChip label={t('mn.none')} active={wager === '' || wager === '0'} onPress={() => setWager('')} />
           </View>
           <ThemedText type="small" themeColor="textSecondary">
-            On a decisive result the winner takes the wagered rating from the loser, on top of normal Elo. Accepting the
-            challenge means agreeing to the wager.
+            {t('mn.wagerExplain')}
           </ThemedText>
         </>
       )}
@@ -230,9 +230,9 @@ export default function NewMatchScreen() {
         <Card style={styles.publicRow}>
           <Ionicons name="globe-outline" size={20} color={isPublic ? theme.accent : theme.textSecondary} />
           <View style={{ flex: 1 }}>
-            <ThemedText style={{ fontWeight: '800' }}>Publish publicly</ThemedText>
+            <ThemedText style={{ fontWeight: '800' }}>{t('mn.publishTitle')}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              If both fighters agree, the match shows in Watch for everyone to view &amp; react.
+              {t('mn.publishSub')}
             </ThemedText>
           </View>
           <Switch value={isPublic} onValueChange={setIsPublic} trackColor={{ true: theme.accent }} />
@@ -243,13 +243,13 @@ export default function NewMatchScreen() {
         <Card style={styles.publicRow}>
           <Ionicons name="lock-closed" size={20} color={theme.textSecondary} />
           <ThemedText type="small" themeColor="textSecondary" style={{ flex: 1 }}>
-            Your account is waiting for a parent/guardian to approve it. You can set up a match once it&apos;s approved.
+            {t('mn.pendingConsent')}
           </ThemedText>
         </Card>
       )}
 
       <Button
-        label="Send challenge"
+        label={t('mn.send')}
         icon="send"
         onPress={create}
         loading={creating}
@@ -305,6 +305,7 @@ function SlotButton({
   onClear: () => void;
 }) {
   const theme = useTheme();
+  const { t } = useTranslation();
   return (
     <Pressable onPress={onPress} style={{ flex: 1 }}>
       <Card
@@ -328,7 +329,7 @@ function SlotButton({
             <Ionicons name="close-circle" size={20} color={theme.textSecondary} onPress={onClear} />
           </View>
         ) : (
-          <ThemedText style={{ marginTop: Spacing.one, color: theme.textSecondary }}>Tap to choose</ThemedText>
+          <ThemedText style={{ marginTop: Spacing.one, color: theme.textSecondary }}>{t('mn.tapToChoose')}</ThemedText>
         )}
       </Card>
     </Pressable>
