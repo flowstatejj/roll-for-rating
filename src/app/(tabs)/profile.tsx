@@ -12,6 +12,7 @@ import { computeAchievements } from '@/lib/achievements';
 import { useAuth } from '@/lib/auth';
 import { deleteAccount } from '@/lib/account';
 import { requestParentConsent } from '@/lib/consent';
+import { useTranslation } from '@/lib/i18n';
 import { winStreak } from '@/lib/elo';
 import { fetchMyMatches } from '@/lib/matches';
 import { fetchPuzzleStats } from '@/lib/puzzles';
@@ -27,6 +28,7 @@ export default function ProfileScreen() {
   const { profile, session, signOut, refreshProfile } = useAuth();
   const theme = useTheme();
   const router = useRouter();
+  const { t } = useTranslation();
   const userId = session?.user.id;
 
   const [editing, setEditing] = useState(false);
@@ -373,11 +375,11 @@ export default function ProfileScreen() {
           <Button label="Cancel" variant="ghost" onPress={() => setEditing(false)} />
         </Card>
       ) : (
-        <Button label="Edit profile" variant="secondary" icon="create-outline" onPress={startEdit} />
+        <Button label={t('profile.editProfile')} variant="secondary" icon="create-outline" onPress={startEdit} />
       )}
 
       <Button
-        label="Import competition record"
+        label={t('profile.importComp')}
         variant="secondary"
         icon="ribbon-outline"
         onPress={() => router.push('/competitions')}
@@ -386,13 +388,13 @@ export default function ProfileScreen() {
       {!profile.is_minor && (
         <>
           <Button
-            label="My juniors"
+            label={t('profile.myJuniors')}
             variant="secondary"
             icon="people-outline"
             onPress={() => router.push('/juniors')}
           />
           <Button
-            label="Junior challenges"
+            label={t('profile.juniorChallenges')}
             variant="secondary"
             icon="mail-outline"
             onPress={() => router.push('/invites')}
@@ -400,9 +402,16 @@ export default function ProfileScreen() {
         </>
       )}
 
-      <Button label="Sign out" variant="ghost" icon="log-out-outline" onPress={signOut} />
       <Button
-        label={deleting ? 'Deleting…' : 'Delete account'}
+        label={t('profile.settings')}
+        variant="secondary"
+        icon="settings-outline"
+        onPress={() => router.push('/settings')}
+      />
+
+      <Button label={t('profile.signOut')} variant="ghost" icon="log-out-outline" onPress={signOut} />
+      <Button
+        label={deleting ? 'Deleting…' : t('profile.deleteAccount')}
         variant="ghost"
         icon="trash-outline"
         loading={deleting}

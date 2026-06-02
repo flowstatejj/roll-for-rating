@@ -7,6 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/theme';
 import { Loading } from '@/components/ui/kit';
 import { AuthProvider, useAuth } from '@/lib/auth';
+import { I18nProvider } from '@/lib/i18n';
 
 // chess.com-style dark navigation chrome.
 const NavTheme = {
@@ -71,6 +72,9 @@ function RootNavigator() {
       <Stack.Screen name="tournaments" options={{ headerShown: true, title: 'Tournaments' }} />
       <Stack.Screen name="tournament/[id]" options={{ headerShown: true, title: 'Tournament' }} />
       <Stack.Screen name="gym-rankings" options={{ headerShown: true, title: 'Gym Rankings' }} />
+      <Stack.Screen name="settings" options={{ headerShown: true, title: 'Settings' }} />
+      <Stack.Screen name="juniors" options={{ headerShown: true, title: 'My juniors' }} />
+      <Stack.Screen name="invites" options={{ headerShown: true, title: 'Junior challenges' }} />
     </Stack>
   );
 }
@@ -80,10 +84,12 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: Colors.dark.background }}>
       <SafeAreaProvider>
         <ThemeProvider value={NavTheme}>
-          <AuthProvider>
-            <RootNavigator />
-            <StatusBar style="light" />
-          </AuthProvider>
+          <I18nProvider>
+            <AuthProvider>
+              <RootNavigator />
+              <StatusBar style="light" />
+            </AuthProvider>
+          </I18nProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

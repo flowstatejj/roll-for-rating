@@ -8,10 +8,12 @@ import { Button, Screen, TextField } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 
 export default function SignInScreen() {
   const { signIn } = useAuth();
   const theme = useTheme();
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -43,13 +45,13 @@ export default function SignInScreen() {
             Roll for Rating
           </ThemedText>
           <ThemedText themeColor="textSecondary" style={{ textAlign: 'center' }}>
-            Rank your rolls. Climb the ladder.
+            {t('auth.tagline')}
           </ThemedText>
         </View>
 
         <View style={styles.form}>
           <TextField
-            label="Email"
+            label={t('auth.email')}
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
@@ -58,19 +60,19 @@ export default function SignInScreen() {
             placeholder="you@example.com"
           />
           <TextField
-            label="Password"
+            label={t('auth.password')}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
             placeholder="••••••••"
           />
-          <Button label="Sign in" onPress={onSubmit} loading={loading} />
+          <Button label={t('auth.signIn')} onPress={onSubmit} loading={loading} />
 
           <View style={styles.footer}>
-            <ThemedText themeColor="textSecondary">New here?</ThemedText>
+            <ThemedText themeColor="textSecondary">{t('auth.newHere')}</ThemedText>
             <Link href="/(auth)/sign-up">
               <ThemedText style={{ color: theme.accent, fontWeight: '700' }}>
-                Create an account
+                {t('auth.createAccount')}
               </ThemedText>
             </Link>
           </View>
