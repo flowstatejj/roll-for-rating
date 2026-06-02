@@ -18,7 +18,8 @@ import { TatamiBackground } from '@/components/tatami-background';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { BELT_COLORS, BELT_LABELS, type BeltRank } from '@/lib/types';
+import { useTranslation } from '@/lib/i18n';
+import { BELT_COLORS, type BeltRank } from '@/lib/types';
 
 // ---------------------------------------------------------------------------
 // Button
@@ -145,6 +146,7 @@ TextField.displayName = 'TextField';
 export function BeltChip({ belt, size = 'md' }: { belt: BeltRank; size?: 'sm' | 'md' }) {
   const color = BELT_COLORS[belt];
   const small = size === 'sm';
+  const { t } = useTranslation();
   return (
     <View
       style={[
@@ -162,7 +164,7 @@ export function BeltChip({ belt, size = 'md' }: { belt: BeltRank; size?: 'sm' | 
           fontWeight: '700',
           fontSize: small ? 10 : 12,
         }}>
-        {BELT_LABELS[belt].toUpperCase()}
+        {t(`belt.${belt}`).toUpperCase()}
       </ThemedText>
     </View>
   );

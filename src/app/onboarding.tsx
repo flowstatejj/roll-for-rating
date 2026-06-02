@@ -8,18 +8,20 @@ import { Button, Card, Screen, TextField } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 
-const STEPS: { icon: keyof typeof Ionicons.glyphMap; title: string; body: string }[] = [
-  { icon: 'flame', title: 'Challenge someone', body: 'Pick an opponent and a referee at the mat — both agree in the app.' },
-  { icon: 'eye', title: 'Roll, then the ref records it', body: 'After the roll the referee taps the winner. No claiming your own wins.' },
-  { icon: 'trending-up', title: 'Your rating moves', body: 'Climb tiers, win title belts, settle rivalries, and top the leaderboard.' },
+const STEPS: { icon: keyof typeof Ionicons.glyphMap; titleKey: string; bodyKey: string }[] = [
+  { icon: 'flame', titleKey: 'onb.step1Title', bodyKey: 'onb.step1Body' },
+  { icon: 'eye', titleKey: 'onb.step2Title', bodyKey: 'onb.step2Body' },
+  { icon: 'trending-up', titleKey: 'onb.step3Title', bodyKey: 'onb.step3Body' },
 ];
 
 export default function OnboardingScreen() {
   const { session, markOnboarded } = useAuth();
   const theme = useTheme();
   const router = useRouter();
+  const { t } = useTranslation();
   const userId = session!.user.id;
 
   const [city, setCity] = useState('');
@@ -50,10 +52,10 @@ export default function OnboardingScreen() {
           <Ionicons name="trophy" size={28} color={theme.accentText} />
         </View>
         <ThemedText type="title" style={{ fontSize: 30, textAlign: 'center' }}>
-          Welcome to Roll for Rating
+          {t('onb.welcome')}
         </ThemedText>
         <ThemedText themeColor="textSecondary" style={{ textAlign: 'center' }}>
-          Turn open mats into a ranked ladder. Here&apos;s the gist:
+          {t('onb.intro')}
         </ThemedText>
       </View>
 
@@ -63,23 +65,23 @@ export default function OnboardingScreen() {
             <Ionicons name={s.icon} size={22} color={theme.accent} />
           </View>
           <View style={{ flex: 1, gap: 2 }}>
-            <ThemedText style={{ fontWeight: '800' }}>{s.title}</ThemedText>
+            <ThemedText style={{ fontWeight: '800' }}>{t(s.titleKey)}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              {s.body}
+              {t(s.bodyKey)}
             </ThemedText>
           </View>
         </Card>
       ))}
 
-      <ThemedText style={styles.section}>Set yourself up</ThemedText>
+      <ThemedText style={styles.section}>{t('onb.setup')}</ThemedText>
       <Card style={{ gap: Spacing.three }}>
-        <TextField label="Your city / area" value={city} onChangeText={setCity} autoCapitalize="words" placeholder="So nearby rollers can find you" />
+        <TextField label={t('onb.cityLabel')} value={city} onChangeText={setCity} autoCapitalize="words" placeholder={t('onb.cityPlaceholder')} />
         <View style={styles.openRow}>
           <Ionicons name="flame" size={20} color={open ? theme.accent : theme.textSecondary} />
           <View style={{ flex: 1 }}>
-            <ThemedText style={{ fontWeight: '800' }}>Open for a challenge</ThemedText>
+            <ThemedText style={{ fontWeight: '800' }}>{t('onb.openTitle')}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              Appear in Find a Roll so people can challenge you.
+              {t('onb.openSub')}
             </ThemedText>
           </View>
           <Switch value={open} onValueChange={setOpen} trackColor={{ true: theme.accent }} />
@@ -87,11 +89,11 @@ export default function OnboardingScreen() {
       </Card>
 
       <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center' }}>
-        Tip: join your academy under Community → Browse gyms to find teammates and rivals.
+        {t('onb.tip')}
       </ThemedText>
 
-      <Button label="Get started" icon="arrow-forward" loading={busy} onPress={() => finish(true)} />
-      <Button label="Skip for now" variant="ghost" onPress={() => finish(false)} />
+      <Button label={t('onb.getStarted')} icon="arrow-forward" loading={busy} onPress={() => finish(true)} />
+      <Button label={t('onb.skip')} variant="ghost" onPress={() => finish(false)} />
     </Screen>
   );
 }

@@ -8,7 +8,8 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
 import { parseDob } from '@/lib/dob';
-import { BELT_COLORS, BELT_LABELS, type BeltRank } from '@/lib/types';
+import { useTranslation } from '@/lib/i18n';
+import { BELT_COLORS, type BeltRank } from '@/lib/types';
 
 const BELTS: BeltRank[] = ['white', 'blue', 'purple', 'brown', 'black'];
 
@@ -16,6 +17,7 @@ export default function SignUpScreen() {
   const { signUp } = useAuth();
   const theme = useTheme();
   const router = useRouter();
+  const { t } = useTranslation();
 
   const [displayName, setDisplayName] = useState('');
   const [username, setUsername] = useState('');
@@ -89,31 +91,31 @@ export default function SignUpScreen() {
     <Screen>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ThemedText type="title" style={{ fontSize: 34, marginBottom: Spacing.three }}>
-          Create account
+          {t('su.title')}
         </ThemedText>
 
         <View style={styles.form}>
-          <TextField label="Display name" value={displayName} onChangeText={setDisplayName} placeholder="Ryan K" />
+          <TextField label={t('su.displayName')} value={displayName} onChangeText={setDisplayName} placeholder="Ryan K" />
           <TextField
-            label="Username"
+            label={t('su.username')}
             value={username}
             onChangeText={setUsername}
             autoCapitalize="none"
             placeholder="ryank"
           />
           <TextField
-            label="Email"
+            label={t('auth.email')}
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
             keyboardType="email-address"
             placeholder="you@example.com"
           />
-          <TextField label="Password" value={password} onChangeText={setPassword} secureTextEntry placeholder="At least 6 characters" />
+          <TextField label={t('auth.password')} value={password} onChangeText={setPassword} secureTextEntry placeholder={t('su.passwordPlaceholder')} />
 
           <View style={{ gap: Spacing.one }}>
             <ThemedText type="smallBold" themeColor="textSecondary">
-              Belt rank
+              {t('su.beltRank')}
             </ThemedText>
             <View style={styles.belts}>
               {BELTS.map((b) => {
@@ -135,7 +137,7 @@ export default function SignUpScreen() {
                         fontSize: 13,
                         color: selected ? (b === 'white' ? '#222' : '#fff') : theme.text,
                       }}>
-                      {BELT_LABELS[b]}
+                      {t(`belt.${b}`)}
                     </ThemedText>
                   </Pressable>
                 );
@@ -145,7 +147,7 @@ export default function SignUpScreen() {
 
           <View style={{ gap: Spacing.one }}>
             <ThemedText type="smallBold" themeColor="textSecondary">
-              Date of birth
+              {t('su.dob')}
             </ThemedText>
             <View style={styles.dobRow}>
               <View style={{ flex: 1 }}>
@@ -180,10 +182,9 @@ export default function SignUpScreen() {
 
           {isKid && (
             <View style={[styles.kidNotice, { borderColor: theme.accent, backgroundColor: theme.accent + '14' }]}>
-              <ThemedText style={{ fontWeight: '800' }}>A parent needs to set this up</ThemedText>
+              <ThemedText style={{ fontWeight: '800' }}>{t('su.kidNoticeTitle')}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                Under-14 accounts are created and managed by a parent or guardian from their own
-                account. Ask them to sign in (or sign up) and add you under “My juniors”.
+                {t('su.kidNoticeBody')}
               </ThemedText>
             </View>
           )}
@@ -191,7 +192,7 @@ export default function SignUpScreen() {
           {isMinor && !isKid && (
             <View style={{ gap: Spacing.one }}>
               <TextField
-                label="Parent / guardian email"
+                label={t('su.parentEmail')}
                 value={parentEmail}
                 onChangeText={setParentEmail}
                 autoCapitalize="none"
@@ -199,18 +200,17 @@ export default function SignUpScreen() {
                 placeholder="parent@example.com"
               />
               <ThemedText type="small" themeColor="textSecondary">
-                Under 18: we&apos;ll email your parent/guardian a link to approve the account. Once
-                approved you can match anyone and appear on leaderboards — wagering stays adults-only.
+                {t('su.teenNote')}
               </ThemedText>
             </View>
           )}
 
-          <Button label="Create account" onPress={onSubmit} loading={loading} disabled={isKid} />
+          <Button label={t('su.title')} onPress={onSubmit} loading={loading} disabled={isKid} />
 
           <View style={styles.footer}>
-            <ThemedText themeColor="textSecondary">Already have an account?</ThemedText>
+            <ThemedText themeColor="textSecondary">{t('su.haveAccount')}</ThemedText>
             <Link href="/(auth)/sign-in">
-              <ThemedText style={{ color: theme.accent, fontWeight: '700' }}>Sign in</ThemedText>
+              <ThemedText style={{ color: theme.accent, fontWeight: '700' }}>{t('auth.signIn')}</ThemedText>
             </Link>
           </View>
         </View>
