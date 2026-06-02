@@ -36,30 +36,27 @@ export default function SignUpScreen() {
 
   async function onSubmit() {
     if (!displayName.trim() || !username.trim() || !email.trim() || !password) {
-      Alert.alert('Missing info', 'Please fill in every field.');
+      Alert.alert(t('su.missingTitle'), t('su.missingBody'));
       return;
     }
     if (password.length < 6) {
-      Alert.alert('Weak password', 'Use at least 6 characters.');
+      Alert.alert(t('su.weakTitle'), t('su.weakBody'));
       return;
     }
     if (!dob) {
-      Alert.alert('Date of birth', 'Please enter a valid date of birth (MM / DD / YYYY).');
+      Alert.alert(t('su.dob'), t('su.dobInvalidFull'));
       return;
     }
     if (dob.age < 0 || dob.age > 120) {
-      Alert.alert('Date of birth', "That date doesn't look right — please check it.");
+      Alert.alert(t('su.dob'), t('su.dobUnreal'));
       return;
     }
     if (isKid) {
-      Alert.alert(
-        'Ask a parent to add you',
-        'Under-14 accounts are created and managed by a parent or guardian from their own account. Ask them to add you under “My juniors”.',
-      );
+      Alert.alert(t('su.askParentTitle'), t('su.askParentBody'));
       return;
     }
     if (isMinor && !parentEmail.trim()) {
-      Alert.alert('Parent / guardian email', "Under-18 accounts need a parent or guardian's email so they can approve the account.");
+      Alert.alert(t('su.parentEmail'), t('su.parentEmailReqBody'));
       return;
     }
     setLoading(true);
@@ -74,14 +71,12 @@ export default function SignUpScreen() {
         parentEmail: isMinor ? parentEmail.trim() : null,
       });
       Alert.alert(
-        'Account created',
-        isMinor
-          ? "We've set up the account. Your parent/guardian needs to approve it from the email we'll send before you can compete. If email confirmation is on, also check your inbox to confirm, then sign in."
-          : 'If email confirmation is on, check your inbox to confirm — then sign in.',
-        [{ text: 'OK', onPress: () => router.replace('/(auth)/sign-in') }],
+        t('su.createdTitle'),
+        isMinor ? t('su.createdMinor') : t('su.createdAdult'),
+        [{ text: t('common.ok'), onPress: () => router.replace('/(auth)/sign-in') }],
       );
     } catch (e: any) {
-      Alert.alert('Sign up failed', e.message ?? 'Please try again.');
+      Alert.alert(t('su.failedTitle'), e.message ?? t('su.tryAgain'));
     } finally {
       setLoading(false);
     }

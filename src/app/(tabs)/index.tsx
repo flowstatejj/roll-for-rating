@@ -171,8 +171,8 @@ export default function HomeScreen() {
                   {profile.rating}
                 </ThemedText>
                 <ThemedText type="small" style={{ color: tier.tier.color, fontWeight: '800' }}>
-                  {tier.tier.name}
-                  {tier.next ? ` · ${tier.toNext} to ${tier.next.name}` : ''}
+                  {t(`tier.${tier.tier.key}`)}
+                  {tier.next ? ` · ${tier.toNext} ${t('tier.to')} ${t(`tier.${tier.next.key}`)}` : ''}
                 </ThemedText>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
                   <BeltChip belt={profile.belt_rank} size="sm" />

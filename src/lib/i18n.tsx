@@ -274,6 +274,21 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'mv.removeFail': 'Could not remove',
 
     'kit.errorDefault': "Couldn't load — check your connection and try again.", 'kit.retry': 'Retry',
+
+    'su.missingTitle': 'Missing info', 'su.missingBody': 'Please fill in every field.',
+    'su.weakTitle': 'Weak password', 'su.weakBody': 'Use at least 6 characters.',
+    'su.dobInvalidFull': 'Please enter a valid date of birth (MM / DD / YYYY).',
+    'su.dobUnreal': "That date doesn't look right — please check it.",
+    'su.askParentTitle': 'Ask a parent to add you',
+    'su.askParentBody': 'Under-14 accounts are created and managed by a parent or guardian from their own account. Ask them to add you under “My juniors”.',
+    'su.parentEmailReqBody': "Under-18 accounts need a parent or guardian's email so they can approve the account.",
+    'su.createdTitle': 'Account created',
+    'su.createdMinor': "We've set up the account. Your parent/guardian needs to approve it from the email we'll send before you can compete. If email confirmation is on, also check your inbox to confirm, then sign in.",
+    'su.createdAdult': 'If email confirmation is on, check your inbox to confirm — then sign in.',
+    'su.failedTitle': 'Sign up failed', 'su.tryAgain': 'Please try again.',
+
+    'tier.novice': 'Novice', 'tier.contender': 'Contender', 'tier.challenger': 'Challenger',
+    'tier.elite': 'Elite', 'tier.apex': 'Apex', 'tier.to': 'to',
   },
   es: {
     'tab.home': 'Inicio', 'tab.puzzles': 'Ejercicios', 'tab.matches': 'Combates',
@@ -536,6 +551,21 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'mv.removeFail': 'No se pudo quitar',
 
     'kit.errorDefault': 'No se pudo cargar: comprueba tu conexión e inténtalo de nuevo.', 'kit.retry': 'Reintentar',
+
+    'su.missingTitle': 'Falta información', 'su.missingBody': 'Completa todos los campos.',
+    'su.weakTitle': 'Contraseña débil', 'su.weakBody': 'Usa al menos 6 caracteres.',
+    'su.dobInvalidFull': 'Introduce una fecha de nacimiento válida (MM / DD / YYYY).',
+    'su.dobUnreal': 'Esa fecha no parece correcta; compruébala.',
+    'su.askParentTitle': 'Pide a un padre que te añada',
+    'su.askParentBody': 'Las cuentas de menores de 14 las crea y gestiona un padre o tutor desde su cuenta. Pídele que te añada en “Mis menores”.',
+    'su.parentEmailReqBody': 'Las cuentas de menores de 18 necesitan el correo de un padre o tutor para aprobar la cuenta.',
+    'su.createdTitle': 'Cuenta creada',
+    'su.createdMinor': 'Hemos creado la cuenta. Tu padre/tutor debe aprobarla desde el correo que enviaremos antes de que puedas competir. Si la confirmación por correo está activada, revisa también tu bandeja para confirmar y luego inicia sesión.',
+    'su.createdAdult': 'Si la confirmación por correo está activada, revisa tu bandeja para confirmar y luego inicia sesión.',
+    'su.failedTitle': 'Error al registrarse', 'su.tryAgain': 'Inténtalo de nuevo.',
+
+    'tier.novice': 'Novato', 'tier.contender': 'Aspirante', 'tier.challenger': 'Retador',
+    'tier.elite': 'Élite', 'tier.apex': 'Cumbre', 'tier.to': 'a',
   },
   pt: {
     'tab.home': 'Início', 'tab.puzzles': 'Exercícios', 'tab.matches': 'Lutas',
@@ -798,6 +828,21 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'mv.removeFail': 'Não foi possível remover',
 
     'kit.errorDefault': 'Não foi possível carregar — verifique sua conexão e tente novamente.', 'kit.retry': 'Tentar novamente',
+
+    'su.missingTitle': 'Faltam dados', 'su.missingBody': 'Preencha todos os campos.',
+    'su.weakTitle': 'Senha fraca', 'su.weakBody': 'Use pelo menos 6 caracteres.',
+    'su.dobInvalidFull': 'Informe uma data de nascimento válida (MM / DD / YYYY).',
+    'su.dobUnreal': 'Essa data não parece certa — confira.',
+    'su.askParentTitle': 'Peça para um responsável te adicionar',
+    'su.askParentBody': 'Contas de menores de 14 são criadas e gerenciadas por um responsável na conta dele. Peça para ele te adicionar em “Meus menores”.',
+    'su.parentEmailReqBody': 'Contas de menores de 18 precisam do e-mail de um responsável para aprovar a conta.',
+    'su.createdTitle': 'Conta criada',
+    'su.createdMinor': 'Criamos a conta. Seu responsável precisa aprová-la pelo e-mail que enviaremos antes de você competir. Se a confirmação por e-mail estiver ativa, confira também sua caixa de entrada e depois entre.',
+    'su.createdAdult': 'Se a confirmação por e-mail estiver ativa, confira sua caixa de entrada e depois entre.',
+    'su.failedTitle': 'Falha no cadastro', 'su.tryAgain': 'Tente novamente.',
+
+    'tier.novice': 'Iniciante', 'tier.contender': 'Concorrente', 'tier.challenger': 'Desafiante',
+    'tier.elite': 'Elite', 'tier.apex': 'Ápice', 'tier.to': 'para',
   },
   fr: {
     'tab.home': 'Accueil', 'tab.puzzles': 'Exercices', 'tab.matches': 'Combats',
@@ -1060,6 +1105,21 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'mv.removeFail': 'Impossible de retirer',
 
     'kit.errorDefault': 'Chargement impossible — vérifie ta connexion et réessaie.', 'kit.retry': 'Réessayer',
+
+    'su.missingTitle': 'Information manquante', 'su.missingBody': 'Remplis tous les champs.',
+    'su.weakTitle': 'Mot de passe faible', 'su.weakBody': 'Utilise au moins 6 caractères.',
+    'su.dobInvalidFull': 'Saisis une date de naissance valide (MM / DD / YYYY).',
+    'su.dobUnreal': 'Cette date semble incorrecte — vérifie-la.',
+    'su.askParentTitle': 'Demande à un parent de t’ajouter',
+    'su.askParentBody': 'Les comptes des moins de 14 ans sont créés et gérés par un parent depuis son compte. Demande-lui de t’ajouter dans « Mes mineurs ».',
+    'su.parentEmailReqBody': 'Les comptes des moins de 18 ans ont besoin de l’e-mail d’un parent pour approuver le compte.',
+    'su.createdTitle': 'Compte créé',
+    'su.createdMinor': 'Le compte est créé. Ton parent/tuteur doit l’approuver via l’e-mail que nous enverrons avant que tu puisses combattre. Si la confirmation par e-mail est activée, vérifie aussi ta boîte de réception, puis connecte-toi.',
+    'su.createdAdult': 'Si la confirmation par e-mail est activée, vérifie ta boîte de réception, puis connecte-toi.',
+    'su.failedTitle': 'Échec de l’inscription', 'su.tryAgain': 'Réessaie.',
+
+    'tier.novice': 'Novice', 'tier.contender': 'Prétendant', 'tier.challenger': 'Challenger',
+    'tier.elite': 'Élite', 'tier.apex': 'Apex', 'tier.to': 'pour',
   },
 };
 

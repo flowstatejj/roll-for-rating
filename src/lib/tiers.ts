@@ -1,16 +1,18 @@
 // Named rating tiers (goal-gradient progression on top of the raw rating).
 export interface Tier {
+  /** stable key for i18n: t(`tier.${key}`). `name` is the English fallback. */
+  key: string;
   name: string;
   min: number;
   color: string;
 }
 
 export const TIERS: Tier[] = [
-  { name: 'Novice', min: 0, color: '#9aa2ad' },
-  { name: 'Contender', min: 1100, color: '#4a90d9' },
-  { name: 'Challenger', min: 1300, color: '#8b5cf6' },
-  { name: 'Elite', min: 1500, color: '#e0a32e' },
-  { name: 'Apex', min: 1700, color: '#e0564b' },
+  { key: 'novice', name: 'Novice', min: 0, color: '#9aa2ad' },
+  { key: 'contender', name: 'Contender', min: 1100, color: '#4a90d9' },
+  { key: 'challenger', name: 'Challenger', min: 1300, color: '#8b5cf6' },
+  { key: 'elite', name: 'Elite', min: 1500, color: '#e0a32e' },
+  { key: 'apex', name: 'Apex', min: 1700, color: '#e0564b' },
 ];
 
 export function tierFor(rating: number): {

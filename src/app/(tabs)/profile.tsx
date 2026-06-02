@@ -218,10 +218,10 @@ export default function ProfileScreen() {
         </ThemedText>
         <View style={{ gap: 4, marginTop: Spacing.one }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <ThemedText style={{ color: theme.accentText, fontWeight: '800' }}>{tier.tier.name}</ThemedText>
+            <ThemedText style={{ color: theme.accentText, fontWeight: '800' }}>{t(`tier.${tier.tier.key}`)}</ThemedText>
             {tier.next && (
               <ThemedText type="small" style={{ color: theme.accentText, opacity: 0.85 }}>
-                {tier.toNext} to {tier.next.name}
+                {tier.toNext} {t('tier.to')} {t(`tier.${tier.next.key}`)}
               </ThemedText>
             )}
           </View>
