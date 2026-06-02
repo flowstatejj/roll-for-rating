@@ -184,12 +184,32 @@ export interface ReactionSummary {
   mine: string | null;
 }
 
+/**
+ * Structured payload for client-side notification localization. The DB triggers
+ * fill this alongside the English `title`/`body` fallback; the app renders the
+ * display text in the member's current language from `k` + params (see
+ * localizeNotification in lib/notifications.ts). Older rows have `data = null`,
+ * in which case the stored English title/body is shown.
+ */
+export interface NotificationData {
+  k: string; // render-kind, e.g. 'challenge.new' | 'result.win' | 'gym.request'
+  name?: string;
+  c?: string; // challenger display name (referee.ready)
+  o?: string; // opponent display name (referee.ready)
+  rb?: number | string; // rating before (result.*)
+  ra?: number | string; // rating after (result.*)
+  emoji?: string; // reaction emoji
+  snippet?: string; // message preview
+  gym?: string; // gym name (gym.request)
+}
+
 export interface AppNotification {
   id: string;
   user_id: string;
   type: string;
   title: string;
   body: string | null;
+  data: NotificationData | null;
   match_id: string | null;
   read: boolean;
   created_at: string;

@@ -9,7 +9,7 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
-import { fetchNotifications, markAllRead } from '@/lib/notifications';
+import { fetchNotifications, localizeNotification, markAllRead } from '@/lib/notifications';
 import type { AppNotification } from '@/lib/types';
 
 function iconFor(type: string): keyof typeof Ionicons.glyphMap {
@@ -77,7 +77,9 @@ export default function NotificationsScreen() {
         <EmptyState icon="notifications-outline" title={t('notif.emptyTitle')} subtitle={t('notif.emptySub')} />
       ) : (
         <View style={{ gap: Spacing.two }}>
-          {items.map((n) => (
+          {items.map((n) => {
+            const { title, body } = localizeNotification(n, t);
+            return (
             <Pressable key={n.id} onPress={() => open(n)}>
               <Card style={[styles.row, !n.read && { borderColor: theme.accent, borderWidth: 1 }]}>
                 <View style={[styles.icon, { backgroundColor: n.read ? theme.backgroundSelected : theme.accent }]}>
@@ -86,15 +88,15 @@ export default function NotificationsScreen() {
                 <View style={{ flex: 1, gap: 2 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
                     <ThemedText style={{ fontWeight: '800', flex: 1 }} numberOfLines={1}>
-                      {n.title}
+                      {title}
                     </ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">
                       {relative(n.created_at, t)}
                     </ThemedText>
                   </View>
-                  {n.body ? (
+                  {body ? (
                     <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
-                      {n.body}
+                      {body}
                     </ThemedText>
                   ) : null}
                 </View>
@@ -103,7 +105,8 @@ export default function NotificationsScreen() {
                 )}
               </Card>
             </Pressable>
-          ))}
+            );
+          })}
         </View>
       )}
     </Screen>

@@ -1,6 +1,47 @@
 import { supabase } from './supabase';
 import type { AppNotification } from './types';
 
+// Maps a structured render-kind (NotificationData.k) to its title + body keys.
+const KIND_KEYS: Record<string, { title: string; body: string }> = {
+  'challenge.new': { title: 'notif.tNew', body: 'notif.bNew' },
+  'referee.new': { title: 'notif.tRefNew', body: 'notif.bRefNew' },
+  'challenge.accepted': { title: 'notif.tAccepted', body: 'notif.bAccepted' },
+  'referee.ready': { title: 'notif.tReady', body: 'notif.bReady' },
+  'challenge.declined': { title: 'notif.tDeclined', body: 'notif.bDeclined' },
+  'match.cancelled': { title: 'notif.tCancelled', body: 'notif.bCancelled' },
+  'result.draw': { title: 'notif.tResult', body: 'notif.bDraw' },
+  'result.win': { title: 'notif.tResult', body: 'notif.bWin' },
+  'result.loss': { title: 'notif.tResult', body: 'notif.bLoss' },
+  'gym.request': { title: 'notif.tGym', body: 'notif.bGym' },
+  'reaction.new': { title: 'notif.tReaction', body: 'notif.bReaction' },
+  'message.new': { title: 'notif.tMessage', body: 'notif.bMessage' },
+};
+
+/**
+ * Renders a notification's title + body in the member's current language.
+ * Falls back to the English `title`/`body` the trigger stored when the row has
+ * no structured `data` (pre-i18n rows) or an unrecognized kind.
+ */
+export function localizeNotification(
+  n: AppNotification,
+  t: (k: string) => string,
+): { title: string; body: string | null } {
+  const d = n.data;
+  if (!d || !KIND_KEYS[d.k]) return { title: n.title, body: n.body };
+  const { title: titleKey, body: bodyKey } = KIND_KEYS[d.k];
+  const fill = (s: string) =>
+    s
+      .replace('{name}', d.name ?? '')
+      .replace('{c}', d.c ?? '')
+      .replace('{o}', d.o ?? '')
+      .replace('{rb}', String(d.rb ?? ''))
+      .replace('{ra}', String(d.ra ?? ''))
+      .replace('{emoji}', d.emoji ?? '')
+      .replace('{snippet}', d.snippet ?? '')
+      .replace('{gym}', d.gym ?? '');
+  return { title: t(titleKey), body: fill(t(bodyKey)) };
+}
+
 export async function fetchNotifications(userId: string): Promise<AppNotification[]> {
   const { data, error } = await supabase
     .from('notifications')

@@ -189,6 +189,8 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'notif.emptyTitle': 'No notifications', 'notif.emptySub': 'Challenges, results, and reactions will show up here.',
     'notif.justNow': 'just now', 'notif.minAgo': '{n}m ago', 'notif.hAgo': '{n}h ago', 'notif.dAgo': '{n}d ago',
+    'notif.tNew': 'New challenge', 'notif.tRefNew': "You're refereeing", 'notif.tAccepted': 'Challenge accepted', 'notif.tReady': 'Ready to record', 'notif.tDeclined': 'Challenge declined', 'notif.tCancelled': 'Match cancelled', 'notif.tResult': 'Result recorded', 'notif.tGym': 'Gym friend request', 'notif.tReaction': 'New reaction', 'notif.tMessage': 'New message',
+    'notif.bNew': '{name} challenged you', 'notif.bRefNew': "{name} set up a match — you're the ref", 'notif.bAccepted': '{name} accepted your challenge', 'notif.bReady': '{c} vs {o} is ready to score', 'notif.bDeclined': '{name} declined your challenge', 'notif.bCancelled': 'Your match vs {name} was cancelled', 'notif.bDraw': 'Draw vs {name} — rating {rb} → {ra}', 'notif.bWin': 'You beat {name} — rating {rb} → {ra}', 'notif.bLoss': 'You lost to {name} — rating {rb} → {ra}', 'notif.bGym': '{gym} wants to connect', 'notif.bReaction': '{name} reacted {emoji} to your match', 'notif.bMessage': '{name}: {snippet}',
 
     'riv.intro': "Your head-to-head record against everyone you've rolled.",
     'riv.emptyTitle': 'No rivalries yet', 'riv.emptySub': 'Complete a match to start a head-to-head record.',
@@ -466,6 +468,8 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'notif.emptyTitle': 'Sin notificaciones', 'notif.emptySub': 'Los retos, resultados y reacciones aparecerán aquí.',
     'notif.justNow': 'ahora mismo', 'notif.minAgo': 'hace {n} min', 'notif.hAgo': 'hace {n} h', 'notif.dAgo': 'hace {n} d',
+    'notif.tNew': 'Nuevo reto', 'notif.tRefNew': 'Estás arbitrando', 'notif.tAccepted': 'Reto aceptado', 'notif.tReady': 'Listo para registrar', 'notif.tDeclined': 'Reto rechazado', 'notif.tCancelled': 'Combate cancelado', 'notif.tResult': 'Resultado registrado', 'notif.tGym': 'Solicitud de amistad de gimnasio', 'notif.tReaction': 'Nueva reacción', 'notif.tMessage': 'Nuevo mensaje',
+    'notif.bNew': '{name} te retó', 'notif.bRefNew': '{name} creó un combate — eres el árbitro', 'notif.bAccepted': '{name} aceptó tu reto', 'notif.bReady': '{c} vs {o} está listo para puntuar', 'notif.bDeclined': '{name} rechazó tu reto', 'notif.bCancelled': 'Tu combate contra {name} fue cancelado', 'notif.bDraw': 'Empate vs {name} — rating {rb} → {ra}', 'notif.bWin': 'Venciste a {name} — rating {rb} → {ra}', 'notif.bLoss': 'Perdiste contra {name} — rating {rb} → {ra}', 'notif.bGym': '{gym} quiere conectar', 'notif.bReaction': '{name} reaccionó {emoji} a tu combate', 'notif.bMessage': '{name}: {snippet}',
 
     'riv.intro': 'Tu historial cara a cara contra todos con quienes has rodado.',
     'riv.emptyTitle': 'Aún no hay rivalidades', 'riv.emptySub': 'Completa un combate para empezar un historial cara a cara.',
@@ -743,6 +747,8 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'notif.emptyTitle': 'Sem notificações', 'notif.emptySub': 'Desafios, resultados e reações aparecerão aqui.',
     'notif.justNow': 'agora mesmo', 'notif.minAgo': 'há {n} min', 'notif.hAgo': 'há {n} h', 'notif.dAgo': 'há {n} d',
+    'notif.tNew': 'Novo desafio', 'notif.tRefNew': 'Você está arbitrando', 'notif.tAccepted': 'Desafio aceito', 'notif.tReady': 'Pronto para registrar', 'notif.tDeclined': 'Desafio recusado', 'notif.tCancelled': 'Luta cancelada', 'notif.tResult': 'Resultado registrado', 'notif.tGym': 'Pedido de amizade de academia', 'notif.tReaction': 'Nova reação', 'notif.tMessage': 'Nova mensagem',
+    'notif.bNew': '{name} desafiou você', 'notif.bRefNew': '{name} criou uma luta — você é o árbitro', 'notif.bAccepted': '{name} aceitou seu desafio', 'notif.bReady': '{c} vs {o} está pronto para pontuar', 'notif.bDeclined': '{name} recusou seu desafio', 'notif.bCancelled': 'Sua luta contra {name} foi cancelada', 'notif.bDraw': 'Empate vs {name} — rating {rb} → {ra}', 'notif.bWin': 'Você venceu {name} — rating {rb} → {ra}', 'notif.bLoss': 'Você perdeu para {name} — rating {rb} → {ra}', 'notif.bGym': '{gym} quer se conectar', 'notif.bReaction': '{name} reagiu {emoji} à sua luta', 'notif.bMessage': '{name}: {snippet}',
 
     'riv.intro': 'Seu retrospecto direto contra todos com quem você rolou.',
     'riv.emptyTitle': 'Ainda sem rivalidades', 'riv.emptySub': 'Complete uma luta para iniciar um retrospecto direto.',
@@ -1020,6 +1026,8 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'notif.emptyTitle': 'Aucune notification', 'notif.emptySub': 'Les défis, résultats et réactions apparaîtront ici.',
     'notif.justNow': 'à l’instant', 'notif.minAgo': 'il y a {n} min', 'notif.hAgo': 'il y a {n} h', 'notif.dAgo': 'il y a {n} j',
+    'notif.tNew': 'Nouveau défi', 'notif.tRefNew': 'Vous arbitrez', 'notif.tAccepted': 'Défi accepté', 'notif.tReady': 'Prêt à enregistrer', 'notif.tDeclined': 'Défi refusé', 'notif.tCancelled': 'Combat annulé', 'notif.tResult': 'Résultat enregistré', 'notif.tGym': 'Demande d’ami de club', 'notif.tReaction': 'Nouvelle réaction', 'notif.tMessage': 'Nouveau message',
+    'notif.bNew': '{name} vous a défié', 'notif.bRefNew': '{name} a créé un combat — vous êtes l’arbitre', 'notif.bAccepted': '{name} a accepté votre défi', 'notif.bReady': '{c} vs {o} est prêt à être noté', 'notif.bDeclined': '{name} a refusé votre défi', 'notif.bCancelled': 'Votre combat contre {name} a été annulé', 'notif.bDraw': 'Nul vs {name} — rating {rb} → {ra}', 'notif.bWin': 'Vous avez battu {name} — rating {rb} → {ra}', 'notif.bLoss': 'Vous avez perdu contre {name} — rating {rb} → {ra}', 'notif.bGym': '{gym} veut se connecter', 'notif.bReaction': '{name} a réagi {emoji} à votre combat', 'notif.bMessage': '{name} : {snippet}',
 
     'riv.intro': 'Ton bilan en face-à-face contre tous ceux avec qui tu as combattu.',
     'riv.emptyTitle': 'Aucune rivalité pour l’instant', 'riv.emptySub': 'Termine un combat pour démarrer un bilan en face-à-face.',
