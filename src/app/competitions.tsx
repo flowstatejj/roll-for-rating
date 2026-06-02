@@ -8,6 +8,7 @@ import { Button, Card, Screen, TextField } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { fetchCompetitionRecords, importCompetitionRecord, readCompetitionLink } from '@/lib/competitions';
 import { COMP_SOURCE_LABELS, type CompetitionRecord, type CompSource } from '@/lib/types';
 
@@ -16,6 +17,7 @@ const SOURCES: CompSource[] = ['smoothcomp', 'ibjjf', 'adcc', 'other'];
 export default function CompetitionsScreen() {
   const { session, refreshProfile } = useAuth();
   const theme = useTheme();
+  const { t } = useTranslation();
   const userId = session!.user.id;
 
   const [source, setSource] = useState<CompSource>('smoothcomp');
@@ -38,7 +40,7 @@ export default function CompetitionsScreen() {
 
   async function autoRead() {
     if (!url.trim()) {
-      Alert.alert('Paste a link', 'Add your profile link first.');
+      Alert.alert(t('cp.pasteLinkTitle'), t('cp.pasteLinkBody'));
       return;
     }
     setReading(true);
@@ -46,9 +48,9 @@ export default function CompetitionsScreen() {
       const r = await readCompetitionLink(source, url.trim());
       setWins(String(r.wins));
       setLosses(String(r.losses));
-      Alert.alert('Read from link', `Found ${r.wins}W / ${r.losses}L — check and confirm below.`);
+      Alert.alert(t('cp.readTitle'), t('cp.readBody').replace('{w}', String(r.wins)).replace('{l}', String(r.losses)));
     } catch (e: any) {
-      Alert.alert('Auto-read unavailable', e.message ?? 'Enter your W/L manually for now.');
+      Alert.alert(t('cp.readFailTitle'), e.message ?? t('cp.readFailBody'));
     } finally {
       setReading(false);
     }
@@ -58,7 +60,7 @@ export default function CompetitionsScreen() {
     const w = parseInt(wins, 10);
     const l = parseInt(losses, 10);
     if (Number.isNaN(w) || Number.isNaN(l) || w < 0 || l < 0) {
-      Alert.alert('Check the numbers', 'Enter valid wins and losses.');
+      Alert.alert(t('cp.checkTitle'), t('cp.checkBody'));
       return;
     }
     setBusy(true);
@@ -68,14 +70,19 @@ export default function CompetitionsScreen() {
       await load();
       const sign = res.rating_delta >= 0 ? '+' : '';
       Alert.alert(
-        'Imported',
-        `${COMP_SOURCE_LABELS[source]}: ${w}W / ${l}L\nRating ${sign}${res.rating_delta} → ${res.new_rating}`,
+        t('cp.importedTitle'),
+        t('cp.importedBody')
+          .replace('{src}', COMP_SOURCE_LABELS[source])
+          .replace('{w}', String(w))
+          .replace('{l}', String(l))
+          .replace('{delta}', `${sign}${res.rating_delta}`)
+          .replace('{new}', String(res.new_rating)),
       );
       setWins('');
       setLosses('');
       setUrl('');
     } catch (e: any) {
-      Alert.alert('Could not import', e.message ?? 'Try again.');
+      Alert.alert(t('cp.importFail'), e.message ?? t('md.tryAgain'));
     } finally {
       setBusy(false);
     }
@@ -83,18 +90,17 @@ export default function CompetitionsScreen() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: 'Competition Record' }} />
+      <Stack.Screen options={{ title: t('nav.competitionRecord') }} />
 
       <ThemedText themeColor="textSecondary">
-        Import your tournament record. Each win is +15 rating, each loss −10. Re-importing a platform
-        refreshes its contribution.
+        {t('cp.intro')}
       </ThemedText>
 
       <Card style={{ gap: Spacing.three }}>
         {/* Source */}
         <View style={{ gap: Spacing.one }}>
           <ThemedText type="smallBold" themeColor="textSecondary">
-            Platform
+            {t('cp.platform')}
           </ThemedText>
           <View style={styles.sources}>
             {SOURCES.map((s) => {
@@ -117,7 +123,7 @@ export default function CompetitionsScreen() {
         </View>
 
         <TextField
-          label="Profile link"
+          label={t('cp.profileLink')}
           value={url}
           onChangeText={setUrl}
           autoCapitalize="none"
@@ -126,7 +132,7 @@ export default function CompetitionsScreen() {
         />
 
         <Button
-          label="Read from link"
+          label={t('cp.readLink')}
           icon="scan"
           variant="secondary"
           loading={reading}
@@ -135,20 +141,20 @@ export default function CompetitionsScreen() {
 
         <View style={styles.wl}>
           <View style={{ flex: 1 }}>
-            <TextField label="Wins" value={wins} onChangeText={setWins} keyboardType="number-pad" placeholder="0" />
+            <TextField label={t('cp.wins')} value={wins} onChangeText={setWins} keyboardType="number-pad" placeholder="0" />
           </View>
           <View style={{ flex: 1 }}>
-            <TextField label="Losses" value={losses} onChangeText={setLosses} keyboardType="number-pad" placeholder="0" />
+            <TextField label={t('cp.losses')} value={losses} onChangeText={setLosses} keyboardType="number-pad" placeholder="0" />
           </View>
         </View>
 
-        <Button label="Import & apply to rating" icon="download" loading={busy} onPress={importNow} />
+        <Button label={t('cp.import')} icon="download" loading={busy} onPress={importNow} />
       </Card>
 
       {/* Existing records */}
       {records.length > 0 && (
         <>
-          <ThemedText style={styles.sectionLabel}>Imported</ThemedText>
+          <ThemedText style={styles.sectionLabel}>{t('cp.imported')}</ThemedText>
           <Card style={{ paddingVertical: Spacing.one }}>
             {records.map((r, i) => (
               <View key={r.id}>
@@ -162,7 +168,7 @@ export default function CompetitionsScreen() {
                   <View style={{ flex: 1 }}>
                     <ThemedText style={{ fontWeight: '700' }}>{COMP_SOURCE_LABELS[r.source]}</ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">
-                      {r.wins}W · {r.losses}L {r.verified ? '· verified' : '· self-reported'}
+                      {r.wins}{t('lb.w')} · {r.losses}{t('lb.l')} · {r.verified ? t('cp.verified') : t('cp.selfReported')}
                     </ThemedText>
                   </View>
                   <ThemedText style={{ fontWeight: '800', color: r.rating_delta >= 0 ? theme.success : theme.danger }}>

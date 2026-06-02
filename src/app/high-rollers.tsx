@@ -8,11 +8,13 @@ import { Avatar, BeltChip, Card, EmptyState, Loading, Screen } from '@/component
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { fetchWagerLeaderboard, type WagerLeader } from '@/lib/matches';
 
 export default function HighRollersScreen() {
   const { session } = useAuth();
   const theme = useTheme();
+  const { t } = useTranslation();
   const userId = session?.user.id;
   const [rows, setRows] = useState<WagerLeader[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,11 +35,11 @@ export default function HighRollersScreen() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: 'Biggest Pots' }} />
-      <ThemedText themeColor="textSecondary">Most Elo won through wagered matches.</ThemedText>
+      <Stack.Screen options={{ title: t('nav.biggestPots') }} />
+      <ThemedText themeColor="textSecondary">{t('hr.intro')}</ThemedText>
 
       {rows.length === 0 ? (
-        <EmptyState icon="cash-outline" title="No pots won yet" subtitle="Win a wagered match to claim the top spot." />
+        <EmptyState icon="cash-outline" title={t('hr.emptyTitle')} subtitle={t('hr.emptySub')} />
       ) : (
         <Card style={{ paddingVertical: Spacing.one, paddingHorizontal: Spacing.one }}>
           {rows.map((r, i) => {
@@ -57,12 +59,12 @@ export default function HighRollersScreen() {
                   <View style={{ flex: 1, gap: 2 }}>
                     <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>
                       {r.display_name}
-                      {isMe ? ' (you)' : ''}
+                      {isMe ? ` ${t('lb.you')}` : ''}
                     </ThemedText>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
                       <BeltChip belt={r.belt_rank} size="sm" />
                       <ThemedText type="small" themeColor="textSecondary">
-                        {r.wagered_wins} pot{r.wagered_wins === 1 ? '' : 's'} won
+                        {r.wagered_wins} {r.wagered_wins === 1 ? t('hr.potWon') : t('hr.potsWon')}
                       </ThemedText>
                     </View>
                   </View>

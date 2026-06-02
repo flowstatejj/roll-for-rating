@@ -7,6 +7,7 @@ import { Card, EmptyState, Loading, Screen } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { fetchGymPowerRanking } from '@/lib/tournaments';
 import type { GymPower } from '@/lib/types';
 
@@ -14,6 +15,7 @@ export default function GymRankingsScreen() {
   const { profile } = useAuth();
   const theme = useTheme();
   const router = useRouter();
+  const { t } = useTranslation();
   const [rows, setRows] = useState<GymPower[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,11 +35,11 @@ export default function GymRankingsScreen() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: 'Gym Rankings' }} />
-      <ThemedText themeColor="textSecondary">Academies ranked by their members&apos; average rating.</ThemedText>
+      <Stack.Screen options={{ title: t('nav.gymRankings') }} />
+      <ThemedText themeColor="textSecondary">{t('gr.intro')}</ThemedText>
 
       {rows.length === 0 ? (
-        <EmptyState icon="barbell-outline" title="No gyms ranked yet" subtitle="Gyms with members appear here." />
+        <EmptyState icon="barbell-outline" title={t('gr.emptyTitle')} subtitle={t('gr.emptySub')} />
       ) : (
         <Card style={{ paddingVertical: Spacing.one, paddingHorizontal: Spacing.one }}>
           {rows.map((g, i) => {
@@ -55,16 +57,16 @@ export default function GymRankingsScreen() {
                   <View style={{ flex: 1, gap: 2 }}>
                     <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>
                       {g.name}
-                      {mine ? ' (yours)' : ''}
+                      {mine ? ` ${t('lb.yours')}` : ''}
                     </ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">
-                      {g.member_count} member{g.member_count === 1 ? '' : 's'}
-                      {g.city ? ` · ${g.city}` : ''} · {g.total_wins} wins
+                      {g.member_count} {g.member_count === 1 ? t('gd.member') : t('gd.members')}
+                      {g.city ? ` · ${g.city}` : ''} · {g.total_wins} {t('gr.wins')}
                     </ThemedText>
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
                     <ThemedText style={{ fontWeight: '800', fontSize: 18 }}>{g.avg_rating}</ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">avg</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">{t('gr.avg')}</ThemedText>
                   </View>
                 </Pressable>
               </View>

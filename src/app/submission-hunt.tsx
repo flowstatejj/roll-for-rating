@@ -8,12 +8,14 @@ import { Button, Card, Loading, Screen } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { claimSubmissionRewards, fetchSubmissionCollection } from '@/lib/matches';
 import { SUBMISSIONS } from '@/lib/types';
 
 export default function SubmissionHuntScreen() {
   const { session, refreshProfile } = useAuth();
   const theme = useTheme();
+  const { t } = useTranslation();
   const userId = session!.user.id;
   const [won, setWon] = useState<string[]>([]);
   const [rewarded, setRewarded] = useState<string[]>([]);
@@ -46,9 +48,14 @@ export default function SubmissionHuntScreen() {
       const res = await claimSubmissionRewards();
       await refreshProfile();
       await load();
-      Alert.alert('Bonus claimed!', res.gained > 0 ? `+${res.gained} Elo — new rating ${res.new_rating}` : 'Nothing new to claim yet.');
+      Alert.alert(
+        t('sh.claimedTitle'),
+        res.gained > 0
+          ? t('sh.claimedBody').replace('{n}', String(res.gained)).replace('{r}', String(res.new_rating))
+          : t('sh.nothingNew'),
+      );
     } catch (e: any) {
-      Alert.alert('Could not claim', e.message ?? 'Try again.');
+      Alert.alert(t('sh.claimFail'), e.message ?? t('md.tryAgain'));
     } finally {
       setClaiming(false);
     }
@@ -58,9 +65,9 @@ export default function SubmissionHuntScreen() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: 'Submission Hunt' }} />
+      <Stack.Screen options={{ title: t('nav.submissionHunt') }} />
       <ThemedText themeColor="textSecondary">
-        Finish matches with different submissions to collect them. Each new one is worth +15 Elo.
+        {t('sh.intro')}
       </ThemedText>
 
       <Card style={{ alignItems: 'center', gap: Spacing.one }}>
@@ -69,12 +76,12 @@ export default function SubmissionHuntScreen() {
           <ThemedText style={{ fontSize: 18, fontWeight: '700', color: theme.textSecondary }}> / {SUBMISSIONS.length}</ThemedText>
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          {collected === SUBMISSIONS.length ? '🥋 Submission Specialist — full set!' : 'submissions collected'}
+          {collected === SUBMISSIONS.length ? t('sh.fullSet') : t('sh.collected')}
         </ThemedText>
       </Card>
 
       {unclaimed.length > 0 && (
-        <Button label={`Claim +${unclaimed.length * 15} Elo`} icon="cash" loading={claiming} onPress={claim} />
+        <Button label={`${t('sh.claim')} +${unclaimed.length * 15} Elo`} icon="cash" loading={claiming} onPress={claim} />
       )}
 
       <View style={styles.grid}>
@@ -88,7 +95,7 @@ export default function SubmissionHuntScreen() {
               </ThemedText>
               {got && !rewardedSet.has(s) && (
                 <ThemedText type="small" style={{ color: theme.success, fontWeight: '800' }}>
-                  +15 ready
+                  +15 {t('sh.ready')}
                 </ThemedText>
               )}
             </Card>

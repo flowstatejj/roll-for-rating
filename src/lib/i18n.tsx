@@ -197,6 +197,31 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'champ.intro': 'Titles are held by whoever sits #1. Beat them in rating to take the crown. 👑',
     'champ.emptyTitle': 'No titles yet', 'champ.emptySub': 'Join a gym and set your city to unlock more titles.',
     'champ.vacant': 'Vacant — claim it',
+
+    'gr.intro': "Academies ranked by their members' average rating.",
+    'gr.emptyTitle': 'No gyms ranked yet', 'gr.emptySub': 'Gyms with members appear here.',
+    'gr.wins': 'wins', 'gr.avg': 'avg',
+
+    'hr.intro': 'Most Elo won through wagered matches.',
+    'hr.emptyTitle': 'No pots won yet', 'hr.emptySub': 'Win a wagered match to claim the top spot.',
+    'hr.potWon': 'pot won', 'hr.potsWon': 'pots won',
+
+    'sh.intro': 'Finish matches with different submissions to collect them. Each new one is worth +15 Elo.',
+    'sh.fullSet': '🥋 Submission Specialist — full set!', 'sh.collected': 'submissions collected',
+    'sh.claim': 'Claim', 'sh.ready': 'ready', 'sh.claimedTitle': 'Bonus claimed!',
+    'sh.claimedBody': '+{n} Elo — new rating {r}', 'sh.nothingNew': 'Nothing new to claim yet.',
+    'sh.claimFail': 'Could not claim',
+
+    'cp.intro': 'Import your tournament record. Each win is +15 rating, each loss −10. Re-importing a platform refreshes its contribution.',
+    'cp.platform': 'Platform', 'cp.profileLink': 'Profile link', 'cp.readLink': 'Read from link',
+    'cp.wins': 'Wins', 'cp.losses': 'Losses', 'cp.import': 'Import & apply to rating', 'cp.imported': 'Imported',
+    'cp.verified': 'verified', 'cp.selfReported': 'self-reported',
+    'cp.pasteLinkTitle': 'Paste a link', 'cp.pasteLinkBody': 'Add your profile link first.',
+    'cp.readTitle': 'Read from link', 'cp.readBody': 'Found {w}W / {l}L — check and confirm below.',
+    'cp.readFailTitle': 'Auto-read unavailable', 'cp.readFailBody': 'Enter your W/L manually for now.',
+    'cp.checkTitle': 'Check the numbers', 'cp.checkBody': 'Enter valid wins and losses.',
+    'cp.importedTitle': 'Imported', 'cp.importedBody': '{src}: {w}W / {l}L\nRating {delta} → {new}',
+    'cp.importFail': 'Could not import',
   },
   es: {
     'tab.home': 'Inicio', 'tab.puzzles': 'Ejercicios', 'tab.matches': 'Combates',
@@ -382,6 +407,31 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'champ.intro': 'Los títulos los tiene quien está en el #1. Supéralos en puntuación para llevarte la corona. 👑',
     'champ.emptyTitle': 'Aún no hay títulos', 'champ.emptySub': 'Únete a un gimnasio y pon tu ciudad para desbloquear más títulos.',
     'champ.vacant': 'Vacante — reclámalo',
+
+    'gr.intro': 'Academias clasificadas por la puntuación media de sus miembros.',
+    'gr.emptyTitle': 'Aún no hay gimnasios clasificados', 'gr.emptySub': 'Los gimnasios con miembros aparecen aquí.',
+    'gr.wins': 'victorias', 'gr.avg': 'media',
+
+    'hr.intro': 'Más Elo ganado en combates apostados.',
+    'hr.emptyTitle': 'Aún no se han ganado botes', 'hr.emptySub': 'Gana un combate apostado para llegar a lo más alto.',
+    'hr.potWon': 'bote ganado', 'hr.potsWon': 'botes ganados',
+
+    'sh.intro': 'Finaliza combates con distintas sumisiones para coleccionarlas. Cada nueva vale +15 Elo.',
+    'sh.fullSet': '🥋 Especialista en sumisiones: ¡colección completa!', 'sh.collected': 'sumisiones coleccionadas',
+    'sh.claim': 'Reclamar', 'sh.ready': 'listo', 'sh.claimedTitle': '¡Bono reclamado!',
+    'sh.claimedBody': '+{n} Elo — nueva puntuación {r}', 'sh.nothingNew': 'Aún no hay nada nuevo que reclamar.',
+    'sh.claimFail': 'No se pudo reclamar',
+
+    'cp.intro': 'Importa tu historial de competición. Cada victoria es +15 de puntuación, cada derrota −10. Reimportar una plataforma actualiza su contribución.',
+    'cp.platform': 'Plataforma', 'cp.profileLink': 'Enlace de perfil', 'cp.readLink': 'Leer del enlace',
+    'cp.wins': 'Victorias', 'cp.losses': 'Derrotas', 'cp.import': 'Importar y aplicar a la puntuación', 'cp.imported': 'Importado',
+    'cp.verified': 'verificado', 'cp.selfReported': 'autoinformado',
+    'cp.pasteLinkTitle': 'Pega un enlace', 'cp.pasteLinkBody': 'Añade primero el enlace de tu perfil.',
+    'cp.readTitle': 'Leer del enlace', 'cp.readBody': 'Encontrado {w}V / {l}D — revisa y confirma abajo.',
+    'cp.readFailTitle': 'Lectura automática no disponible', 'cp.readFailBody': 'Introduce tu V/D manualmente por ahora.',
+    'cp.checkTitle': 'Revisa los números', 'cp.checkBody': 'Introduce victorias y derrotas válidas.',
+    'cp.importedTitle': 'Importado', 'cp.importedBody': '{src}: {w}V / {l}D\nPuntuación {delta} → {new}',
+    'cp.importFail': 'No se pudo importar',
   },
   pt: {
     'tab.home': 'Início', 'tab.puzzles': 'Exercícios', 'tab.matches': 'Lutas',
@@ -567,6 +617,31 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'champ.intro': 'Os títulos são de quem está em #1. Supere-os na pontuação para levar a coroa. 👑',
     'champ.emptyTitle': 'Ainda sem títulos', 'champ.emptySub': 'Entre numa academia e defina sua cidade para desbloquear mais títulos.',
     'champ.vacant': 'Vago — conquiste-o',
+
+    'gr.intro': 'Academias classificadas pela pontuação média dos membros.',
+    'gr.emptyTitle': 'Ainda sem academias no ranking', 'gr.emptySub': 'Academias com membros aparecem aqui.',
+    'gr.wins': 'vitórias', 'gr.avg': 'média',
+
+    'hr.intro': 'Mais Elo ganho em lutas apostadas.',
+    'hr.emptyTitle': 'Ainda sem potes ganhos', 'hr.emptySub': 'Vença uma luta apostada para chegar ao topo.',
+    'hr.potWon': 'pote ganho', 'hr.potsWon': 'potes ganhos',
+
+    'sh.intro': 'Finalize lutas com finalizações diferentes para coletá-las. Cada nova vale +15 Elo.',
+    'sh.fullSet': '🥋 Especialista em finalizações — coleção completa!', 'sh.collected': 'finalizações coletadas',
+    'sh.claim': 'Resgatar', 'sh.ready': 'pronto', 'sh.claimedTitle': 'Bônus resgatado!',
+    'sh.claimedBody': '+{n} Elo — nova pontuação {r}', 'sh.nothingNew': 'Nada novo para resgatar ainda.',
+    'sh.claimFail': 'Não foi possível resgatar',
+
+    'cp.intro': 'Importe seu histórico de competição. Cada vitória é +15 de pontuação, cada derrota −10. Reimportar uma plataforma atualiza a contribuição dela.',
+    'cp.platform': 'Plataforma', 'cp.profileLink': 'Link do perfil', 'cp.readLink': 'Ler do link',
+    'cp.wins': 'Vitórias', 'cp.losses': 'Derrotas', 'cp.import': 'Importar e aplicar à pontuação', 'cp.imported': 'Importado',
+    'cp.verified': 'verificado', 'cp.selfReported': 'autodeclarado',
+    'cp.pasteLinkTitle': 'Cole um link', 'cp.pasteLinkBody': 'Adicione primeiro o link do seu perfil.',
+    'cp.readTitle': 'Ler do link', 'cp.readBody': 'Encontrado {w}V / {l}D — confira e confirme abaixo.',
+    'cp.readFailTitle': 'Leitura automática indisponível', 'cp.readFailBody': 'Informe seu V/D manualmente por enquanto.',
+    'cp.checkTitle': 'Confira os números', 'cp.checkBody': 'Informe vitórias e derrotas válidas.',
+    'cp.importedTitle': 'Importado', 'cp.importedBody': '{src}: {w}V / {l}D\nPontuação {delta} → {new}',
+    'cp.importFail': 'Não foi possível importar',
   },
   fr: {
     'tab.home': 'Accueil', 'tab.puzzles': 'Exercices', 'tab.matches': 'Combats',
@@ -752,6 +827,31 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'champ.intro': 'Les titres sont détenus par le n°1. Bats-le au classement pour prendre la couronne. 👑',
     'champ.emptyTitle': 'Aucun titre pour l’instant', 'champ.emptySub': 'Rejoins une salle et renseigne ta ville pour débloquer plus de titres.',
     'champ.vacant': 'Vacant — réclame-le',
+
+    'gr.intro': 'Salles classées selon le classement moyen de leurs membres.',
+    'gr.emptyTitle': 'Aucune salle classée pour l’instant', 'gr.emptySub': 'Les salles avec des membres apparaissent ici.',
+    'gr.wins': 'victoires', 'gr.avg': 'moy.',
+
+    'hr.intro': 'Le plus d’Elo gagné dans des combats avec pari.',
+    'hr.emptyTitle': 'Aucune cagnotte gagnée pour l’instant', 'hr.emptySub': 'Gagne un combat avec pari pour prendre la tête.',
+    'hr.potWon': 'cagnotte gagnée', 'hr.potsWon': 'cagnottes gagnées',
+
+    'sh.intro': 'Termine des combats avec différentes soumissions pour les collectionner. Chaque nouvelle vaut +15 Elo.',
+    'sh.fullSet': '🥋 Spécialiste des soumissions — collection complète !', 'sh.collected': 'soumissions collectées',
+    'sh.claim': 'Réclamer', 'sh.ready': 'prêt', 'sh.claimedTitle': 'Bonus réclamé !',
+    'sh.claimedBody': '+{n} Elo — nouveau classement {r}', 'sh.nothingNew': 'Rien de nouveau à réclamer pour l’instant.',
+    'sh.claimFail': 'Impossible de réclamer',
+
+    'cp.intro': 'Importe ton bilan en compétition. Chaque victoire vaut +15 au classement, chaque défaite −10. Réimporter une plateforme actualise sa contribution.',
+    'cp.platform': 'Plateforme', 'cp.profileLink': 'Lien du profil', 'cp.readLink': 'Lire depuis le lien',
+    'cp.wins': 'Victoires', 'cp.losses': 'Défaites', 'cp.import': 'Importer et appliquer au classement', 'cp.imported': 'Importé',
+    'cp.verified': 'vérifié', 'cp.selfReported': 'auto-déclaré',
+    'cp.pasteLinkTitle': 'Colle un lien', 'cp.pasteLinkBody': 'Ajoute d’abord le lien de ton profil.',
+    'cp.readTitle': 'Lire depuis le lien', 'cp.readBody': 'Trouvé {w}V / {l}D — vérifie et confirme ci-dessous.',
+    'cp.readFailTitle': 'Lecture auto indisponible', 'cp.readFailBody': 'Saisis tes V/D manuellement pour l’instant.',
+    'cp.checkTitle': 'Vérifie les chiffres', 'cp.checkBody': 'Saisis des victoires et défaites valides.',
+    'cp.importedTitle': 'Importé', 'cp.importedBody': '{src} : {w}V / {l}D\nClassement {delta} → {new}',
+    'cp.importFail': 'Impossible d’importer',
   },
 };
 
