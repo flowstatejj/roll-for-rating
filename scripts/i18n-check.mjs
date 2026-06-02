@@ -88,7 +88,18 @@ console.log('');
 console.log(`!! Static keys MISSING from en (would show raw key): ${missingInEn.length}`);
 for (const { k, files } of missingInEn) console.log(`   - ${k}   (${files.join(', ')})`);
 console.log('');
+let otherGaps = 0;
 for (const lang of ['es', 'pt', 'fr']) {
   console.log(`Keys in en but not ${lang} (fall back to English): ${missingInOther[lang].length}`);
   if (missingInOther[lang].length) console.log('   ' + missingInOther[lang].join(', '));
+  otherGaps += missingInOther[lang].length;
 }
+
+// ---- 4. Exit non-zero on any gap so CI / pre-push gates the merge ----
+if (missingInEn.length > 0 || otherGaps > 0) {
+  console.log('');
+  console.log(`FAIL: ${missingInEn.length} key(s) missing from en, ${otherGaps} gap(s) in es/pt/fr.`);
+  process.exit(1);
+}
+console.log('');
+console.log('OK: full t() key parity across en/es/pt/fr.');
