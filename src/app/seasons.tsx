@@ -8,12 +8,14 @@ import { Avatar, BeltChip, Card, EmptyState, Loading, Screen } from '@/component
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { currentSeason, fetchSeasons, fetchSeasonStandings } from '@/lib/seasons';
 import type { Season, SeasonStanding } from '@/lib/types';
 
 export default function SeasonsScreen() {
   const { session } = useAuth();
   const theme = useTheme();
+  const { t } = useTranslation();
   const userId = session?.user.id;
   const [season, setSeason] = useState<Season | null>(null);
   const [standings, setStandings] = useState<SeasonStanding[]>([]);
@@ -47,25 +49,25 @@ export default function SeasonsScreen() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: 'Seasons' }} />
+      <Stack.Screen options={{ title: t('nav.seasons') }} />
 
       {season ? (
         <>
           <Card style={{ backgroundColor: theme.accent, gap: Spacing.one }}>
             <ThemedText style={{ color: theme.accentText, fontWeight: '800', fontSize: 22 }}>{season.name}</ThemedText>
             <ThemedText style={{ color: theme.accentText, opacity: 0.9 }}>
-              {daysLeft} day{daysLeft === 1 ? '' : 's'} left · +10 points per win
+              {daysLeft} {daysLeft === 1 ? t('q.day') : t('q.days')} {t('se.left')} · {t('se.perWin')}
             </ThemedText>
             {myRank >= 0 && (
               <ThemedText style={{ color: theme.accentText, fontWeight: '700', marginTop: Spacing.one }}>
-                You: #{myRank + 1} · {standings[myRank].points} pts
+                {t('se.you')}: #{myRank + 1} · {standings[myRank].points} {t('se.pts')}
               </ThemedText>
             )}
           </Card>
 
-          <ThemedText style={styles.section}>Standings</ThemedText>
+          <ThemedText style={styles.section}>{t('se.standings')}</ThemedText>
           {standings.length === 0 ? (
-            <EmptyState icon="ribbon-outline" title="No points yet" subtitle="Win a match to get on the board this season." />
+            <EmptyState icon="ribbon-outline" title={t('se.noPointsTitle')} subtitle={t('se.noPointsSub')} />
           ) : (
             <Card style={{ paddingVertical: Spacing.one, paddingHorizontal: Spacing.one }}>
               {standings.map((s, i) => {
@@ -81,13 +83,13 @@ export default function SeasonsScreen() {
                       <Avatar name={s.profile?.display_name ?? '?'} size={36} />
                       <View style={{ flex: 1, gap: 2 }}>
                         <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>
-                          {s.profile?.display_name ?? 'Member'}
-                          {isMe ? ' (you)' : ''}
+                          {s.profile?.display_name ?? t('se.member')}
+                          {isMe ? ` ${t('md.you')}` : ''}
                         </ThemedText>
                         {s.profile && (
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
                             <BeltChip belt={s.profile.belt_rank} size="sm" />
-                            <ThemedText type="small" themeColor="textSecondary">{s.wins} wins</ThemedText>
+                            <ThemedText type="small" themeColor="textSecondary">{s.wins} {t('gr.wins')}</ThemedText>
                           </View>
                         )}
                       </View>
@@ -100,19 +102,19 @@ export default function SeasonsScreen() {
           )}
         </>
       ) : (
-        <EmptyState icon="calendar-outline" title="No active season" subtitle="A new season will start soon." />
+        <EmptyState icon="calendar-outline" title={t('se.noSeasonTitle')} subtitle={t('se.noSeasonSub')} />
       )}
 
       {past.length > 0 && (
         <>
-          <ThemedText style={styles.section}>Past seasons</ThemedText>
+          <ThemedText style={styles.section}>{t('se.past')}</ThemedText>
           {past.map(({ season: s, champ }) => (
             <Card key={s.id} style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.three }}>
               <ThemedText style={{ fontSize: 22 }}>👑</ThemedText>
               <View style={{ flex: 1 }}>
                 <ThemedText style={{ fontWeight: '800' }}>{s.name}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  {champ ? `Champion: ${champ.profile?.display_name ?? 'Member'} · ${champ.points} pts` : 'No champion'}
+                  {champ ? `${t('se.champion')}: ${champ.profile?.display_name ?? t('se.member')} · ${champ.points} ${t('se.pts')}` : t('se.noChampion')}
                 </ThemedText>
               </View>
             </Card>

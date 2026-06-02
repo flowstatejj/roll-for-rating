@@ -222,6 +222,28 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'cp.checkTitle': 'Check the numbers', 'cp.checkBody': 'Enter valid wins and losses.',
     'cp.importedTitle': 'Imported', 'cp.importedBody': '{src}: {w}W / {l}L\nRating {delta} → {new}',
     'cp.importFail': 'Could not import',
+
+    'q.day': 'day', 'q.days': 'days', 'q.streakSub': 'Daily streak — open the app each day to keep it alive',
+    'q.weekQuests': "This week's quests", 'q.claimed': 'Claimed', 'q.reset': 'Quests reset every week.',
+    'q.completeTitle': 'Quest complete!', 'q.completeBody': '+{n} Elo — new rating {r}', 'q.notYet': 'Not yet',
+
+    'se.left': 'left', 'se.perWin': '+10 points per win', 'se.you': 'You', 'se.pts': 'pts',
+    'se.standings': 'Standings', 'se.noPointsTitle': 'No points yet',
+    'se.noPointsSub': 'Win a match to get on the board this season.', 'se.member': 'Member',
+    'se.noSeasonTitle': 'No active season', 'se.noSeasonSub': 'A new season will start soon.',
+    'se.past': 'Past seasons', 'se.champion': 'Champion', 'se.noChampion': 'No champion',
+
+    'tr.dur1w': '1 week', 'tr.dur2w': '2 weeks', 'tr.dur1m': '1 month', 'tr.upcoming': 'Upcoming',
+    'tr.ended': 'Ended', 'tr.live': 'Live',
+    'tr.intro': 'Join an event and rack up wins during its window to climb the standings.',
+    'tr.newTitle': 'New tournament', 'tr.name': 'Name', 'tr.runsFor': 'Runs for',
+    'tr.createBtn': 'Create tournament', 'tr.create': 'Create a tournament',
+    'tr.emptyTitle': 'No tournaments yet', 'tr.emptySub': 'Create the first event for your scene.',
+    'tr.nameReqTitle': 'Name required', 'tr.nameReqBody': 'Give your tournament a name.', 'tr.createFail': 'Could not create',
+
+    'td.liveNow': 'Live now', 'td.entrant': 'entrant', 'td.entrants': 'entrants',
+    'td.scoreNote': 'win matches during the window to score', 'td.leave': 'Leave tournament',
+    'td.join': 'Join tournament', 'td.noEntrants': 'No entrants yet.',
   },
   es: {
     'tab.home': 'Inicio', 'tab.puzzles': 'Ejercicios', 'tab.matches': 'Combates',
@@ -432,6 +454,28 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'cp.checkTitle': 'Revisa los números', 'cp.checkBody': 'Introduce victorias y derrotas válidas.',
     'cp.importedTitle': 'Importado', 'cp.importedBody': '{src}: {w}V / {l}D\nPuntuación {delta} → {new}',
     'cp.importFail': 'No se pudo importar',
+
+    'q.day': 'día', 'q.days': 'días', 'q.streakSub': 'Racha diaria: abre la app cada día para mantenerla.',
+    'q.weekQuests': 'Misiones de esta semana', 'q.claimed': 'Reclamado', 'q.reset': 'Las misiones se reinician cada semana.',
+    'q.completeTitle': '¡Misión completada!', 'q.completeBody': '+{n} Elo — nueva puntuación {r}', 'q.notYet': 'Aún no',
+
+    'se.left': 'restantes', 'se.perWin': '+10 puntos por victoria', 'se.you': 'Tú', 'se.pts': 'pts',
+    'se.standings': 'Clasificación', 'se.noPointsTitle': 'Aún no hay puntos',
+    'se.noPointsSub': 'Gana un combate para entrar en la tabla esta temporada.', 'se.member': 'Miembro',
+    'se.noSeasonTitle': 'No hay temporada activa', 'se.noSeasonSub': 'Pronto empezará una nueva temporada.',
+    'se.past': 'Temporadas pasadas', 'se.champion': 'Campeón', 'se.noChampion': 'Sin campeón',
+
+    'tr.dur1w': '1 semana', 'tr.dur2w': '2 semanas', 'tr.dur1m': '1 mes', 'tr.upcoming': 'Próximo',
+    'tr.ended': 'Finalizado', 'tr.live': 'En vivo',
+    'tr.intro': 'Únete a un evento y suma victorias durante su ventana para subir en la clasificación.',
+    'tr.newTitle': 'Nuevo torneo', 'tr.name': 'Nombre', 'tr.runsFor': 'Dura',
+    'tr.createBtn': 'Crear torneo', 'tr.create': 'Crear un torneo',
+    'tr.emptyTitle': 'Aún no hay torneos', 'tr.emptySub': 'Crea el primer evento para tu escena.',
+    'tr.nameReqTitle': 'Nombre obligatorio', 'tr.nameReqBody': 'Dale un nombre a tu torneo.', 'tr.createFail': 'No se pudo crear',
+
+    'td.liveNow': 'En vivo ahora', 'td.entrant': 'participante', 'td.entrants': 'participantes',
+    'td.scoreNote': 'gana combates durante la ventana para puntuar', 'td.leave': 'Salir del torneo',
+    'td.join': 'Unirse al torneo', 'td.noEntrants': 'Aún no hay participantes.',
   },
   pt: {
     'tab.home': 'Início', 'tab.puzzles': 'Exercícios', 'tab.matches': 'Lutas',
@@ -642,6 +686,28 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'cp.checkTitle': 'Confira os números', 'cp.checkBody': 'Informe vitórias e derrotas válidas.',
     'cp.importedTitle': 'Importado', 'cp.importedBody': '{src}: {w}V / {l}D\nPontuação {delta} → {new}',
     'cp.importFail': 'Não foi possível importar',
+
+    'q.day': 'dia', 'q.days': 'dias', 'q.streakSub': 'Sequência diária: abra o app todo dia para mantê-la.',
+    'q.weekQuests': 'Missões desta semana', 'q.claimed': 'Resgatado', 'q.reset': 'As missões reiniciam toda semana.',
+    'q.completeTitle': 'Missão concluída!', 'q.completeBody': '+{n} Elo — nova pontuação {r}', 'q.notYet': 'Ainda não',
+
+    'se.left': 'restantes', 'se.perWin': '+10 pontos por vitória', 'se.you': 'Você', 'se.pts': 'pts',
+    'se.standings': 'Classificação', 'se.noPointsTitle': 'Ainda sem pontos',
+    'se.noPointsSub': 'Vença uma luta para entrar na tabela nesta temporada.', 'se.member': 'Membro',
+    'se.noSeasonTitle': 'Sem temporada ativa', 'se.noSeasonSub': 'Uma nova temporada começará em breve.',
+    'se.past': 'Temporadas anteriores', 'se.champion': 'Campeão', 'se.noChampion': 'Sem campeão',
+
+    'tr.dur1w': '1 semana', 'tr.dur2w': '2 semanas', 'tr.dur1m': '1 mês', 'tr.upcoming': 'Em breve',
+    'tr.ended': 'Encerrado', 'tr.live': 'Ao vivo',
+    'tr.intro': 'Entre num evento e acumule vitórias durante o período para subir na classificação.',
+    'tr.newTitle': 'Novo torneio', 'tr.name': 'Nome', 'tr.runsFor': 'Dura',
+    'tr.createBtn': 'Criar torneio', 'tr.create': 'Criar um torneio',
+    'tr.emptyTitle': 'Ainda sem torneios', 'tr.emptySub': 'Crie o primeiro evento da sua cena.',
+    'tr.nameReqTitle': 'Nome obrigatório', 'tr.nameReqBody': 'Dê um nome ao seu torneio.', 'tr.createFail': 'Não foi possível criar',
+
+    'td.liveNow': 'Ao vivo agora', 'td.entrant': 'inscrito', 'td.entrants': 'inscritos',
+    'td.scoreNote': 'vença lutas durante o período para pontuar', 'td.leave': 'Sair do torneio',
+    'td.join': 'Entrar no torneio', 'td.noEntrants': 'Ainda sem inscritos.',
   },
   fr: {
     'tab.home': 'Accueil', 'tab.puzzles': 'Exercices', 'tab.matches': 'Combats',
@@ -852,6 +918,28 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'cp.checkTitle': 'Vérifie les chiffres', 'cp.checkBody': 'Saisis des victoires et défaites valides.',
     'cp.importedTitle': 'Importé', 'cp.importedBody': '{src} : {w}V / {l}D\nClassement {delta} → {new}',
     'cp.importFail': 'Impossible d’importer',
+
+    'q.day': 'jour', 'q.days': 'jours', 'q.streakSub': 'Série quotidienne — ouvre l’app chaque jour pour la garder.',
+    'q.weekQuests': 'Quêtes de la semaine', 'q.claimed': 'Réclamé', 'q.reset': 'Les quêtes se réinitialisent chaque semaine.',
+    'q.completeTitle': 'Quête terminée !', 'q.completeBody': '+{n} Elo — nouveau classement {r}', 'q.notYet': 'Pas encore',
+
+    'se.left': 'restants', 'se.perWin': '+10 points par victoire', 'se.you': 'Toi', 'se.pts': 'pts',
+    'se.standings': 'Classement', 'se.noPointsTitle': 'Aucun point pour l’instant',
+    'se.noPointsSub': 'Gagne un combat pour entrer au tableau cette saison.', 'se.member': 'Membre',
+    'se.noSeasonTitle': 'Aucune saison active', 'se.noSeasonSub': 'Une nouvelle saison commencera bientôt.',
+    'se.past': 'Saisons passées', 'se.champion': 'Champion', 'se.noChampion': 'Aucun champion',
+
+    'tr.dur1w': '1 semaine', 'tr.dur2w': '2 semaines', 'tr.dur1m': '1 mois', 'tr.upcoming': 'À venir',
+    'tr.ended': 'Terminé', 'tr.live': 'En direct',
+    'tr.intro': 'Rejoins un événement et enchaîne les victoires pendant sa fenêtre pour grimper au classement.',
+    'tr.newTitle': 'Nouveau tournoi', 'tr.name': 'Nom', 'tr.runsFor': 'Durée',
+    'tr.createBtn': 'Créer le tournoi', 'tr.create': 'Créer un tournoi',
+    'tr.emptyTitle': 'Aucun tournoi pour l’instant', 'tr.emptySub': 'Crée le premier événement de ta scène.',
+    'tr.nameReqTitle': 'Nom requis', 'tr.nameReqBody': 'Donne un nom à ton tournoi.', 'tr.createFail': 'Impossible de créer',
+
+    'td.liveNow': 'En direct', 'td.entrant': 'inscrit', 'td.entrants': 'inscrits',
+    'td.scoreNote': 'gagne des combats pendant la fenêtre pour marquer', 'td.leave': 'Quitter le tournoi',
+    'td.join': 'Rejoindre le tournoi', 'td.noEntrants': 'Aucun inscrit pour l’instant.',
   },
 };
 

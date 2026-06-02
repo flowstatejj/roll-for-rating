@@ -8,12 +8,14 @@ import { Button, Card, Loading, Screen } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { claimQuest, fetchQuests, pingActivity } from '@/lib/quests';
 import type { Quest } from '@/lib/types';
 
 export default function QuestsScreen() {
   const { profile, refreshProfile } = useAuth();
   const theme = useTheme();
+  const { t } = useTranslation();
   const [quests, setQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
   const [claimingKey, setClaimingKey] = useState<string | null>(null);
@@ -39,12 +41,12 @@ export default function QuestsScreen() {
       if (res.ok) {
         await refreshProfile();
         setQuests(await fetchQuests());
-        Alert.alert('Quest complete!', `+${res.reward} Elo — new rating ${res.new_rating}`);
+        Alert.alert(t('q.completeTitle'), t('q.completeBody').replace('{n}', String(res.reward)).replace('{r}', String(res.new_rating)));
       } else {
-        Alert.alert('Not yet', res.reason ?? 'Keep going.');
+        Alert.alert(t('q.notYet'), res.reason ?? '');
       }
     } catch (e: any) {
-      Alert.alert('Could not claim', e.message ?? 'Try again.');
+      Alert.alert(t('sh.claimFail'), e.message ?? t('md.tryAgain'));
     } finally {
       setClaimingKey(null);
     }
@@ -54,22 +56,22 @@ export default function QuestsScreen() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: 'Quests' }} />
+      <Stack.Screen options={{ title: t('nav.quests') }} />
 
       {/* Daily streak */}
       <Card style={styles.streak}>
         <Ionicons name="flame" size={28} color="#ff7a1a" />
         <View style={{ flex: 1 }}>
           <ThemedText style={{ fontSize: 22, fontWeight: '800' }}>
-            {profile.activity_streak} day{profile.activity_streak === 1 ? '' : 's'}
+            {profile.activity_streak} {profile.activity_streak === 1 ? t('q.day') : t('q.days')}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            Daily streak — open the app each day to keep it alive
+            {t('q.streakSub')}
           </ThemedText>
         </View>
       </Card>
 
-      <ThemedText style={styles.section}>This week&apos;s quests</ThemedText>
+      <ThemedText style={styles.section}>{t('q.weekQuests')}</ThemedText>
       <View style={{ gap: Spacing.two }}>
         {quests.map((q) => {
           const done = q.progress >= q.target;
@@ -94,10 +96,10 @@ export default function QuestsScreen() {
                 </ThemedText>
                 {q.claimed ? (
                   <ThemedText type="small" style={{ color: theme.success, fontWeight: '800' }}>
-                    Claimed ✓
+                    {t('q.claimed')} ✓
                   </ThemedText>
                 ) : done ? (
-                  <Button label="Claim" loading={claimingKey === q.key} onPress={() => claim(q)} variant="primary" />
+                  <Button label={t('sh.claim')} loading={claimingKey === q.key} onPress={() => claim(q)} variant="primary" />
                 ) : null}
               </View>
             </Card>
@@ -106,7 +108,7 @@ export default function QuestsScreen() {
       </View>
 
       <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center' }}>
-        Quests reset every week.
+        {t('q.reset')}
       </ThemedText>
     </Screen>
   );

@@ -7,6 +7,7 @@ import { Avatar, BeltChip, Button, Card, Loading, Screen } from '@/components/ui
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import {
   fetchEntrants,
   fetchTournament,
@@ -20,6 +21,7 @@ export default function TournamentDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useAuth();
   const theme = useTheme();
+  const { t: tr } = useTranslation();
   const userId = session!.user.id;
 
   const [t, setT] = useState<Tournament | null>(null);
@@ -54,7 +56,7 @@ export default function TournamentDetailScreen() {
       await fn();
       await load();
     } catch (e: any) {
-      Alert.alert('Error', e.message ?? 'Try again.');
+      Alert.alert(tr('md.error'), e.message ?? tr('md.tryAgain'));
     } finally {
       setBusy(false);
     }
@@ -68,24 +70,24 @@ export default function TournamentDetailScreen() {
         <ThemedText style={{ fontSize: 22, fontWeight: '800' }}>{t.name}</ThemedText>
         <ThemedText themeColor="textSecondary">
           {new Date(t.starts_at).toLocaleDateString()} – {new Date(t.ends_at).toLocaleDateString()} ·{' '}
-          {ended ? 'Ended' : live ? 'Live now' : 'Upcoming'}
+          {ended ? tr('tr.ended') : live ? tr('td.liveNow') : tr('tr.upcoming')}
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          {entrants.length} entrant{entrants.length === 1 ? '' : 's'} · win matches during the window to score
+          {entrants.length} {entrants.length === 1 ? tr('td.entrant') : tr('td.entrants')} · {tr('td.scoreNote')}
         </ThemedText>
       </Card>
 
       {!ended &&
         (joined ? (
-          <Button label="Leave tournament" variant="ghost" icon="exit-outline" loading={busy} onPress={() => act(() => leaveTournament(t.id, userId))} />
+          <Button label={tr('td.leave')} variant="ghost" icon="exit-outline" loading={busy} onPress={() => act(() => leaveTournament(t.id, userId))} />
         ) : (
-          <Button label="Join tournament" icon="add-circle" loading={busy} onPress={() => act(() => joinTournament(t.id, userId))} />
+          <Button label={tr('td.join')} icon="add-circle" loading={busy} onPress={() => act(() => joinTournament(t.id, userId))} />
         ))}
 
-      <ThemedText style={styles.section}>Standings</ThemedText>
+      <ThemedText style={styles.section}>{tr('se.standings')}</ThemedText>
       {standings.length === 0 ? (
         <Card style={{ alignItems: 'center' }}>
-          <ThemedText themeColor="textSecondary">No entrants yet.</ThemedText>
+          <ThemedText themeColor="textSecondary">{tr('td.noEntrants')}</ThemedText>
         </Card>
       ) : (
         <Card style={{ paddingVertical: Spacing.one, paddingHorizontal: Spacing.one }}>
@@ -103,13 +105,13 @@ export default function TournamentDetailScreen() {
                   <View style={{ flex: 1, gap: 2 }}>
                     <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>
                       {s.display_name}
-                      {isMe ? ' (you)' : ''}
+                      {isMe ? ` ${tr('md.you')}` : ''}
                     </ThemedText>
                     <BeltChip belt={s.belt_rank} size="sm" />
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
                     <ThemedText style={{ fontWeight: '800', fontSize: 18 }}>{s.wins}</ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">wins</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">{tr('gr.wins')}</ThemedText>
                   </View>
                 </View>
               </View>

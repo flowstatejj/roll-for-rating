@@ -8,28 +8,30 @@ import { Button, Card, EmptyState, Loading, Screen, TextField } from '@/componen
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { createTournament, fetchTournaments } from '@/lib/tournaments';
 import type { Tournament } from '@/lib/types';
 
 const DURATIONS = [
-  { label: '1 week', days: 7 },
-  { label: '2 weeks', days: 14 },
-  { label: '1 month', days: 30 },
+  { tkey: 'tr.dur1w', days: 7 },
+  { tkey: 'tr.dur2w', days: 14 },
+  { tkey: 'tr.dur1m', days: 30 },
 ];
 
-function status(t: Tournament): { label: string; color: string } {
+function status(t: Tournament): { tkey: string; color: string } {
   const now = Date.now();
   const s = new Date(t.starts_at).getTime();
   const e = new Date(t.ends_at).getTime();
-  if (now < s) return { label: 'Upcoming', color: '#D9822B' };
-  if (now > e) return { label: 'Ended', color: '#9aa2ad' };
-  return { label: 'Live', color: '#5c9a3a' };
+  if (now < s) return { tkey: 'tr.upcoming', color: '#D9822B' };
+  if (now > e) return { tkey: 'tr.ended', color: '#9aa2ad' };
+  return { tkey: 'tr.live', color: '#5c9a3a' };
 }
 
 export default function TournamentsScreen() {
   const { session } = useAuth();
   const theme = useTheme();
   const router = useRouter();
+  const { t } = useTranslation();
   const userId = session!.user.id;
 
   const [items, setItems] = useState<Tournament[]>([]);
@@ -53,7 +55,7 @@ export default function TournamentsScreen() {
 
   async function submit() {
     if (!name.trim()) {
-      Alert.alert('Name required', 'Give your tournament a name.');
+      Alert.alert(t('tr.nameReqTitle'), t('tr.nameReqBody'));
       return;
     }
     setBusy(true);
@@ -68,7 +70,7 @@ export default function TournamentsScreen() {
       });
       router.replace(`/tournament/${id}`);
     } catch (e: any) {
-      Alert.alert('Could not create', e.message ?? 'Try again.');
+      Alert.alert(t('tr.createFail'), e.message ?? t('md.tryAgain'));
     } finally {
       setBusy(false);
     }
@@ -78,17 +80,17 @@ export default function TournamentsScreen() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: 'Tournaments' }} />
+      <Stack.Screen options={{ title: t('nav.tournaments') }} />
       <ThemedText themeColor="textSecondary">
-        Join an event and rack up wins during its window to climb the standings.
+        {t('tr.intro')}
       </ThemedText>
 
       {creating ? (
         <Card style={{ gap: Spacing.three }}>
-          <ThemedText style={{ fontSize: 18, fontWeight: '800' }}>New tournament</ThemedText>
-          <TextField label="Name" value={name} onChangeText={setName} placeholder="Spring Throwdown" />
+          <ThemedText style={{ fontSize: 18, fontWeight: '800' }}>{t('tr.newTitle')}</ThemedText>
+          <TextField label={t('tr.name')} value={name} onChangeText={setName} placeholder="Spring Throwdown" />
           <View style={{ gap: Spacing.one }}>
-            <ThemedText type="smallBold" themeColor="textSecondary">Runs for</ThemedText>
+            <ThemedText type="smallBold" themeColor="textSecondary">{t('tr.runsFor')}</ThemedText>
             <View style={styles.chips}>
               {DURATIONS.map((d) => {
                 const active = days === d.days;
@@ -97,39 +99,39 @@ export default function TournamentsScreen() {
                     key={d.days}
                     onPress={() => setDays(d.days)}
                     style={[styles.chip, { backgroundColor: active ? theme.accent : theme.tile, borderColor: active ? theme.accent : theme.tileBorder }]}>
-                    <ThemedText style={{ color: active ? theme.accentText : theme.text, fontWeight: '700', fontSize: 13 }}>{d.label}</ThemedText>
+                    <ThemedText style={{ color: active ? theme.accentText : theme.text, fontWeight: '700', fontSize: 13 }}>{t(d.tkey)}</ThemedText>
                   </Pressable>
                 );
               })}
             </View>
           </View>
-          <Button label="Create tournament" icon="trophy" loading={busy} onPress={submit} />
-          <Button label="Cancel" variant="ghost" onPress={() => setCreating(false)} />
+          <Button label={t('tr.createBtn')} icon="trophy" loading={busy} onPress={submit} />
+          <Button label={t('common.cancel')} variant="ghost" onPress={() => setCreating(false)} />
         </Card>
       ) : (
-        <Button label="Create a tournament" icon="trophy" onPress={() => setCreating(true)} />
+        <Button label={t('tr.create')} icon="trophy" onPress={() => setCreating(true)} />
       )}
 
       {items.length === 0 ? (
-        <EmptyState icon="trophy-outline" title="No tournaments yet" subtitle="Create the first event for your scene." />
+        <EmptyState icon="trophy-outline" title={t('tr.emptyTitle')} subtitle={t('tr.emptySub')} />
       ) : (
         <View style={{ gap: Spacing.two }}>
-          {items.map((t) => {
-            const st = status(t);
+          {items.map((ev) => {
+            const st = status(ev);
             return (
-              <Pressable key={t.id} onPress={() => router.push(`/tournament/${t.id}`)}>
+              <Pressable key={ev.id} onPress={() => router.push(`/tournament/${ev.id}`)}>
                 <Card style={styles.row}>
                   <View style={[styles.icon, { backgroundColor: theme.backgroundSelected }]}>
                     <Ionicons name="trophy" size={20} color={theme.accent} />
                   </View>
                   <View style={{ flex: 1, gap: 2 }}>
-                    <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>{t.name}</ThemedText>
+                    <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>{ev.name}</ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">
-                      {new Date(t.starts_at).toLocaleDateString()} – {new Date(t.ends_at).toLocaleDateString()}
+                      {new Date(ev.starts_at).toLocaleDateString()} – {new Date(ev.ends_at).toLocaleDateString()}
                     </ThemedText>
                   </View>
                   <View style={[styles.badge, { backgroundColor: st.color + '22' }]}>
-                    <ThemedText style={{ color: st.color, fontWeight: '800', fontSize: 12 }}>{st.label}</ThemedText>
+                    <ThemedText style={{ color: st.color, fontWeight: '800', fontSize: 12 }}>{t(st.tkey)}</ThemedText>
                   </View>
                 </Card>
               </Pressable>
