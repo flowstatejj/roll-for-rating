@@ -8,8 +8,9 @@ import { Avatar, BeltChip, Card, EmptyState, Screen, TextField } from '@/compone
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { fetchFriendlyOpponents, fetchOpenChallengers } from '@/lib/social';
-import { BELT_LABELS, type BeltRank, type Profile } from '@/lib/types';
+import { type BeltRank, type Profile } from '@/lib/types';
 
 type Mode = 'network' | 'area';
 const BELTS: (BeltRank | 'any')[] = ['any', 'white', 'blue', 'purple', 'brown', 'black'];
@@ -18,6 +19,7 @@ export default function FindScreen() {
   const { session, profile } = useAuth();
   const theme = useTheme();
   const router = useRouter();
+  const { t } = useTranslation();
   const userId = session!.user.id;
 
   const [mode, setMode] = useState<Mode>(profile?.gym_id ? 'network' : 'area');
@@ -46,24 +48,24 @@ export default function FindScreen() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: 'Find a Roll' }} />
+      <Stack.Screen options={{ title: t('nav.findRoll') }} />
 
       {/* Mode toggle */}
       <View style={styles.segment}>
-        <Seg label="My network" active={mode === 'network'} onPress={() => setMode('network')} />
-        <Seg label="Open in area" active={mode === 'area'} onPress={() => setMode('area')} />
+        <Seg label={t('find.network')} active={mode === 'network'} onPress={() => setMode('network')} />
+        <Seg label={t('find.area')} active={mode === 'area'} onPress={() => setMode('area')} />
       </View>
 
       {mode === 'network' ? (
         <ThemedText type="small" themeColor="textSecondary">
-          Competitors from your gym and gyms it&apos;s friends with.
+          {t('find.networkNote')}
         </ThemedText>
       ) : (
         <>
           <ThemedText type="small" themeColor="textSecondary">
-            Anyone marked “open for a challenge.” Filter by area and belt.
+            {t('find.areaNote')}
           </ThemedText>
-          <TextField label="Area / city" value={city} onChangeText={setCity} autoCapitalize="words" placeholder="Any city" />
+          <TextField label={t('find.areaCity')} value={city} onChangeText={setCity} autoCapitalize="words" placeholder={t('find.anyCity')} />
           <View style={styles.belts}>
             {BELTS.map((b) => {
               const active = belt === b;
@@ -73,7 +75,7 @@ export default function FindScreen() {
                   onPress={() => setBelt(b)}
                   style={[styles.chip, { backgroundColor: active ? theme.accent : theme.tile, borderColor: active ? theme.accent : theme.tileBorder }]}>
                   <ThemedText style={{ color: active ? theme.accentText : theme.text, fontWeight: '700', fontSize: 13 }}>
-                    {b === 'any' ? 'Any belt' : BELT_LABELS[b]}
+                    {b === 'any' ? t('find.anyBelt') : t(`belt.${b}`)}
                   </ThemedText>
                 </Pressable>
               );
@@ -83,12 +85,12 @@ export default function FindScreen() {
       )}
 
       {mode === 'network' && !profile?.gym_id ? (
-        <EmptyState icon="barbell-outline" title="Join a gym first" subtitle="Your network comes from your gym and friendly gyms." />
+        <EmptyState icon="barbell-outline" title={t('find.joinFirst')} subtitle={t('find.joinFirstSub')} />
       ) : results.length === 0 ? (
         <EmptyState
           icon="people-outline"
-          title="Nobody here yet"
-          subtitle={mode === 'network' ? 'Invite teammates or friend other gyms.' : 'Try a wider area, or toggle yourself open so others find you.'}
+          title={t('find.nobody')}
+          subtitle={mode === 'network' ? t('find.nobodyNetwork') : t('find.nobodyArea')}
         />
       ) : (
         <View style={{ gap: Spacing.two }}>
@@ -110,7 +112,7 @@ export default function FindScreen() {
                 </View>
                 <View style={[styles.challenge, { backgroundColor: theme.accent }]}>
                   <Ionicons name="flame" size={16} color={theme.accentText} />
-                  <ThemedText style={{ color: theme.accentText, fontWeight: '700', fontSize: 13 }}>Challenge</ThemedText>
+                  <ThemedText style={{ color: theme.accentText, fontWeight: '700', fontSize: 13 }}>{t('find.challenge')}</ThemedText>
                 </View>
               </Card>
             </Pressable>

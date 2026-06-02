@@ -167,6 +167,21 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'gym.search': 'Search gyms', 'gym.searchPlaceholder': 'Name or city', 'gym.yourGymSuffix': 'your gym',
     'gym.none': 'No gyms found. Create the first one!', 'gym.nameReqTitle': 'Name required',
     'gym.nameReqBody': 'Give your gym a name.', 'gym.createFail': 'Could not create gym',
+
+    'find.network': 'My network', 'find.area': 'Open in area',
+    'find.networkNote': "Competitors from your gym and gyms it's friends with.",
+    'find.areaNote': 'Anyone marked “open for a challenge.” Filter by area and belt.',
+    'find.areaCity': 'Area / city', 'find.anyCity': 'Any city', 'find.anyBelt': 'Any belt',
+    'find.joinFirst': 'Join a gym first', 'find.joinFirstSub': 'Your network comes from your gym and friendly gyms.',
+    'find.nobody': 'Nobody here yet', 'find.nobodyNetwork': 'Invite teammates or friend other gyms.',
+    'find.nobodyArea': 'Try a wider area, or toggle yourself open so others find you.', 'find.challenge': 'Challenge',
+
+    'om.post': 'Post an open mat', 'om.title': 'Title', 'om.city': 'City', 'om.address': 'Address (optional)',
+    'om.when': 'When', 'om.postBtn': 'Post open mat', 'om.search': 'Search by city', 'om.searchPlaceholder': 'City or title',
+    'om.emptyTitle': 'No open mats yet', 'om.emptySub': 'Be the first to post one in your area.',
+    'om.titleReqTitle': 'Title required', 'om.titleReqBody': 'Give the open mat a title.', 'om.postFail': 'Could not post',
+    'om.removeTitle': 'Remove listing?', 'om.removeBody': 'Delete this open mat?', 'om.delete': 'Delete',
+    'om.deleteFail': 'Could not delete',
   },
   es: {
     'tab.home': 'Inicio', 'tab.puzzles': 'Ejercicios', 'tab.matches': 'Combates',
@@ -322,6 +337,21 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'gym.search': 'Buscar gimnasios', 'gym.searchPlaceholder': 'Nombre o ciudad', 'gym.yourGymSuffix': 'tu gimnasio',
     'gym.none': 'No se encontraron gimnasios. ¡Crea el primero!', 'gym.nameReqTitle': 'Nombre obligatorio',
     'gym.nameReqBody': 'Dale un nombre a tu gimnasio.', 'gym.createFail': 'No se pudo crear el gimnasio',
+
+    'find.network': 'Mi red', 'find.area': 'Abiertos en la zona',
+    'find.networkNote': 'Competidores de tu gimnasio y de los gimnasios amigos.',
+    'find.areaNote': 'Cualquiera marcado como “disponible para un reto”. Filtra por zona y cinturón.',
+    'find.areaCity': 'Zona / ciudad', 'find.anyCity': 'Cualquier ciudad', 'find.anyBelt': 'Cualquier cinturón',
+    'find.joinFirst': 'Únete a un gimnasio primero', 'find.joinFirstSub': 'Tu red proviene de tu gimnasio y los gimnasios amigos.',
+    'find.nobody': 'Aún no hay nadie aquí', 'find.nobodyNetwork': 'Invita a compañeros o haz amigos a otros gimnasios.',
+    'find.nobodyArea': 'Prueba una zona más amplia, o márcate como disponible para que te encuentren.', 'find.challenge': 'Retar',
+
+    'om.post': 'Publicar un open mat', 'om.title': 'Título', 'om.city': 'Ciudad', 'om.address': 'Dirección (opcional)',
+    'om.when': 'Cuándo', 'om.postBtn': 'Publicar open mat', 'om.search': 'Buscar por ciudad', 'om.searchPlaceholder': 'Ciudad o título',
+    'om.emptyTitle': 'Aún no hay open mats', 'om.emptySub': 'Sé el primero en publicar uno en tu zona.',
+    'om.titleReqTitle': 'Título obligatorio', 'om.titleReqBody': 'Dale un título al open mat.', 'om.postFail': 'No se pudo publicar',
+    'om.removeTitle': '¿Quitar anuncio?', 'om.removeBody': '¿Eliminar este open mat?', 'om.delete': 'Eliminar',
+    'om.deleteFail': 'No se pudo eliminar',
   },
   pt: {
     'tab.home': 'Início', 'tab.puzzles': 'Exercícios', 'tab.matches': 'Lutas',
@@ -477,6 +507,21 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'gym.search': 'Buscar academias', 'gym.searchPlaceholder': 'Nome ou cidade', 'gym.yourGymSuffix': 'sua academia',
     'gym.none': 'Nenhuma academia encontrada. Crie a primeira!', 'gym.nameReqTitle': 'Nome obrigatório',
     'gym.nameReqBody': 'Dê um nome à sua academia.', 'gym.createFail': 'Não foi possível criar a academia',
+
+    'find.network': 'Minha rede', 'find.area': 'Abertos na região',
+    'find.networkNote': 'Competidores da sua academia e das academias amigas.',
+    'find.areaNote': 'Qualquer um marcado como “disponível para um desafio”. Filtre por região e faixa.',
+    'find.areaCity': 'Região / cidade', 'find.anyCity': 'Qualquer cidade', 'find.anyBelt': 'Qualquer faixa',
+    'find.joinFirst': 'Entre em uma academia primeiro', 'find.joinFirstSub': 'Sua rede vem da sua academia e das academias amigas.',
+    'find.nobody': 'Ainda não há ninguém aqui', 'find.nobodyNetwork': 'Convide parceiros ou faça amizade com outras academias.',
+    'find.nobodyArea': 'Tente uma região mais ampla, ou marque-se como disponível para que te encontrem.', 'find.challenge': 'Desafiar',
+
+    'om.post': 'Publicar um open mat', 'om.title': 'Título', 'om.city': 'Cidade', 'om.address': 'Endereço (opcional)',
+    'om.when': 'Quando', 'om.postBtn': 'Publicar open mat', 'om.search': 'Buscar por cidade', 'om.searchPlaceholder': 'Cidade ou título',
+    'om.emptyTitle': 'Ainda sem open mats', 'om.emptySub': 'Seja o primeiro a publicar um na sua região.',
+    'om.titleReqTitle': 'Título obrigatório', 'om.titleReqBody': 'Dê um título ao open mat.', 'om.postFail': 'Não foi possível publicar',
+    'om.removeTitle': 'Remover anúncio?', 'om.removeBody': 'Excluir este open mat?', 'om.delete': 'Excluir',
+    'om.deleteFail': 'Não foi possível excluir',
   },
   fr: {
     'tab.home': 'Accueil', 'tab.puzzles': 'Exercices', 'tab.matches': 'Combats',
@@ -632,6 +677,21 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'gym.search': 'Chercher des salles', 'gym.searchPlaceholder': 'Nom ou ville', 'gym.yourGymSuffix': 'ta salle',
     'gym.none': 'Aucune salle trouvée. Crée la première !', 'gym.nameReqTitle': 'Nom requis',
     'gym.nameReqBody': 'Donne un nom à ta salle.', 'gym.createFail': 'Impossible de créer la salle',
+
+    'find.network': 'Mon réseau', 'find.area': 'Ouverts dans la zone',
+    'find.networkNote': 'Les compétiteurs de ta salle et des salles amies.',
+    'find.areaNote': 'Toute personne marquée « disponible pour un défi ». Filtre par zone et ceinture.',
+    'find.areaCity': 'Zone / ville', 'find.anyCity': 'N’importe quelle ville', 'find.anyBelt': 'Toutes ceintures',
+    'find.joinFirst': 'Rejoins d’abord une salle', 'find.joinFirstSub': 'Ton réseau vient de ta salle et des salles amies.',
+    'find.nobody': 'Personne ici pour l’instant', 'find.nobodyNetwork': 'Invite des partenaires ou lie-toi à d’autres salles.',
+    'find.nobodyArea': 'Essaie une zone plus large, ou rends-toi disponible pour qu’on te trouve.', 'find.challenge': 'Défier',
+
+    'om.post': 'Publier un open mat', 'om.title': 'Titre', 'om.city': 'Ville', 'om.address': 'Adresse (optionnel)',
+    'om.when': 'Quand', 'om.postBtn': 'Publier l’open mat', 'om.search': 'Chercher par ville', 'om.searchPlaceholder': 'Ville ou titre',
+    'om.emptyTitle': 'Aucun open mat pour l’instant', 'om.emptySub': 'Sois le premier à en publier un dans ta zone.',
+    'om.titleReqTitle': 'Titre requis', 'om.titleReqBody': 'Donne un titre à l’open mat.', 'om.postFail': 'Impossible de publier',
+    'om.removeTitle': 'Retirer l’annonce ?', 'om.removeBody': 'Supprimer cet open mat ?', 'om.delete': 'Supprimer',
+    'om.deleteFail': 'Impossible de supprimer',
   },
 };
 

@@ -8,12 +8,14 @@ import { Button, Card, EmptyState, Screen, TextField } from '@/components/ui/kit
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { createOpenMat, deleteOpenMat, fetchOpenMats } from '@/lib/social';
 import type { OpenMat } from '@/lib/types';
 
 export default function OpenMatsScreen() {
   const { session, profile } = useAuth();
   const theme = useTheme();
+  const { t } = useTranslation();
   const userId = session!.user.id;
 
   const [query, setQuery] = useState('');
@@ -43,7 +45,7 @@ export default function OpenMatsScreen() {
 
   async function submit() {
     if (!form.title.trim()) {
-      Alert.alert('Title required', 'Give the open mat a title.');
+      Alert.alert(t('om.titleReqTitle'), t('om.titleReqBody'));
       return;
     }
     setBusy(true);
@@ -61,24 +63,24 @@ export default function OpenMatsScreen() {
       setAdding(false);
       await load();
     } catch (e: any) {
-      Alert.alert('Could not post', e.message ?? 'Try again.');
+      Alert.alert(t('om.postFail'), e.message ?? t('md.tryAgain'));
     } finally {
       setBusy(false);
     }
   }
 
   function confirmDelete(id: string) {
-    Alert.alert('Remove listing?', 'Delete this open mat?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('om.removeTitle'), t('om.removeBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('om.delete'),
         style: 'destructive',
         onPress: async () => {
           try {
             await deleteOpenMat(id);
             await load();
           } catch (e: any) {
-            Alert.alert('Could not delete', e.message ?? 'Try again.');
+            Alert.alert(t('om.deleteFail'), e.message ?? t('md.tryAgain'));
           }
         },
       },
@@ -87,27 +89,27 @@ export default function OpenMatsScreen() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: 'Open mats' }} />
+      <Stack.Screen options={{ title: t('nav.openMats') }} />
 
       {adding ? (
         <Card style={{ gap: Spacing.three }}>
-          <ThemedText style={{ fontSize: 18, fontWeight: '800' }}>Post an open mat</ThemedText>
-          <TextField label="Title" value={form.title} onChangeText={(v) => set('title', v)} placeholder="Saturday Open Mat" />
-          <TextField label="City" value={form.city} onChangeText={(v) => set('city', v)} placeholder="Springfield" />
-          <TextField label="Address (optional)" value={form.address} onChangeText={(v) => set('address', v)} placeholder="123 Main St" />
-          <TextField label="When" value={form.schedule} onChangeText={(v) => set('schedule', v)} placeholder="Saturdays 11:00 AM" />
-          <TextField label="Notes (optional)" value={form.notes} onChangeText={(v) => set('notes', v)} multiline placeholder="All levels welcome, $10 drop-in" />
-          <Button label="Post open mat" icon="megaphone" loading={busy} onPress={submit} />
-          <Button label="Cancel" variant="ghost" onPress={() => setAdding(false)} />
+          <ThemedText style={{ fontSize: 18, fontWeight: '800' }}>{t('om.post')}</ThemedText>
+          <TextField label={t('om.title')} value={form.title} onChangeText={(v) => set('title', v)} placeholder="Saturday Open Mat" />
+          <TextField label={t('om.city')} value={form.city} onChangeText={(v) => set('city', v)} placeholder="Springfield" />
+          <TextField label={t('om.address')} value={form.address} onChangeText={(v) => set('address', v)} placeholder="123 Main St" />
+          <TextField label={t('om.when')} value={form.schedule} onChangeText={(v) => set('schedule', v)} placeholder="Saturdays 11:00 AM" />
+          <TextField label={t('md.notes')} value={form.notes} onChangeText={(v) => set('notes', v)} multiline placeholder="All levels welcome, $10 drop-in" />
+          <Button label={t('om.postBtn')} icon="megaphone" loading={busy} onPress={submit} />
+          <Button label={t('common.cancel')} variant="ghost" onPress={() => setAdding(false)} />
         </Card>
       ) : (
-        <Button label="Post an open mat" icon="megaphone" onPress={() => setAdding(true)} />
+        <Button label={t('om.post')} icon="megaphone" onPress={() => setAdding(true)} />
       )}
 
-      <TextField label="Search by city" value={query} onChangeText={setQuery} autoCapitalize="none" placeholder="City or title" />
+      <TextField label={t('om.search')} value={query} onChangeText={setQuery} autoCapitalize="none" placeholder={t('om.searchPlaceholder')} />
 
       {mats.length === 0 ? (
-        <EmptyState icon="calendar-outline" title="No open mats yet" subtitle="Be the first to post one in your area." />
+        <EmptyState icon="calendar-outline" title={t('om.emptyTitle')} subtitle={t('om.emptySub')} />
       ) : (
         <View style={{ gap: Spacing.two }}>
           {mats.map((m) => (
