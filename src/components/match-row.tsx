@@ -6,18 +6,19 @@ import { ThemedText } from '@/components/themed-text';
 import { Avatar } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/lib/i18n';
 import type { MatchStatus, MatchWithPeople } from '@/lib/types';
 
-function pendingLabel(status: MatchStatus): string {
+function pendingLabel(status: MatchStatus, t: (k: string) => string): string {
   switch (status) {
     case 'pending_opponent':
-      return 'Pending';
+      return t('mrow.pending');
     case 'pending_referee':
-      return 'Awaiting ref';
+      return t('mrow.awaitingRef');
     case 'declined':
-      return 'Declined';
+      return t('md.statusDeclined');
     case 'cancelled':
-      return 'Cancelled';
+      return t('md.statusCancelled');
     default:
       return '';
   }
@@ -31,6 +32,7 @@ function pendingLabel(status: MatchStatus): string {
 export function MatchRow({ match, currentUserId }: { match: MatchWithPeople; currentUserId: string }) {
   const theme = useTheme();
   const router = useRouter();
+  const { t } = useTranslation();
 
   const meChallenger = match.challenger_id === currentUserId;
   const meOpponent = match.opponent_id === currentUserId;
@@ -59,7 +61,7 @@ export function MatchRow({ match, currentUserId }: { match: MatchWithPeople; cur
   const title = meCompetitor ? other.display_name : `${match.challenger.display_name} vs ${match.opponent.display_name}`;
   const subtitle = meCompetitor
     ? `${other.rating}`
-    : `Refereed`;
+    : t('mrow.refereed');
   const avatarName = meCompetitor ? other.display_name : match.challenger.display_name;
 
   return (
@@ -70,7 +72,7 @@ export function MatchRow({ match, currentUserId }: { match: MatchWithPeople; cur
           {title}
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          {meCompetitor ? `Rating ${subtitle}` : subtitle}
+          {meCompetitor ? `${t('pz.rating')} ${subtitle}` : subtitle}
         </ThemedText>
       </View>
 
@@ -92,7 +94,7 @@ export function MatchRow({ match, currentUserId }: { match: MatchWithPeople; cur
       ) : (
         <View style={[styles.pendingPill, { borderColor: theme.border }]}>
           <ThemedText type="small" themeColor="textSecondary" style={{ fontWeight: '700' }}>
-            {pendingLabel(match.status)}
+            {pendingLabel(match.status, t)}
           </ThemedText>
         </View>
       )}

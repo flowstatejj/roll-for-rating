@@ -6,27 +6,29 @@ import { ThemedText } from '@/components/themed-text';
 import { BeltChip, Card } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { RESULT_LABELS, type MatchStatus, type MatchWithPeople } from '@/lib/types';
+import { useTranslation } from '@/lib/i18n';
+import { type MatchStatus, type MatchWithPeople } from '@/lib/types';
 
-function statusMeta(status: MatchStatus, theme: ReturnType<typeof useTheme>) {
+function statusMeta(status: MatchStatus, theme: ReturnType<typeof useTheme>, t: (k: string) => string) {
   switch (status) {
     case 'pending_opponent':
-      return { label: 'Awaiting opponent', color: '#D9822B' };
+      return { label: t('md.statusPendingOpponent'), color: '#D9822B' };
     case 'pending_referee':
-      return { label: 'Awaiting referee', color: theme.accent };
+      return { label: t('md.statusPendingReferee'), color: theme.accent };
     case 'completed':
-      return { label: 'Completed', color: theme.success };
+      return { label: t('md.statusCompleted'), color: theme.success };
     case 'declined':
-      return { label: 'Declined', color: theme.textSecondary };
+      return { label: t('md.statusDeclined'), color: theme.textSecondary };
     case 'cancelled':
-      return { label: 'Cancelled', color: theme.textSecondary };
+      return { label: t('md.statusCancelled'), color: theme.textSecondary };
   }
 }
 
 export function MatchCard({ match, currentUserId }: { match: MatchWithPeople; currentUserId: string }) {
   const theme = useTheme();
   const router = useRouter();
-  const meta = statusMeta(match.status, theme);
+  const { t } = useTranslation();
+  const meta = statusMeta(match.status, theme, t);
 
   // What's my role, and does this match need ME to do something?
   const isOpponentPending = match.status === 'pending_opponent' && match.opponent_id === currentUserId;
@@ -48,7 +50,7 @@ export function MatchCard({ match, currentUserId }: { match: MatchWithPeople; cu
           {needsMe && (
             <View style={[styles.badge, { backgroundColor: theme.accent }]}>
               <ThemedText style={{ color: theme.accentText, fontWeight: '700', fontSize: 12 }}>
-                {isOpponentPending ? 'Respond' : 'Record result'}
+                {isOpponentPending ? t('mc.respond') : t('mc.recordResult')}
               </ThemedText>
             </View>
           )}
@@ -76,12 +78,12 @@ export function MatchCard({ match, currentUserId }: { match: MatchWithPeople; cu
           <View style={styles.refRow}>
             <Ionicons name="eye-outline" size={14} color={theme.textSecondary} />
             <ThemedText type="small" themeColor="textSecondary">
-              Ref: {match.referee.display_name}
+              {t('mc.ref')}: {match.referee.display_name}
             </ThemedText>
           </View>
           {match.status === 'completed' && match.result && (
             <ThemedText type="small" themeColor="textSecondary">
-              {match.result === 'draw' ? 'Draw' : RESULT_LABELS[match.result]}
+              {match.result === 'draw' ? t('md.draw') : t(`result.${match.result}`)}
               {match.method ? ` · ${match.method}` : ''}
             </ThemedText>
           )}

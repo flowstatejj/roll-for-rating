@@ -244,6 +244,36 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'td.liveNow': 'Live now', 'td.entrant': 'entrant', 'td.entrants': 'entrants',
     'td.scoreNote': 'win matches during the window to score', 'td.leave': 'Leave tournament',
     'td.join': 'Join tournament', 'td.noEntrants': 'No entrants yet.',
+
+    'jr.intro': "Under-14 members you manage. You operate their account from yours — they don't log in. They can't wager, aren't publicly searchable, and only match other under-18 members.",
+    'jr.emptyTitle': 'No juniors yet', 'jr.emptySub': 'Add a child you manage to start tracking their rolls.',
+    'jr.add': 'Add a junior', 'jr.name': 'Name', 'jr.namePlaceholder': 'First name', 'jr.addBtn': 'Add junior',
+    'jr.nameNeededTitle': 'Name needed', 'jr.nameNeededBody': "Enter the junior's name.",
+    'jr.dobInvalid': 'Enter a valid date of birth (MM / DD / YYYY).',
+    'jr.under14Title': 'Under 14 only', 'jr.under14Body': 'Managed junior accounts are for members under 14. A 14–17 member should make their own account with parent approval.',
+    'jr.addFail': 'Could not add', 'jr.removeTitle': 'Remove {name}?',
+    'jr.removeBody': "This permanently deletes this junior's profile, matches, and rating. This cannot be undone.",
+    'jr.removeFail': 'Could not remove',
+
+    'inv.pending': 'Pending', 'inv.accepted': 'Accepted', 'inv.declined': 'Declined', 'inv.cancelled': 'Cancelled',
+    'inv.emptyTitle': 'No challenges yet', 'inv.emptySub': 'Challenge another junior from the 13 & under leaderboard.',
+    'inv.needsResponse': 'NEEDS YOUR RESPONSE', 'inv.challengedMid': 'challenged',
+    'inv.acceptNote': 'If you accept, arrange a time/place and record the match in person with a neutral referee.',
+    'inv.allChallenges': 'ALL CHALLENGES', 'inv.oppRating': 'opponent rating', 'inv.setupMatch': 'Set up match',
+    'inv.hostSetsUp': 'Accepted — the host sets up the match & referee',
+
+    'mrow.pending': 'Pending', 'mrow.awaitingRef': 'Awaiting ref', 'mrow.refereed': 'Refereed',
+
+    'mc.respond': 'Respond', 'mc.recordResult': 'Record result', 'mc.ref': 'Ref',
+
+    'mv.label': 'Match video', 'mv.noVideo': 'No video yet', 'mv.remove': 'Remove', 'mv.uploading': 'Uploading…',
+    'mv.upload': 'Upload a video', 'mv.record': 'Record video',
+    'mv.cameraTitle': 'Camera needed', 'mv.cameraBody': 'Allow camera access to record the match.',
+    'mv.uploadFailTitle': 'Upload failed', 'mv.uploadFailBody': 'Could not add the video.',
+    'mv.removeTitle': 'Remove video?', 'mv.removeBody': 'This deletes the video from the match.',
+    'mv.removeFail': 'Could not remove',
+
+    'kit.errorDefault': "Couldn't load — check your connection and try again.", 'kit.retry': 'Retry',
   },
   es: {
     'tab.home': 'Inicio', 'tab.puzzles': 'Ejercicios', 'tab.matches': 'Combates',
@@ -476,6 +506,36 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'td.liveNow': 'En vivo ahora', 'td.entrant': 'participante', 'td.entrants': 'participantes',
     'td.scoreNote': 'gana combates durante la ventana para puntuar', 'td.leave': 'Salir del torneo',
     'td.join': 'Unirse al torneo', 'td.noEntrants': 'Aún no hay participantes.',
+
+    'jr.intro': 'Menores de 14 que gestionas. Operas su cuenta desde la tuya: no inician sesión. No pueden apostar, no son buscables públicamente y solo se enfrentan a otros menores de 18.',
+    'jr.emptyTitle': 'Aún no hay menores', 'jr.emptySub': 'Añade a un menor que gestiones para registrar sus combates.',
+    'jr.add': 'Añadir un menor', 'jr.name': 'Nombre', 'jr.namePlaceholder': 'Nombre', 'jr.addBtn': 'Añadir menor',
+    'jr.nameNeededTitle': 'Falta el nombre', 'jr.nameNeededBody': 'Introduce el nombre del menor.',
+    'jr.dobInvalid': 'Introduce una fecha de nacimiento válida (MM / DD / YYYY).',
+    'jr.under14Title': 'Solo menores de 14', 'jr.under14Body': 'Las cuentas gestionadas son para menores de 14. Un miembro de 14 a 17 debe crear su propia cuenta con aprobación parental.',
+    'jr.addFail': 'No se pudo añadir', 'jr.removeTitle': '¿Eliminar a {name}?',
+    'jr.removeBody': 'Esto elimina permanentemente el perfil, los combates y la puntuación de este menor. No se puede deshacer.',
+    'jr.removeFail': 'No se pudo eliminar',
+
+    'inv.pending': 'Pendiente', 'inv.accepted': 'Aceptado', 'inv.declined': 'Rechazado', 'inv.cancelled': 'Cancelado',
+    'inv.emptyTitle': 'Aún no hay retos', 'inv.emptySub': 'Reta a otro menor desde la clasificación de 13 y menores.',
+    'inv.needsResponse': 'NECESITA TU RESPUESTA', 'inv.challengedMid': 'retó a',
+    'inv.acceptNote': 'Si aceptas, acordad hora/lugar y registrad el combate en persona con un árbitro neutral.',
+    'inv.allChallenges': 'TODOS LOS RETOS', 'inv.oppRating': 'puntuación del rival', 'inv.setupMatch': 'Crear el combate',
+    'inv.hostSetsUp': 'Aceptado: el anfitrión crea el combate y el árbitro',
+
+    'mrow.pending': 'Pendiente', 'mrow.awaitingRef': 'Esperando árbitro', 'mrow.refereed': 'Arbitrado',
+
+    'mc.respond': 'Responder', 'mc.recordResult': 'Registrar resultado', 'mc.ref': 'Árb.',
+
+    'mv.label': 'Vídeo del combate', 'mv.noVideo': 'Aún no hay vídeo', 'mv.remove': 'Quitar', 'mv.uploading': 'Subiendo…',
+    'mv.upload': 'Subir un vídeo', 'mv.record': 'Grabar vídeo',
+    'mv.cameraTitle': 'Cámara necesaria', 'mv.cameraBody': 'Permite el acceso a la cámara para grabar el combate.',
+    'mv.uploadFailTitle': 'Error al subir', 'mv.uploadFailBody': 'No se pudo añadir el vídeo.',
+    'mv.removeTitle': '¿Quitar vídeo?', 'mv.removeBody': 'Esto elimina el vídeo del combate.',
+    'mv.removeFail': 'No se pudo quitar',
+
+    'kit.errorDefault': 'No se pudo cargar: comprueba tu conexión e inténtalo de nuevo.', 'kit.retry': 'Reintentar',
   },
   pt: {
     'tab.home': 'Início', 'tab.puzzles': 'Exercícios', 'tab.matches': 'Lutas',
@@ -708,6 +768,36 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'td.liveNow': 'Ao vivo agora', 'td.entrant': 'inscrito', 'td.entrants': 'inscritos',
     'td.scoreNote': 'vença lutas durante o período para pontuar', 'td.leave': 'Sair do torneio',
     'td.join': 'Entrar no torneio', 'td.noEntrants': 'Ainda sem inscritos.',
+
+    'jr.intro': 'Menores de 14 que você gerencia. Você opera a conta deles pela sua — eles não fazem login. Não podem apostar, não são pesquisáveis publicamente e só enfrentam outros menores de 18.',
+    'jr.emptyTitle': 'Ainda sem menores', 'jr.emptySub': 'Adicione um menor que você gerencia para acompanhar as lutas dele.',
+    'jr.add': 'Adicionar um menor', 'jr.name': 'Nome', 'jr.namePlaceholder': 'Primeiro nome', 'jr.addBtn': 'Adicionar menor',
+    'jr.nameNeededTitle': 'Falta o nome', 'jr.nameNeededBody': 'Informe o nome do menor.',
+    'jr.dobInvalid': 'Informe uma data de nascimento válida (MM / DD / YYYY).',
+    'jr.under14Title': 'Apenas menores de 14', 'jr.under14Body': 'Contas gerenciadas são para menores de 14. Um membro de 14 a 17 deve criar a própria conta com aprovação dos pais.',
+    'jr.addFail': 'Não foi possível adicionar', 'jr.removeTitle': 'Remover {name}?',
+    'jr.removeBody': 'Isto exclui permanentemente o perfil, as lutas e a pontuação deste menor. Não pode ser desfeito.',
+    'jr.removeFail': 'Não foi possível remover',
+
+    'inv.pending': 'Pendente', 'inv.accepted': 'Aceito', 'inv.declined': 'Recusado', 'inv.cancelled': 'Cancelado',
+    'inv.emptyTitle': 'Ainda sem desafios', 'inv.emptySub': 'Desafie outro menor pelo ranking de 13 e menores.',
+    'inv.needsResponse': 'PRECISA DA SUA RESPOSTA', 'inv.challengedMid': 'desafiou',
+    'inv.acceptNote': 'Se aceitar, combinem horário/local e registrem a luta pessoalmente com um árbitro neutro.',
+    'inv.allChallenges': 'TODOS OS DESAFIOS', 'inv.oppRating': 'pontuação do oponente', 'inv.setupMatch': 'Criar a luta',
+    'inv.hostSetsUp': 'Aceito — o anfitrião cria a luta e o árbitro',
+
+    'mrow.pending': 'Pendente', 'mrow.awaitingRef': 'Aguardando árbitro', 'mrow.refereed': 'Arbitrado',
+
+    'mc.respond': 'Responder', 'mc.recordResult': 'Registrar resultado', 'mc.ref': 'Árb.',
+
+    'mv.label': 'Vídeo da luta', 'mv.noVideo': 'Ainda sem vídeo', 'mv.remove': 'Remover', 'mv.uploading': 'Enviando…',
+    'mv.upload': 'Enviar um vídeo', 'mv.record': 'Gravar vídeo',
+    'mv.cameraTitle': 'Câmera necessária', 'mv.cameraBody': 'Permita o acesso à câmera para gravar a luta.',
+    'mv.uploadFailTitle': 'Falha no envio', 'mv.uploadFailBody': 'Não foi possível adicionar o vídeo.',
+    'mv.removeTitle': 'Remover vídeo?', 'mv.removeBody': 'Isto exclui o vídeo da luta.',
+    'mv.removeFail': 'Não foi possível remover',
+
+    'kit.errorDefault': 'Não foi possível carregar — verifique sua conexão e tente novamente.', 'kit.retry': 'Tentar novamente',
   },
   fr: {
     'tab.home': 'Accueil', 'tab.puzzles': 'Exercices', 'tab.matches': 'Combats',
@@ -940,6 +1030,36 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'td.liveNow': 'En direct', 'td.entrant': 'inscrit', 'td.entrants': 'inscrits',
     'td.scoreNote': 'gagne des combats pendant la fenêtre pour marquer', 'td.leave': 'Quitter le tournoi',
     'td.join': 'Rejoindre le tournoi', 'td.noEntrants': 'Aucun inscrit pour l’instant.',
+
+    'jr.intro': 'Les moins de 14 ans que tu gères. Tu opères leur compte depuis le tien — ils ne se connectent pas. Ils ne peuvent pas parier, ne sont pas trouvables publiquement et n’affrontent que d’autres moins de 18 ans.',
+    'jr.emptyTitle': 'Aucun mineur pour l’instant', 'jr.emptySub': 'Ajoute un enfant que tu gères pour suivre ses combats.',
+    'jr.add': 'Ajouter un mineur', 'jr.name': 'Nom', 'jr.namePlaceholder': 'Prénom', 'jr.addBtn': 'Ajouter le mineur',
+    'jr.nameNeededTitle': 'Nom manquant', 'jr.nameNeededBody': 'Saisis le nom du mineur.',
+    'jr.dobInvalid': 'Saisis une date de naissance valide (MM / DD / YYYY).',
+    'jr.under14Title': 'Moins de 14 ans uniquement', 'jr.under14Body': 'Les comptes gérés sont pour les moins de 14 ans. Un membre de 14 à 17 ans doit créer son propre compte avec l’accord parental.',
+    'jr.addFail': 'Impossible d’ajouter', 'jr.removeTitle': 'Retirer {name} ?',
+    'jr.removeBody': 'Cela supprime définitivement le profil, les combats et le classement de ce mineur. Irréversible.',
+    'jr.removeFail': 'Impossible de retirer',
+
+    'inv.pending': 'En attente', 'inv.accepted': 'Accepté', 'inv.declined': 'Refusé', 'inv.cancelled': 'Annulé',
+    'inv.emptyTitle': 'Aucun défi pour l’instant', 'inv.emptySub': 'Défie un autre mineur depuis le classement des 13 ans et moins.',
+    'inv.needsResponse': 'NÉCESSITE TA RÉPONSE', 'inv.challengedMid': 'a défié',
+    'inv.acceptNote': 'Si tu acceptes, convenez d’un horaire/lieu et enregistrez le combat en personne avec un arbitre neutre.',
+    'inv.allChallenges': 'TOUS LES DÉFIS', 'inv.oppRating': 'classement de l’adversaire', 'inv.setupMatch': 'Créer le combat',
+    'inv.hostSetsUp': 'Accepté — l’hôte crée le combat et l’arbitre',
+
+    'mrow.pending': 'En attente', 'mrow.awaitingRef': 'En attente d’arbitre', 'mrow.refereed': 'Arbitré',
+
+    'mc.respond': 'Répondre', 'mc.recordResult': 'Enregistrer le résultat', 'mc.ref': 'Arb.',
+
+    'mv.label': 'Vidéo du combat', 'mv.noVideo': 'Aucune vidéo pour l’instant', 'mv.remove': 'Retirer', 'mv.uploading': 'Envoi…',
+    'mv.upload': 'Envoyer une vidéo', 'mv.record': 'Enregistrer une vidéo',
+    'mv.cameraTitle': 'Caméra requise', 'mv.cameraBody': 'Autorise l’accès à la caméra pour filmer le combat.',
+    'mv.uploadFailTitle': 'Échec de l’envoi', 'mv.uploadFailBody': 'Impossible d’ajouter la vidéo.',
+    'mv.removeTitle': 'Retirer la vidéo ?', 'mv.removeBody': 'Cela supprime la vidéo du combat.',
+    'mv.removeFail': 'Impossible de retirer',
+
+    'kit.errorDefault': 'Chargement impossible — vérifie ta connexion et réessaie.', 'kit.retry': 'Réessayer',
   },
 };
 

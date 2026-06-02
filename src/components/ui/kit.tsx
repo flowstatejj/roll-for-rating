@@ -234,13 +234,14 @@ export function Screen({
 
 export function ErrorState({ message, onRetry }: { message?: string; onRetry: () => void }) {
   const theme = useTheme();
+  const { t } = useTranslation();
   return (
     <View style={[styles.center, { gap: Spacing.three, paddingVertical: Spacing.six }]}>
       <Ionicons name="cloud-offline-outline" size={48} color={theme.textSecondary} />
       <ThemedText themeColor="textSecondary" style={{ textAlign: 'center', paddingHorizontal: Spacing.four }}>
-        {message ?? "Couldn't load — check your connection and try again."}
+        {message ?? t('kit.errorDefault')}
       </ThemedText>
-      <Button label="Retry" icon="refresh" variant="secondary" onPress={onRetry} />
+      <Button label={t('kit.retry')} icon="refresh" variant="secondary" onPress={onRetry} />
     </View>
   );
 }

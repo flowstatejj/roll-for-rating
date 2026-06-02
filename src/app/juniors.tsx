@@ -9,14 +9,16 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
 import { parseDob } from '@/lib/dob';
+import { useTranslation } from '@/lib/i18n';
 import { addJunior, fetchJuniors, removeJunior } from '@/lib/juniors';
-import { BELT_LABELS, type BeltRank, type Profile } from '@/lib/types';
+import { type BeltRank, type Profile } from '@/lib/types';
 
 const BELTS: BeltRank[] = ['white', 'blue', 'purple', 'brown', 'black'];
 
 export default function JuniorsScreen() {
   const { profile } = useAuth();
   const theme = useTheme();
+  const { t } = useTranslation();
 
   const [juniors, setJuniors] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,16 +57,16 @@ export default function JuniorsScreen() {
   async function onAdd() {
     if (!profile) return;
     if (!name.trim()) {
-      Alert.alert('Name needed', "Enter the junior's name.");
+      Alert.alert(t('jr.nameNeededTitle'), t('jr.nameNeededBody'));
       return;
     }
     const dob = parseDob(dobM, dobD, dobY);
     if (!dob) {
-      Alert.alert('Date of birth', 'Enter a valid date of birth (MM / DD / YYYY).');
+      Alert.alert(t('su.dob'), t('jr.dobInvalid'));
       return;
     }
     if (dob.age >= 14 || dob.age < 0) {
-      Alert.alert('Under 14 only', 'Managed junior accounts are for members under 14. A 14–17 member should make their own account with parent approval.');
+      Alert.alert(t('jr.under14Title'), t('jr.under14Body'));
       return;
     }
     setBusy(true);
@@ -79,7 +81,7 @@ export default function JuniorsScreen() {
       resetForm();
       await load();
     } catch (e: any) {
-      Alert.alert('Could not add', e.message ?? 'Try again.');
+      Alert.alert(t('jr.addFail'), e.message ?? t('md.tryAgain'));
     } finally {
       setBusy(false);
     }
@@ -87,19 +89,19 @@ export default function JuniorsScreen() {
 
   function confirmRemove(j: Profile) {
     Alert.alert(
-      `Remove ${j.display_name}?`,
-      "This permanently deletes this junior's profile, matches, and rating. This cannot be undone.",
+      t('jr.removeTitle').replace('{name}', j.display_name),
+      t('jr.removeBody'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('om.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
               await removeJunior(j.id);
               await load();
             } catch (e: any) {
-              Alert.alert('Could not remove', e.message ?? 'Try again.');
+              Alert.alert(t('jr.removeFail'), e.message ?? t('md.tryAgain'));
             }
           },
         },
@@ -111,15 +113,14 @@ export default function JuniorsScreen() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: 'My juniors' }} />
+      <Stack.Screen options={{ title: t('profile.myJuniors') }} />
 
       <ThemedText type="small" themeColor="textSecondary">
-        Under-14 members you manage. You operate their account from yours — they don&apos;t log in.
-        They can&apos;t wager, aren&apos;t publicly searchable, and only match other under-18 members.
+        {t('jr.intro')}
       </ThemedText>
 
       {juniors.length === 0 && !adding ? (
-        <EmptyState icon="happy-outline" title="No juniors yet" subtitle="Add a child you manage to start tracking their rolls." />
+        <EmptyState icon="happy-outline" title={t('jr.emptyTitle')} subtitle={t('jr.emptySub')} />
       ) : (
         <View style={{ gap: Spacing.two }}>
           {juniors.map((j) => (
@@ -128,7 +129,7 @@ export default function JuniorsScreen() {
               <View style={{ flex: 1 }}>
                 <ThemedText style={{ fontWeight: '800' }}>{j.display_name}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  {BELT_LABELS[j.belt_rank]} • {j.rating} • {j.wins}-{j.losses}-{j.draws}
+                  {t(`belt.${j.belt_rank}`)} • {j.rating} • {j.wins}-{j.losses}-{j.draws}
                 </ThemedText>
               </View>
               <Pressable onPress={() => confirmRemove(j)} hitSlop={8}>
@@ -141,11 +142,11 @@ export default function JuniorsScreen() {
 
       {adding ? (
         <Card style={{ gap: Spacing.three }}>
-          <ThemedText style={{ fontWeight: '800', fontSize: 16 }}>Add a junior</ThemedText>
-          <TextField label="Name" value={name} onChangeText={setName} placeholder="First name" />
+          <ThemedText style={{ fontWeight: '800', fontSize: 16 }}>{t('jr.add')}</ThemedText>
+          <TextField label={t('jr.name')} value={name} onChangeText={setName} placeholder={t('jr.namePlaceholder')} />
 
           <View style={{ gap: Spacing.one }}>
-            <ThemedText type="smallBold" themeColor="textSecondary">Belt rank</ThemedText>
+            <ThemedText type="smallBold" themeColor="textSecondary">{t('su.beltRank')}</ThemedText>
             <View style={styles.belts}>
               {BELTS.map((b) => {
                 const selected = belt === b;
@@ -158,7 +159,7 @@ export default function JuniorsScreen() {
                       { backgroundColor: selected ? theme.accent : theme.backgroundElement, borderColor: selected ? theme.accent : theme.border },
                     ]}>
                     <ThemedText style={{ fontWeight: '700', fontSize: 13, color: selected ? theme.accentText : theme.text }}>
-                      {BELT_LABELS[b]}
+                      {t(`belt.${b}`)}
                     </ThemedText>
                   </Pressable>
                 );
@@ -167,7 +168,7 @@ export default function JuniorsScreen() {
           </View>
 
           <View style={{ gap: Spacing.one }}>
-            <ThemedText type="smallBold" themeColor="textSecondary">Date of birth</ThemedText>
+            <ThemedText type="smallBold" themeColor="textSecondary">{t('su.dob')}</ThemedText>
             <View style={styles.dobRow}>
               <View style={{ flex: 1 }}>
                 <TextField label="MM" value={dobM} onChangeText={(t) => setDobM(t.replace(/\D/g, '').slice(0, 2))} keyboardType="number-pad" placeholder="MM" />
@@ -181,11 +182,11 @@ export default function JuniorsScreen() {
             </View>
           </View>
 
-          <Button label="Add junior" icon="add" loading={busy} onPress={onAdd} />
-          <Button label="Cancel" variant="ghost" onPress={resetForm} />
+          <Button label={t('jr.addBtn')} icon="add" loading={busy} onPress={onAdd} />
+          <Button label={t('common.cancel')} variant="ghost" onPress={resetForm} />
         </Card>
       ) : (
-        <Button label="Add a junior" icon="add" variant="secondary" onPress={() => setAdding(true)} />
+        <Button label={t('jr.add')} icon="add" variant="secondary" onPress={() => setAdding(true)} />
       )}
     </Screen>
   );

@@ -8,6 +8,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Button, Card } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/lib/i18n';
 import { deleteMatchVideo, fetchMatchVideos, uploadMatchVideo, videoPublicUrl } from '@/lib/videos';
 import type { MatchVideo } from '@/lib/types';
 
@@ -21,6 +22,7 @@ export function MatchVideos({
   isParticipant: boolean;
 }) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const [videos, setVideos] = useState<MatchVideo[]>([]);
   const [busy, setBusy] = useState(false);
 
@@ -39,7 +41,7 @@ export function MatchVideos({
       if (fromCamera) {
         const perm = await ImagePicker.requestCameraPermissionsAsync();
         if (!perm.granted) {
-          Alert.alert('Camera needed', 'Allow camera access to record the match.');
+          Alert.alert(t('mv.cameraTitle'), t('mv.cameraBody'));
           return;
         }
       }
@@ -61,24 +63,24 @@ export function MatchVideos({
       });
       await load();
     } catch (e: any) {
-      Alert.alert('Upload failed', e.message ?? 'Could not add the video.');
+      Alert.alert(t('mv.uploadFailTitle'), e.message ?? t('mv.uploadFailBody'));
     } finally {
       setBusy(false);
     }
   }
 
   function confirmDelete(video: MatchVideo) {
-    Alert.alert('Remove video?', 'This deletes the video from the match.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('mv.removeTitle'), t('mv.removeBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Remove',
+        text: t('mv.remove'),
         style: 'destructive',
         onPress: async () => {
           try {
             await deleteMatchVideo(video);
             await load();
           } catch (e: any) {
-            Alert.alert('Could not remove', e.message ?? 'Try again.');
+            Alert.alert(t('mv.removeFail'), e.message ?? t('md.tryAgain'));
           }
         },
       },
@@ -87,12 +89,12 @@ export function MatchVideos({
 
   return (
     <View style={{ gap: Spacing.two }}>
-      <ThemedText style={styles.label}>Match video</ThemedText>
+      <ThemedText style={styles.label}>{t('mv.label')}</ThemedText>
 
       {videos.length === 0 && (
         <Card style={{ alignItems: 'center', paddingVertical: Spacing.four, gap: Spacing.one }}>
           <Ionicons name="videocam-outline" size={32} color={theme.textSecondary} />
-          <ThemedText themeColor="textSecondary">No video yet</ThemedText>
+          <ThemedText themeColor="textSecondary">{t('mv.noVideo')}</ThemedText>
         </Card>
       )}
 
@@ -103,7 +105,7 @@ export function MatchVideos({
             <Pressable onPress={() => confirmDelete(v)} style={styles.deleteRow}>
               <Ionicons name="trash-outline" size={14} color={theme.danger} />
               <ThemedText type="small" style={{ color: theme.danger }}>
-                Remove
+                {t('mv.remove')}
               </ThemedText>
             </Pressable>
           )}
@@ -115,13 +117,13 @@ export function MatchVideos({
           {busy ? (
             <Card style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.two }}>
               <ActivityIndicator color={theme.accent} />
-              <ThemedText themeColor="textSecondary">Uploading…</ThemedText>
+              <ThemedText themeColor="textSecondary">{t('mv.uploading')}</ThemedText>
             </Card>
           ) : (
             <>
-              <Button label="Upload a video" icon="cloud-upload" variant="secondary" onPress={() => addVideo(false)} />
+              <Button label={t('mv.upload')} icon="cloud-upload" variant="secondary" onPress={() => addVideo(false)} />
               {Platform.OS !== 'web' && (
-                <Button label="Record video" icon="videocam" variant="secondary" onPress={() => addVideo(true)} />
+                <Button label={t('mv.record')} icon="videocam" variant="secondary" onPress={() => addVideo(true)} />
               )}
             </>
           )}
