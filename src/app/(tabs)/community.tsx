@@ -8,12 +8,14 @@ import { Button, Card, Loading, Screen } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 
 export default function CommunityScreen() {
   const { profile, refreshProfile } = useAuth();
   const theme = useTheme();
   const router = useRouter();
+  const { t } = useTranslation();
   const [gymName, setGymName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -51,7 +53,7 @@ export default function CommunityScreen() {
   return (
     <Screen>
       <ThemedText type="subtitle" style={{ fontSize: 28 }}>
-        Community
+        {t('tab.community')}
       </ThemedText>
 
       {/* My gym */}
@@ -63,10 +65,10 @@ export default function CommunityScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <ThemedText type="small" themeColor="textSecondary">
-                YOUR GYM
+                {t('comm.yourGym')}
               </ThemedText>
               <ThemedText style={{ fontSize: 18, fontWeight: '800' }} numberOfLines={1}>
-                {gymName ?? 'Your gym'}
+                {gymName ?? t('comm.yourGymFallback')}
               </ThemedText>
             </View>
             <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
@@ -76,80 +78,80 @@ export default function CommunityScreen() {
         <Card style={{ gap: Spacing.three, alignItems: 'center' }}>
           <Ionicons name="barbell-outline" size={36} color={theme.textSecondary} />
           <ThemedText style={{ fontWeight: '700', textAlign: 'center' }}>
-            You haven&apos;t joined a gym yet
+            {t('comm.noGymTitle')}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center' }}>
-            Join your academy to find teammates and challenge rivals.
+            {t('comm.noGymSub')}
           </ThemedText>
-          <Button label="Find or create a gym" icon="add-circle" onPress={() => router.push('/gyms')} />
+          <Button label={t('comm.findCreateGym')} icon="add-circle" onPress={() => router.push('/gyms')} />
         </Card>
       )}
 
       {/* Actions */}
       <ActionRow
         icon="play-circle"
-        title="Watch"
-        subtitle="Public matches — view counts and reactions"
+        title={t('nav.watch')}
+        subtitle={t('comm.watchSub')}
         onPress={() => router.push('/watch')}
       />
       <ActionRow
         icon="flame"
-        title="Find a roll"
-        subtitle="Your gym network, or anyone open for a challenge nearby"
+        title={t('nav.findRoll')}
+        subtitle={t('comm.findRollSub')}
         onPress={() => router.push('/find')}
       />
       <ActionRow
         icon="podium"
-        title="Rankings"
-        subtitle="The global leaderboard"
+        title={t('lb.title')}
+        subtitle={t('comm.rankingsSub')}
         onPress={() => router.push('/(tabs)/leaderboard')}
       />
       <ActionRow
         icon="calendar"
-        title="Open mats"
-        subtitle="Find and post local open mat sessions"
+        title={t('nav.openMats')}
+        subtitle={t('comm.openMatsSub')}
         onPress={() => router.push('/open-mats')}
       />
       <ActionRow
         icon="checkbox"
-        title="Quests"
-        subtitle="Weekly challenges + your daily streak"
+        title={t('nav.quests')}
+        subtitle={t('comm.questsSub')}
         onPress={() => router.push('/quests')}
       />
       <ActionRow
         icon="calendar-number"
-        title="Seasons"
-        subtitle="The seasonal points race + champions"
+        title={t('nav.seasons')}
+        subtitle={t('comm.seasonsSub')}
         onPress={() => router.push('/seasons')}
       />
       <ActionRow
         icon="trophy"
-        title="Tournaments"
-        subtitle="Join events and race for wins"
+        title={t('nav.tournaments')}
+        subtitle={t('comm.tournamentsSub')}
         onPress={() => router.push('/tournaments')}
       />
       <ActionRow
         icon="barbell"
-        title="Gym Rankings"
-        subtitle="Which academy is strongest"
+        title={t('nav.gymRankings')}
+        subtitle={t('comm.gymRankingsSub')}
         onPress={() => router.push('/gym-rankings')}
       />
       <ActionRow
         icon="lock-open"
-        title="Submission Hunt"
-        subtitle="Collect submissions for bonus Elo"
+        title={t('nav.submissionHunt')}
+        subtitle={t('comm.submissionHuntSub')}
         onPress={() => router.push('/submission-hunt')}
       />
       <ActionRow
         icon="cash"
-        title="Biggest Pots"
-        subtitle="High rollers — most Elo won via wagers"
+        title={t('nav.biggestPots')}
+        subtitle={t('comm.biggestPotsSub')}
         onPress={() => router.push('/high-rollers')}
       />
       <ActionRow
         icon="search"
-        title="Browse gyms"
-        subtitle="Explore academies and switch gyms"
+        title={t('comm.browseGyms')}
+        subtitle={t('comm.browseGymsSub')}
         onPress={() => router.push('/gyms')}
       />
     </Screen>

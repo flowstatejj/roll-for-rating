@@ -9,6 +9,7 @@ import { Button, Card, EmptyState, Loading, Screen, TextField } from '@/componen
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { fetchNextPuzzle, submitMc, submitWritten } from '@/lib/puzzles';
 import type { Puzzle, PuzzleKind, PuzzleResult } from '@/lib/types';
 
@@ -16,6 +17,7 @@ export default function SolvePuzzleScreen() {
   const { kind = 'multiple_choice' } = useLocalSearchParams<{ kind: PuzzleKind }>();
   const { session, refreshProfile } = useAuth();
   const theme = useTheme();
+  const { t } = useTranslation();
   const userId = session!.user.id;
 
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
@@ -80,15 +82,15 @@ export default function SolvePuzzleScreen() {
   if (!puzzle) {
     return (
       <Screen>
-        <Stack.Screen options={{ title: 'Puzzles' }} />
-        <EmptyState icon="extension-puzzle-outline" title="No puzzles yet" subtitle="Add some puzzles to get started." />
+        <Stack.Screen options={{ title: t('tab.puzzles') }} />
+        <EmptyState icon="extension-puzzle-outline" title={t('pz.noTitle')} subtitle={t('pz.noSub')} />
       </Screen>
     );
   }
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: puzzle.title ?? 'Puzzle' }} />
+      <Stack.Screen options={{ title: puzzle.title ?? t('nav.puzzle') }} />
 
       {puzzle.image_url && (
         <Image source={{ uri: puzzle.image_url }} style={styles.image} contentFit="cover" transition={150} />
@@ -99,14 +101,14 @@ export default function SolvePuzzleScreen() {
       {puzzle.kind === 'written' && !result && (
         <View style={{ gap: Spacing.two }}>
           <TextField
-            label="Your answer"
+            label={t('pz.yourAnswer')}
             value={answer}
             onChangeText={setAnswer}
             multiline
-            placeholder="Explain your answer in a few sentences…"
+            placeholder={t('pz.answerPlaceholder')}
             style={{ minHeight: 120, textAlignVertical: 'top' }}
           />
-          <Button label="Submit for grading" icon="sparkles" loading={busy} onPress={submitWrittenAnswer} />
+          <Button label={t('pz.submit')} icon="sparkles" loading={busy} onPress={submitWrittenAnswer} />
         </View>
       )}
 
@@ -155,7 +157,7 @@ export default function SolvePuzzleScreen() {
               color={result.is_correct ? theme.success : theme.danger}
             />
             <ThemedText style={{ fontSize: 18, fontWeight: '800', flex: 1 }}>
-              {result.is_correct ? 'Correct!' : 'Not quite'}
+              {result.is_correct ? t('pz.correct') : t('pz.notQuite')}
             </ThemedText>
             {result.rated ? (
               <View style={[styles.delta, { backgroundColor: (result.delta >= 0 ? theme.success : theme.danger) + '26' }]}>
@@ -165,16 +167,16 @@ export default function SolvePuzzleScreen() {
               </View>
             ) : (
               <ThemedText type="small" themeColor="textSecondary">
-                Practice
+                {t('pz.practice')}
               </ThemedText>
             )}
           </View>
           {puzzle.kind === 'written' && result.score != null && (
-            <ThemedText style={{ fontWeight: '700' }}>Score: {result.score}/100</ThemedText>
+            <ThemedText style={{ fontWeight: '700' }}>{t('pz.score')}: {result.score}/100</ThemedText>
           )}
           {result.low_effort && (
             <ThemedText type="small" style={{ color: theme.danger, fontWeight: '700' }}>
-              That answer didn’t really address the question.
+              {t('pz.lowEffort')}
             </ThemedText>
           )}
           {result.feedback && <ThemedText>{result.feedback}</ThemedText>}
@@ -202,19 +204,19 @@ export default function SolvePuzzleScreen() {
 
           {(result.model_answer || result.explanation) && (
             <View style={{ gap: 2, marginTop: Spacing.one }}>
-              <ThemedText type="smallBold" themeColor="textSecondary">Model answer</ThemedText>
+              <ThemedText type="smallBold" themeColor="textSecondary">{t('pz.modelAnswer')}</ThemedText>
               <ThemedText themeColor="textSecondary">{result.model_answer ?? result.explanation}</ThemedText>
             </View>
           )}
           {result.rated && (
             <ThemedText type="small" themeColor="textSecondary">
-              Rating {result.rating_before} → {result.rating_after}
+              {t('pz.rating')} {result.rating_before} → {result.rating_after}
             </ThemedText>
           )}
         </Card>
       )}
 
-      {result && <Button label="Next puzzle" icon="arrow-forward" onPress={loadNext} />}
+      {result && <Button label={t('pz.next')} icon="arrow-forward" onPress={loadNext} />}
     </Screen>
   );
 }

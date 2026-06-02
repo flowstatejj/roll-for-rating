@@ -8,6 +8,7 @@ import { Card, Loading, Screen } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { fetchPuzzleStats } from '@/lib/puzzles';
 import type { PuzzleStats } from '@/lib/types';
 
@@ -15,6 +16,7 @@ export default function PuzzlesScreen() {
   const { session } = useAuth();
   const theme = useTheme();
   const router = useRouter();
+  const { t } = useTranslation();
   const userId = session?.user.id;
   const [stats, setStats] = useState<PuzzleStats | null>(null);
 
@@ -34,23 +36,23 @@ export default function PuzzlesScreen() {
   return (
     <Screen>
       <ThemedText type="subtitle" style={{ fontSize: 28 }}>
-        Puzzles
+        {t('tab.puzzles')}
       </ThemedText>
       <ThemedText themeColor="textSecondary">
-        Test your jiu-jitsu IQ. Correct answers raise your rating; wrong ones cost you.
+        {t('pz.intro')}
       </ThemedText>
 
       {/* Stats */}
       <Card style={styles.statsRow}>
-        <Stat label="Solved" value={stats.solved} />
+        <Stat label={t('pz.solved')} value={stats.solved} />
         <Divider />
-        <Stat label="Accuracy" value={`${stats.accuracy}%`} />
+        <Stat label={t('pz.accuracy')} value={`${stats.accuracy}%`} />
         <Divider />
-        <Stat label="Attempts" value={stats.attempts} />
+        <Stat label={t('pz.attempts')} value={stats.attempts} />
       </Card>
 
       {/* Modes */}
-      <ThemedText style={styles.sectionLabel}>Choose a mode</ThemedText>
+      <ThemedText style={styles.sectionLabel}>{t('pz.chooseMode')}</ThemedText>
 
       <Pressable onPress={() => router.push('/puzzle/solve?kind=multiple_choice')}>
         <Card style={styles.modeCard}>
@@ -58,9 +60,9 @@ export default function PuzzlesScreen() {
             <Ionicons name="list" size={24} color={theme.accentText} />
           </View>
           <View style={{ flex: 1, gap: 2 }}>
-            <ThemedText style={{ fontSize: 18, fontWeight: '800' }}>Multiple choice</ThemedText>
+            <ThemedText style={{ fontSize: 18, fontWeight: '800' }}>{t('pz.mcTitle')}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              Pick the best answer. Instant feedback. Easy mode.
+              {t('pz.mcSub')}
             </ThemedText>
           </View>
           <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
@@ -74,9 +76,9 @@ export default function PuzzlesScreen() {
             <Ionicons name="create" size={24} color={theme.text} />
           </View>
           <View style={{ flex: 1, gap: 2 }}>
-            <ThemedText style={{ fontSize: 18, fontWeight: '800' }}>Written answer</ThemedText>
+            <ThemedText style={{ fontSize: 18, fontWeight: '800' }}>{t('pz.writtenTitle')}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              Explain your answer; an AI coach grades it. Hard mode.
+              {t('pz.writtenSub')}
             </ThemedText>
           </View>
           <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
