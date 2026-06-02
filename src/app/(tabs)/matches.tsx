@@ -8,20 +8,22 @@ import { Card, EmptyState, ErrorState, Loading, Screen } from '@/components/ui/k
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { fetchMyMatches } from '@/lib/matches';
 import { supabase } from '@/lib/supabase';
 import type { MatchWithPeople } from '@/lib/types';
 
 type Filter = 'all' | 'active' | 'completed';
-const FILTERS: { key: Filter; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'active', label: 'Active' },
-  { key: 'completed', label: 'Completed' },
+const FILTERS: { key: Filter; tkey: string }[] = [
+  { key: 'all', tkey: 'matches.filterAll' },
+  { key: 'active', tkey: 'matches.filterActive' },
+  { key: 'completed', tkey: 'matches.filterCompleted' },
 ];
 
 export default function MatchesScreen() {
   const { session } = useAuth();
   const theme = useTheme();
+  const { t } = useTranslation();
   const userId = session?.user.id;
   const [matches, setMatches] = useState<MatchWithPeople[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,7 +71,7 @@ export default function MatchesScreen() {
   return (
     <Screen refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.text} />}>
       <ThemedText type="subtitle" style={{ fontSize: 28 }}>
-        Matches
+        {t('tab.matches')}
       </ThemedText>
 
       <View style={styles.filters}>
@@ -87,7 +89,7 @@ export default function MatchesScreen() {
                 },
               ]}>
               <ThemedText style={{ color: active ? theme.accentText : theme.text, fontWeight: '700', fontSize: 13 }}>
-                {f.label}
+                {t(f.tkey)}
               </ThemedText>
             </Pressable>
           );
@@ -97,7 +99,7 @@ export default function MatchesScreen() {
       {error ? (
         <ErrorState onRetry={load} />
       ) : filtered.length === 0 ? (
-        <EmptyState icon="list-outline" title="Nothing here yet" subtitle="Matches you compete in or referee will show up here." />
+        <EmptyState icon="list-outline" title={t('matches.emptyTitle')} subtitle={t('matches.emptySub')} />
       ) : (
         <Card style={{ paddingVertical: Spacing.one }}>
           {filtered.map((m, i) => (

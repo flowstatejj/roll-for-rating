@@ -8,6 +8,7 @@ import { Avatar, BeltChip, Button, Card, EmptyState, Loading, Screen } from '@/c
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { GEO_LEVELS, geoMatches, type Geo, type GeoLevel } from '@/lib/geo';
 import { createMatchRequest } from '@/lib/invites';
 import { fetchJuniors } from '@/lib/juniors';
@@ -20,6 +21,7 @@ export default function LeaderboardScreen() {
   const { session, profile } = useAuth();
   const theme = useTheme();
   const router = useRouter();
+  const { t } = useTranslation();
   const userId = session?.user.id;
 
   const [tab, setTab] = useState<Tab>('overall');
@@ -95,31 +97,31 @@ export default function LeaderboardScreen() {
   return (
     <Screen refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.text} />}>
       <ThemedText type="subtitle" style={{ fontSize: 28 }}>
-        Rankings
+        {t('lb.title')}
       </ThemedText>
 
       {canSeeKids && (
         <View style={styles.segment}>
-          <Seg label="Overall" active={tab === 'overall'} onPress={() => setTab('overall')} />
-          <Seg label="13 & under" active={tab === 'kids'} onPress={() => setTab('kids')} />
+          <Seg label={t('lb.overall')} active={tab === 'overall'} onPress={() => setTab('overall')} />
+          <Seg label={t('lb.under13')} active={tab === 'kids'} onPress={() => setTab('kids')} />
         </View>
       )}
 
       {/* Geographic level */}
       <View style={styles.levels}>
         {GEO_LEVELS.map((l) => (
-          <Chip key={l.key} label={l.label} active={level === l.key} onPress={() => setLevel(l.key)} />
+          <Chip key={l.key} label={t(`geo.${l.key}`)} active={level === l.key} onPress={() => setLevel(l.key)} />
         ))}
       </View>
       {level !== 'world' && !myGeo?.[level] && (
         <ThemedText type="small" themeColor="textSecondary">
-          Set your gym&apos;s location to rank at this level. Showing nothing until then.
+          {t('lb.noGeo')}
         </ThemedText>
       )}
 
       {tab === 'overall' || !canSeeKids ? (
         overallFiltered.length === 0 ? (
-          <EmptyState icon="podium-outline" title="No grapplers here yet" subtitle="Try a wider level, or be the first to climb." />
+          <EmptyState icon="podium-outline" title={t('lb.emptyTitle')} subtitle={t('lb.emptySub')} />
         ) : (
           <Card style={styles.list}>
             {overallFiltered.map((p, i) => {
@@ -133,12 +135,12 @@ export default function LeaderboardScreen() {
                     <View style={{ flex: 1, gap: 2 }}>
                       <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>
                         {p.display_name}
-                        {isMe ? ' (you)' : ''}
+                        {isMe ? ` ${t('lb.you')}` : ''}
                       </ThemedText>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
                         <BeltChip belt={p.belt_rank} size="sm" />
                         <ThemedText type="small" themeColor="textSecondary">
-                          {p.wins}W · {p.losses}L · {p.draws}D
+                          {p.wins}{t('lb.w')} · {p.losses}{t('lb.l')} · {p.draws}{t('lb.d')}
                         </ThemedText>
                       </View>
                     </View>
@@ -160,13 +162,13 @@ export default function LeaderboardScreen() {
       ) : (
         <>
           {juniors.length > 0 && (
-            <Button label="Junior challenges" variant="secondary" icon="mail-outline" onPress={() => router.push('/invites')} />
+            <Button label={t('profile.juniorChallenges')} variant="secondary" icon="mail-outline" onPress={() => router.push('/invites')} />
           )}
           <ThemedText type="small" themeColor="textSecondary">
-            Under-14 athletes ranked by rating. For their privacy, only a first name is shown.
+            {t('lb.kidsNote')}
           </ThemedText>
           {kids.length === 0 ? (
-            <EmptyState icon="happy-outline" title="No ranked juniors here" subtitle="Try a wider level, or once they've competed they'll show up." />
+            <EmptyState icon="happy-outline" title={t('lb.kidsEmptyTitle')} subtitle={t('lb.kidsEmptySub')} />
           ) : (
             <Card style={styles.list}>
               {kids.map((k, i) => {
@@ -178,7 +180,7 @@ export default function LeaderboardScreen() {
                       <RankBadge rank={k.rank} />
                       <ThemedText style={{ flex: 1, fontWeight: '700' }} numberOfLines={1}>
                         {k.first_name}
-                        {mine ? ' (yours)' : ''}
+                        {mine ? ` ${t('lb.yours')}` : ''}
                       </ThemedText>
                       <ThemedText style={{ fontWeight: '800', fontSize: 20 }}>{k.rating}</ThemedText>
                       {juniors.length > 0 && !mine && (

@@ -13,6 +13,7 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useUnread } from '@/hooks/use-unread';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { winStreak } from '@/lib/elo';
 import { fetchMyMatches } from '@/lib/matches';
 import { pingActivity } from '@/lib/quests';
@@ -27,6 +28,7 @@ export default function HomeScreen() {
   const { profile, refreshProfile, session } = useAuth();
   const theme = useTheme();
   const router = useRouter();
+  const { t } = useTranslation();
   const [matches, setMatches] = useState<MatchWithPeople[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -141,10 +143,10 @@ export default function HomeScreen() {
                 <Ionicons name="flame" size={40} color={theme.accentText} style={{ opacity: 0.9 }} />
                 <View style={{ gap: 2 }}>
                   <ThemedText style={{ color: theme.accentText, fontSize: 24, fontWeight: '800' }}>
-                    Start a Match
+                    {t('home.startMatch')}
                   </ThemedText>
                   <ThemedText style={{ color: theme.accentText, opacity: 0.9 }}>
-                    Challenge someone at the mat
+                    {t('home.startMatchSub')}
                   </ThemedText>
                 </View>
               </View>
@@ -154,13 +156,13 @@ export default function HomeScreen() {
               <View style={[styles.hero, { width: HERO_W, backgroundColor: theme.tile, borderColor: theme.tileBorder, borderWidth: 1 }]}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                   <ThemedText type="smallBold" themeColor="textSecondary">
-                    YOUR RATING
+                    {t('home.yourRating')}
                   </ThemedText>
                   {streak >= 2 && (
                     <View style={styles.streak}>
                       <Ionicons name="flame" size={14} color="#ff7a1a" />
                       <ThemedText style={{ color: '#ff7a1a', fontWeight: '800', fontSize: 13 }}>
-                        {streak} win streak
+                        {streak} {t('home.winStreak')}
                       </ThemedText>
                     </View>
                   )}
@@ -175,7 +177,7 @@ export default function HomeScreen() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
                   <BeltChip belt={profile.belt_rank} size="sm" />
                   <ThemedText type="small" themeColor="textSecondary">
-                    View rankings ›
+                    {t('home.viewRankings')}
                   </ThemedText>
                 </View>
               </View>
@@ -183,19 +185,19 @@ export default function HomeScreen() {
           </ScrollView>
 
           {/* Stats tiles */}
-          <SectionLabel>Your Stats</SectionLabel>
+          <SectionLabel>{t('home.yourStats')}</SectionLabel>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tileRow}>
-            <StatTile icon="trending-up" value={profile.rating} label="Rating" />
-            <StatTile icon="trophy" value={profile.wins} label="Wins" />
-            <StatTile icon="pie-chart" value={`${winRate}%`} label="Win rate" />
-            <StatTile icon="pie-chart-outline" value={`${drawRate}%`} label="Draw rate" />
-            <StatTile icon="albums" value={total} label="Matches" />
+            <StatTile icon="trending-up" value={profile.rating} label={t('home.statRating')} />
+            <StatTile icon="trophy" value={profile.wins} label={t('home.statWins')} />
+            <StatTile icon="pie-chart" value={`${winRate}%`} label={t('home.statWinRate')} />
+            <StatTile icon="pie-chart-outline" value={`${drawRate}%`} label={t('home.statDrawRate')} />
+            <StatTile icon="albums" value={total} label={t('home.statMatches')} />
           </ScrollView>
 
           {/* Needs attention */}
           {needsMe.length > 0 && (
             <>
-              <SectionLabel>Needs your attention</SectionLabel>
+              <SectionLabel>{t('home.needsAttention')}</SectionLabel>
               <View style={{ gap: Spacing.two }}>
                 {needsMe.map((m) => (
                   <MatchCard key={m.id} match={m} currentUserId={userId!} />
@@ -205,14 +207,14 @@ export default function HomeScreen() {
           )}
 
           {/* Recent matches — chess.com Game History style */}
-          <SectionLabel>Recent matches</SectionLabel>
+          <SectionLabel>{t('home.recentMatches')}</SectionLabel>
           {error ? (
             <ErrorState onRetry={load} />
           ) : recent.length === 0 ? (
             <EmptyState
               icon="hand-left-outline"
-              title="No matches yet"
-              subtitle="Start a challenge at the next open mat to get on the board."
+              title={t('home.noMatchesTitle')}
+              subtitle={t('home.noMatchesSub')}
             />
           ) : (
             <Card style={{ paddingVertical: Spacing.one }}>
@@ -224,7 +226,7 @@ export default function HomeScreen() {
               ))}
               <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />
               <Pressable onPress={() => router.push('/(tabs)/matches')} style={styles.viewAll}>
-                <ThemedText style={{ fontWeight: '700', color: theme.accent }}>View all matches</ThemedText>
+                <ThemedText style={{ fontWeight: '700', color: theme.accent }}>{t('home.viewAll')}</ThemedText>
               </Pressable>
             </Card>
           )}
@@ -232,7 +234,7 @@ export default function HomeScreen() {
 
         {/* Pinned action button */}
         <View style={styles.pinned} pointerEvents="box-none">
-          <Button label="New Challenge" icon="add-circle" onPress={() => router.push('/match/new')} />
+          <Button label={t('home.newChallenge')} icon="add-circle" onPress={() => router.push('/match/new')} />
         </View>
       </SafeAreaView>
     </View>
