@@ -250,7 +250,8 @@ export interface LeaderRow extends Profile {
 export async function fetchLeaderboard(limit = 200): Promise<LeaderRow[]> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('*, gym:gyms(city,state,country,continent)')
+    // disambiguate: profiles<->gyms has two FKs (gym_id and owner_id); we want gym_id.
+    .select('*, gym:gyms!profiles_gym_id_fkey(city,state,country,continent)')
     .neq('age_tier', 'kid')
     .order('rating', { ascending: false })
     .limit(limit);
@@ -262,7 +263,7 @@ export async function fetchLeaderboard(limit = 200): Promise<LeaderRow[]> {
 export async function fetchMyGeo(userId: string): Promise<import('./geo').Geo | null> {
   const { data } = await supabase
     .from('profiles')
-    .select('gym:gyms(city,state,country,continent)')
+    .select('gym:gyms!profiles_gym_id_fkey(city,state,country,continent)')
     .eq('id', userId)
     .single();
   const g = (data as any)?.gym;
