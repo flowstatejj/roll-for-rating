@@ -8,12 +8,14 @@ import { EmptyState, Loading, Screen } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { fetchPublicMatches } from '@/lib/matches';
 import type { MatchWithPeople } from '@/lib/types';
 
 export default function WatchScreen() {
   const { session } = useAuth();
   const theme = useTheme();
+  const { t } = useTranslation();
   const userId = session!.user.id;
   const [matches, setMatches] = useState<MatchWithPeople[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,17 +43,17 @@ export default function WatchScreen() {
 
   return (
     <Screen refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.text} />}>
-      <Stack.Screen options={{ title: 'Watch' }} />
+      <Stack.Screen options={{ title: t('nav.watch') }} />
       <ThemedText type="subtitle" style={{ fontSize: 28 }}>
-        Watch
+        {t('nav.watch')}
       </ThemedText>
-      <ThemedText themeColor="textSecondary">Public matches. Tap to watch, count a view, and react.</ThemedText>
+      <ThemedText themeColor="textSecondary">{t('watch.intro')}</ThemedText>
 
       {matches.length === 0 ? (
         <EmptyState
           icon="play-circle-outline"
-          title="Nothing public yet"
-          subtitle="Matches set to public by both fighters show up here once recorded."
+          title={t('watch.emptyTitle')}
+          subtitle={t('watch.emptySub')}
         />
       ) : (
         <View style={{ gap: Spacing.two }}>

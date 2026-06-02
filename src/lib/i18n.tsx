@@ -182,6 +182,21 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'om.titleReqTitle': 'Title required', 'om.titleReqBody': 'Give the open mat a title.', 'om.postFail': 'Could not post',
     'om.removeTitle': 'Remove listing?', 'om.removeBody': 'Delete this open mat?', 'om.delete': 'Delete',
     'om.deleteFail': 'Could not delete',
+
+    'watch.intro': 'Public matches. Tap to watch, count a view, and react.',
+    'watch.emptyTitle': 'Nothing public yet',
+    'watch.emptySub': 'Matches set to public by both fighters show up here once recorded.',
+
+    'notif.emptyTitle': 'No notifications', 'notif.emptySub': 'Challenges, results, and reactions will show up here.',
+    'notif.justNow': 'just now', 'notif.minAgo': '{n}m ago', 'notif.hAgo': '{n}h ago', 'notif.dAgo': '{n}d ago',
+
+    'riv.intro': "Your head-to-head record against everyone you've rolled.",
+    'riv.emptyTitle': 'No rivalries yet', 'riv.emptySub': 'Complete a match to start a head-to-head record.',
+    'riv.rematch': 'Rematch',
+
+    'champ.intro': 'Titles are held by whoever sits #1. Beat them in rating to take the crown. 👑',
+    'champ.emptyTitle': 'No titles yet', 'champ.emptySub': 'Join a gym and set your city to unlock more titles.',
+    'champ.vacant': 'Vacant — claim it',
   },
   es: {
     'tab.home': 'Inicio', 'tab.puzzles': 'Ejercicios', 'tab.matches': 'Combates',
@@ -352,6 +367,21 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'om.titleReqTitle': 'Título obligatorio', 'om.titleReqBody': 'Dale un título al open mat.', 'om.postFail': 'No se pudo publicar',
     'om.removeTitle': '¿Quitar anuncio?', 'om.removeBody': '¿Eliminar este open mat?', 'om.delete': 'Eliminar',
     'om.deleteFail': 'No se pudo eliminar',
+
+    'watch.intro': 'Combates públicos. Toca para ver, contar una vista y reaccionar.',
+    'watch.emptyTitle': 'Aún no hay nada público',
+    'watch.emptySub': 'Los combates marcados como públicos por ambos aparecen aquí una vez registrados.',
+
+    'notif.emptyTitle': 'Sin notificaciones', 'notif.emptySub': 'Los retos, resultados y reacciones aparecerán aquí.',
+    'notif.justNow': 'ahora mismo', 'notif.minAgo': 'hace {n} min', 'notif.hAgo': 'hace {n} h', 'notif.dAgo': 'hace {n} d',
+
+    'riv.intro': 'Tu historial cara a cara contra todos con quienes has rodado.',
+    'riv.emptyTitle': 'Aún no hay rivalidades', 'riv.emptySub': 'Completa un combate para empezar un historial cara a cara.',
+    'riv.rematch': 'Revancha',
+
+    'champ.intro': 'Los títulos los tiene quien está en el #1. Supéralos en puntuación para llevarte la corona. 👑',
+    'champ.emptyTitle': 'Aún no hay títulos', 'champ.emptySub': 'Únete a un gimnasio y pon tu ciudad para desbloquear más títulos.',
+    'champ.vacant': 'Vacante — reclámalo',
   },
   pt: {
     'tab.home': 'Início', 'tab.puzzles': 'Exercícios', 'tab.matches': 'Lutas',
@@ -522,6 +552,21 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'om.titleReqTitle': 'Título obrigatório', 'om.titleReqBody': 'Dê um título ao open mat.', 'om.postFail': 'Não foi possível publicar',
     'om.removeTitle': 'Remover anúncio?', 'om.removeBody': 'Excluir este open mat?', 'om.delete': 'Excluir',
     'om.deleteFail': 'Não foi possível excluir',
+
+    'watch.intro': 'Lutas públicas. Toque para assistir, contar uma visualização e reagir.',
+    'watch.emptyTitle': 'Ainda sem nada público',
+    'watch.emptySub': 'Lutas marcadas como públicas pelos dois aparecem aqui depois de registradas.',
+
+    'notif.emptyTitle': 'Sem notificações', 'notif.emptySub': 'Desafios, resultados e reações aparecerão aqui.',
+    'notif.justNow': 'agora mesmo', 'notif.minAgo': 'há {n} min', 'notif.hAgo': 'há {n} h', 'notif.dAgo': 'há {n} d',
+
+    'riv.intro': 'Seu retrospecto direto contra todos com quem você rolou.',
+    'riv.emptyTitle': 'Ainda sem rivalidades', 'riv.emptySub': 'Complete uma luta para iniciar um retrospecto direto.',
+    'riv.rematch': 'Revanche',
+
+    'champ.intro': 'Os títulos são de quem está em #1. Supere-os na pontuação para levar a coroa. 👑',
+    'champ.emptyTitle': 'Ainda sem títulos', 'champ.emptySub': 'Entre numa academia e defina sua cidade para desbloquear mais títulos.',
+    'champ.vacant': 'Vago — conquiste-o',
   },
   fr: {
     'tab.home': 'Accueil', 'tab.puzzles': 'Exercices', 'tab.matches': 'Combats',
@@ -692,6 +737,21 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'om.titleReqTitle': 'Titre requis', 'om.titleReqBody': 'Donne un titre à l’open mat.', 'om.postFail': 'Impossible de publier',
     'om.removeTitle': 'Retirer l’annonce ?', 'om.removeBody': 'Supprimer cet open mat ?', 'om.delete': 'Supprimer',
     'om.deleteFail': 'Impossible de supprimer',
+
+    'watch.intro': 'Combats publics. Touche pour regarder, compter une vue et réagir.',
+    'watch.emptyTitle': 'Rien de public pour l’instant',
+    'watch.emptySub': 'Les combats rendus publics par les deux apparaissent ici une fois enregistrés.',
+
+    'notif.emptyTitle': 'Aucune notification', 'notif.emptySub': 'Les défis, résultats et réactions apparaîtront ici.',
+    'notif.justNow': 'à l’instant', 'notif.minAgo': 'il y a {n} min', 'notif.hAgo': 'il y a {n} h', 'notif.dAgo': 'il y a {n} j',
+
+    'riv.intro': 'Ton bilan en face-à-face contre tous ceux avec qui tu as combattu.',
+    'riv.emptyTitle': 'Aucune rivalité pour l’instant', 'riv.emptySub': 'Termine un combat pour démarrer un bilan en face-à-face.',
+    'riv.rematch': 'Revanche',
+
+    'champ.intro': 'Les titres sont détenus par le n°1. Bats-le au classement pour prendre la couronne. 👑',
+    'champ.emptyTitle': 'Aucun titre pour l’instant', 'champ.emptySub': 'Rejoins une salle et renseigne ta ville pour débloquer plus de titres.',
+    'champ.vacant': 'Vacant — réclame-le',
   },
 };
 

@@ -7,11 +7,13 @@ import { Avatar, BeltChip, Card, EmptyState, Loading, Screen } from '@/component
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { fetchChampions, type Champion } from '@/lib/titles';
 
 export default function ChampionsScreen() {
   const { profile } = useAuth();
   const theme = useTheme();
+  const { t } = useTranslation();
   const [champs, setChamps] = useState<Champion[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -32,13 +34,13 @@ export default function ChampionsScreen() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: 'Champions' }} />
+      <Stack.Screen options={{ title: t('nav.champions') }} />
       <ThemedText themeColor="textSecondary">
-        Titles are held by whoever sits #1. Beat them in rating to take the crown. 👑
+        {t('champ.intro')}
       </ThemedText>
 
       {champs.length === 0 ? (
-        <EmptyState icon="trophy-outline" title="No titles yet" subtitle="Join a gym and set your city to unlock more titles." />
+        <EmptyState icon="trophy-outline" title={t('champ.emptyTitle')} subtitle={t('champ.emptySub')} />
       ) : (
         <View style={{ gap: Spacing.two }}>
           {champs.map((c) => (
@@ -51,13 +53,13 @@ export default function ChampionsScreen() {
                     <Avatar name={c.champ.display_name} size={28} />
                     <ThemedText type="small" themeColor="textSecondary">
                       {c.champ.display_name}
-                      {c.isMe ? ' (you)' : ''} · {c.champ.rating}
+                      {c.isMe ? ` ${t('md.you')}` : ''} · {c.champ.rating}
                     </ThemedText>
                     <BeltChip belt={c.champ.belt_rank} size="sm" />
                   </View>
                 ) : (
                   <ThemedText type="small" themeColor="textSecondary">
-                    Vacant — claim it
+                    {t('champ.vacant')}
                   </ThemedText>
                 )}
               </View>

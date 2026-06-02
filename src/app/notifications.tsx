@@ -8,6 +8,7 @@ import { Card, EmptyState, Loading, Screen } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { fetchNotifications, markAllRead } from '@/lib/notifications';
 import type { AppNotification } from '@/lib/types';
 
@@ -26,21 +27,22 @@ function iconFor(type: string): keyof typeof Ionicons.glyphMap {
   }
 }
 
-function relative(iso: string): string {
+function relative(iso: string, t: (k: string) => string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
-  if (m < 1) return 'just now';
-  if (m < 60) return `${m}m ago`;
+  if (m < 1) return t('notif.justNow');
+  if (m < 60) return t('notif.minAgo').replace('{n}', String(m));
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
+  if (h < 24) return t('notif.hAgo').replace('{n}', String(h));
   const d = Math.floor(h / 24);
-  return `${d}d ago`;
+  return t('notif.dAgo').replace('{n}', String(d));
 }
 
 export default function NotificationsScreen() {
   const { session } = useAuth();
   const theme = useTheme();
   const router = useRouter();
+  const { t } = useTranslation();
   const userId = session!.user.id;
   const [items, setItems] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,10 +71,10 @@ export default function NotificationsScreen() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: 'Notifications' }} />
+      <Stack.Screen options={{ title: t('nav.notifications') }} />
 
       {items.length === 0 ? (
-        <EmptyState icon="notifications-outline" title="No notifications" subtitle="Challenges, results, and reactions will show up here." />
+        <EmptyState icon="notifications-outline" title={t('notif.emptyTitle')} subtitle={t('notif.emptySub')} />
       ) : (
         <View style={{ gap: Spacing.two }}>
           {items.map((n) => (
@@ -87,7 +89,7 @@ export default function NotificationsScreen() {
                       {n.title}
                     </ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">
-                      {relative(n.created_at)}
+                      {relative(n.created_at, t)}
                     </ThemedText>
                   </View>
                   {n.body ? (

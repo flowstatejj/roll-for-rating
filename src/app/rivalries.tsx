@@ -8,6 +8,7 @@ import { Avatar, BeltChip, Card, EmptyState, Loading, Screen } from '@/component
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { fetchMyMatches } from '@/lib/matches';
 import { computeRivalries, type Rivalry } from '@/lib/rivalries';
 
@@ -15,6 +16,7 @@ export default function RivalriesScreen() {
   const { session } = useAuth();
   const theme = useTheme();
   const router = useRouter();
+  const { t } = useTranslation();
   const userId = session!.user.id;
   const [rivalries, setRivalries] = useState<Rivalry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,11 +38,11 @@ export default function RivalriesScreen() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: 'Rivalries' }} />
-      <ThemedText themeColor="textSecondary">Your head-to-head record against everyone you&apos;ve rolled.</ThemedText>
+      <Stack.Screen options={{ title: t('nav.rivalries') }} />
+      <ThemedText themeColor="textSecondary">{t('riv.intro')}</ThemedText>
 
       {rivalries.length === 0 ? (
-        <EmptyState icon="git-compare-outline" title="No rivalries yet" subtitle="Complete a match to start a head-to-head record." />
+        <EmptyState icon="git-compare-outline" title={t('riv.emptyTitle')} subtitle={t('riv.emptySub')} />
       ) : (
         <View style={{ gap: Spacing.two }}>
           {rivalries.map((r) => {
@@ -65,7 +67,7 @@ export default function RivalriesScreen() {
                 </View>
                 <Pressable onPress={() => router.push(`/match/new?opponent=${r.opponentId}`)} style={[styles.rematch, { backgroundColor: theme.accent }]}>
                   <Ionicons name="repeat" size={15} color={theme.accentText} />
-                  <ThemedText style={{ color: theme.accentText, fontWeight: '700', fontSize: 13 }}>Rematch</ThemedText>
+                  <ThemedText style={{ color: theme.accentText, fontWeight: '700', fontSize: 13 }}>{t('riv.rematch')}</ThemedText>
                 </Pressable>
               </Card>
             );
