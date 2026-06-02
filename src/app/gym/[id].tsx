@@ -8,6 +8,7 @@ import { Avatar, BeltChip, Button, Card, Loading, Screen } from '@/components/ui
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import {
   fetchGym,
   fetchGymFriends,
@@ -24,6 +25,7 @@ export default function GymDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session, refreshProfile } = useAuth();
   const theme = useTheme();
+  const { t } = useTranslation();
   const userId = session!.user.id;
 
   const [gym, setGym] = useState<GymWithMeta | null>(null);
@@ -57,9 +59,9 @@ export default function GymDetailScreen() {
       await fn();
       await refreshProfile();
       await load();
-      if (done) Alert.alert('Done', done);
+      if (done) Alert.alert(t('md.done'), done);
     } catch (e: any) {
-      Alert.alert('Error', e.message ?? 'Try again.');
+      Alert.alert(t('md.error'), e.message ?? t('md.tryAgain'));
     } finally {
       setBusy(false);
     }
@@ -83,7 +85,7 @@ export default function GymDetailScreen() {
             <ThemedText style={{ fontSize: 22, fontWeight: '800' }}>{gym.name}</ThemedText>
             {gym.city ? <ThemedText themeColor="textSecondary">{gym.city}</ThemedText> : null}
             <ThemedText type="small" themeColor="textSecondary">
-              {gym.member_count} member{gym.member_count === 1 ? '' : 's'}
+              {gym.member_count} {gym.member_count === 1 ? t('gd.member') : t('gd.members')}
             </ThemedText>
           </View>
         </View>
@@ -92,28 +94,28 @@ export default function GymDetailScreen() {
 
       {/* Membership */}
       {gym.is_member ? (
-        <Button label="Leave this gym" variant="ghost" icon="exit-outline" loading={busy} onPress={() => act(() => leaveGym(userId))} />
+        <Button label={t('gd.leave')} variant="ghost" icon="exit-outline" loading={busy} onPress={() => act(() => leaveGym(userId))} />
       ) : (
-        <Button label="Join this gym" icon="add-circle" loading={busy} onPress={() => act(() => joinGym(userId, gym.id), `Welcome to ${gym.name}!`)} />
+        <Button label={t('gd.join')} icon="add-circle" loading={busy} onPress={() => act(() => joinGym(userId, gym.id), t('gd.welcome').replace('{name}', gym.name))} />
       )}
 
       {canRequestFriend && (
         <Button
-          label="Request gym friendship"
+          label={t('gd.requestFriend')}
           variant="secondary"
           icon="git-merge"
           loading={busy}
-          onPress={() => act(() => requestGymFriendship(gym.id), 'Request sent to the gym owner.')}
+          onPress={() => act(() => requestGymFriendship(gym.id), t('gd.requestSent'))}
         />
       )}
 
       {/* Owner: gym friends management */}
       {gym.is_owner && (
         <View style={{ gap: Spacing.two }}>
-          <ThemedText style={styles.section}>Gym friends</ThemedText>
+          <ThemedText style={styles.section}>{t('gd.gymFriends')}</ThemedText>
           {friends.length === 0 ? (
             <Card style={{ alignItems: 'center' }}>
-              <ThemedText themeColor="textSecondary">No gym friendships yet.</ThemedText>
+              <ThemedText themeColor="textSecondary">{t('gd.noFriends')}</ThemedText>
             </Card>
           ) : (
             friends.map((f) => (
@@ -121,7 +123,7 @@ export default function GymDetailScreen() {
                 <View style={{ flex: 1 }}>
                   <ThemedText style={{ fontWeight: '700' }}>{f.gym.name}</ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">
-                    {f.status === 'accepted' ? 'Friends' : f.incoming ? 'Wants to connect' : 'Request sent'}
+                    {f.status === 'accepted' ? t('gd.friends') : f.incoming ? t('gd.wantsConnect') : t('gd.reqSent')}
                   </ThemedText>
                 </View>
                 {f.status === 'pending' && f.incoming && (
@@ -138,10 +140,10 @@ export default function GymDetailScreen() {
       )}
 
       {/* Members */}
-      <ThemedText style={styles.section}>Members</ThemedText>
+      <ThemedText style={styles.section}>{t('gd.membersTitle')}</ThemedText>
       {members.length === 0 ? (
         <Card style={{ alignItems: 'center' }}>
-          <ThemedText themeColor="textSecondary">No members yet.</ThemedText>
+          <ThemedText themeColor="textSecondary">{t('gd.noMembers')}</ThemedText>
         </Card>
       ) : (
         <Card style={{ paddingVertical: Spacing.one }}>
@@ -153,7 +155,7 @@ export default function GymDetailScreen() {
                 <View style={{ flex: 1, gap: 2 }}>
                   <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>
                     {p.display_name}
-                    {p.id === gym.owner_id ? ' · owner' : ''}
+                    {p.id === gym.owner_id ? ` · ${t('gd.ownerSuffix')}` : ''}
                   </ThemedText>
                   <BeltChip belt={p.belt_rank} size="sm" />
                 </View>

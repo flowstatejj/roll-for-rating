@@ -8,6 +8,7 @@ import { Button, Card, Screen, TextField } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { createGym, fetchGyms } from '@/lib/social';
 import type { Gym } from '@/lib/types';
 
@@ -15,6 +16,7 @@ export default function GymsScreen() {
   const { profile, refreshProfile } = useAuth();
   const theme = useTheme();
   const router = useRouter();
+  const { t } = useTranslation();
 
   const [query, setQuery] = useState('');
   const [gyms, setGyms] = useState<Gym[]>([]);
@@ -43,7 +45,7 @@ export default function GymsScreen() {
 
   async function submitCreate() {
     if (!name.trim()) {
-      Alert.alert('Name required', 'Give your gym a name.');
+      Alert.alert(t('gym.nameReqTitle'), t('gym.nameReqBody'));
       return;
     }
     setBusy(true);
@@ -52,7 +54,7 @@ export default function GymsScreen() {
       await refreshProfile();
       router.replace(`/gym/${gym.id}`);
     } catch (e: any) {
-      Alert.alert('Could not create gym', e.message ?? 'Try again.');
+      Alert.alert(t('gym.createFail'), e.message ?? t('md.tryAgain'));
     } finally {
       setBusy(false);
     }
@@ -60,32 +62,32 @@ export default function GymsScreen() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: 'Gyms' }} />
+      <Stack.Screen options={{ title: t('nav.gyms') }} />
 
       {creating ? (
         <Card style={{ gap: Spacing.three }}>
-          <ThemedText style={{ fontSize: 18, fontWeight: '800' }}>Create a gym</ThemedText>
-          <TextField label="Gym name" value={name} onChangeText={setName} placeholder="Gracie Barra Springfield" />
-          <TextField label="City" value={city} onChangeText={setCity} placeholder="Springfield" />
-          <TextField label="State / region" value={state} onChangeText={setState} placeholder="Illinois" />
-          <TextField label="Country" value={country} onChangeText={setCountry} placeholder="United States" />
+          <ThemedText style={{ fontSize: 18, fontWeight: '800' }}>{t('gym.create')}</ThemedText>
+          <TextField label={t('gym.name')} value={name} onChangeText={setName} placeholder="Gracie Barra Springfield" />
+          <TextField label={t('gym.city')} value={city} onChangeText={setCity} placeholder="Springfield" />
+          <TextField label={t('gym.state')} value={state} onChangeText={setState} placeholder="Illinois" />
+          <TextField label={t('gym.country')} value={country} onChangeText={setCountry} placeholder="United States" />
           <ThemedText type="small" themeColor="textSecondary">
-            Location powers the City / State / Country / Continent / World leaderboards.
+            {t('gym.locationHint')}
           </ThemedText>
-          <TextField label="Description (optional)" value={description} onChangeText={setDescription} multiline placeholder="A bit about the academy" />
-          <Button label="Create gym" icon="add-circle" loading={busy} onPress={submitCreate} />
-          <Button label="Cancel" variant="ghost" onPress={() => setCreating(false)} />
+          <TextField label={t('gym.descOptional')} value={description} onChangeText={setDescription} multiline placeholder="A bit about the academy" />
+          <Button label={t('gym.createBtn')} icon="add-circle" loading={busy} onPress={submitCreate} />
+          <Button label={t('common.cancel')} variant="ghost" onPress={() => setCreating(false)} />
         </Card>
       ) : (
-        <Button label="Create a new gym" icon="add-circle" onPress={() => setCreating(true)} />
+        <Button label={t('gym.createNew')} icon="add-circle" onPress={() => setCreating(true)} />
       )}
 
       <TextField
-        label="Search gyms"
+        label={t('gym.search')}
         value={query}
         onChangeText={setQuery}
         autoCapitalize="none"
-        placeholder="Name or city"
+        placeholder={t('gym.searchPlaceholder')}
       />
 
       <View style={{ gap: Spacing.two }}>
@@ -100,7 +102,7 @@ export default function GymsScreen() {
                 <View style={{ flex: 1, gap: 2 }}>
                   <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>
                     {g.name}
-                    {mine ? ' (your gym)' : ''}
+                    {mine ? ` (${t('gym.yourGymSuffix')})` : ''}
                   </ThemedText>
                   {g.city ? (
                     <ThemedText type="small" themeColor="textSecondary">
@@ -115,7 +117,7 @@ export default function GymsScreen() {
         })}
         {gyms.length === 0 && (
           <ThemedText themeColor="textSecondary" style={{ textAlign: 'center', paddingVertical: Spacing.three }}>
-            No gyms found. Create the first one!
+            {t('gym.none')}
           </ThemedText>
         )}
       </View>

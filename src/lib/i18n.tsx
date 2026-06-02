@@ -153,6 +153,20 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'md.acceptWagerTitle': 'Accept the wager?',
     'md.acceptWagerBody': "You're staking {n} Elo. Win and you take it; lose and it's gone.",
     'md.acceptBtn': 'Accept', 'md.tryAgain': 'Try again.',
+
+    'gd.member': 'member', 'gd.members': 'members', 'gd.leave': 'Leave this gym', 'gd.join': 'Join this gym',
+    'gd.welcome': 'Welcome to {name}!', 'gd.requestFriend': 'Request gym friendship',
+    'gd.requestSent': 'Request sent to the gym owner.', 'gd.gymFriends': 'Gym friends',
+    'gd.noFriends': 'No gym friendships yet.', 'gd.friends': 'Friends', 'gd.wantsConnect': 'Wants to connect',
+    'gd.reqSent': 'Request sent', 'gd.membersTitle': 'Members', 'gd.noMembers': 'No members yet.',
+    'gd.ownerSuffix': 'owner',
+
+    'gym.create': 'Create a gym', 'gym.name': 'Gym name', 'gym.city': 'City', 'gym.state': 'State / region',
+    'gym.country': 'Country', 'gym.locationHint': 'Location powers the City / State / Country / Continent / World leaderboards.',
+    'gym.descOptional': 'Description (optional)', 'gym.createBtn': 'Create gym', 'gym.createNew': 'Create a new gym',
+    'gym.search': 'Search gyms', 'gym.searchPlaceholder': 'Name or city', 'gym.yourGymSuffix': 'your gym',
+    'gym.none': 'No gyms found. Create the first one!', 'gym.nameReqTitle': 'Name required',
+    'gym.nameReqBody': 'Give your gym a name.', 'gym.createFail': 'Could not create gym',
   },
   es: {
     'tab.home': 'Inicio', 'tab.puzzles': 'Ejercicios', 'tab.matches': 'Combates',
@@ -294,6 +308,20 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'md.acceptWagerTitle': '¿Aceptar la apuesta?',
     'md.acceptWagerBody': 'Apuestas {n} Elo. Si ganas te lo llevas; si pierdes se va.',
     'md.acceptBtn': 'Aceptar', 'md.tryAgain': 'Inténtalo de nuevo.',
+
+    'gd.member': 'miembro', 'gd.members': 'miembros', 'gd.leave': 'Salir de este gimnasio', 'gd.join': 'Unirse a este gimnasio',
+    'gd.welcome': '¡Bienvenido a {name}!', 'gd.requestFriend': 'Solicitar amistad de gimnasio',
+    'gd.requestSent': 'Solicitud enviada al dueño del gimnasio.', 'gd.gymFriends': 'Gimnasios amigos',
+    'gd.noFriends': 'Aún no hay amistades de gimnasio.', 'gd.friends': 'Amigos', 'gd.wantsConnect': 'Quiere conectar',
+    'gd.reqSent': 'Solicitud enviada', 'gd.membersTitle': 'Miembros', 'gd.noMembers': 'Aún no hay miembros.',
+    'gd.ownerSuffix': 'dueño',
+
+    'gym.create': 'Crear un gimnasio', 'gym.name': 'Nombre del gimnasio', 'gym.city': 'Ciudad', 'gym.state': 'Estado / región',
+    'gym.country': 'País', 'gym.locationHint': 'La ubicación activa las clasificaciones de Ciudad / Estado / País / Continente / Mundo.',
+    'gym.descOptional': 'Descripción (opcional)', 'gym.createBtn': 'Crear gimnasio', 'gym.createNew': 'Crear un nuevo gimnasio',
+    'gym.search': 'Buscar gimnasios', 'gym.searchPlaceholder': 'Nombre o ciudad', 'gym.yourGymSuffix': 'tu gimnasio',
+    'gym.none': 'No se encontraron gimnasios. ¡Crea el primero!', 'gym.nameReqTitle': 'Nombre obligatorio',
+    'gym.nameReqBody': 'Dale un nombre a tu gimnasio.', 'gym.createFail': 'No se pudo crear el gimnasio',
   },
   pt: {
     'tab.home': 'Início', 'tab.puzzles': 'Exercícios', 'tab.matches': 'Lutas',
@@ -435,6 +463,20 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'md.acceptWagerTitle': 'Aceitar a aposta?',
     'md.acceptWagerBody': 'Você aposta {n} Elo. Se ganhar leva; se perder, foi.',
     'md.acceptBtn': 'Aceitar', 'md.tryAgain': 'Tente novamente.',
+
+    'gd.member': 'membro', 'gd.members': 'membros', 'gd.leave': 'Sair desta academia', 'gd.join': 'Entrar nesta academia',
+    'gd.welcome': 'Bem-vindo à {name}!', 'gd.requestFriend': 'Solicitar amizade de academia',
+    'gd.requestSent': 'Solicitação enviada ao dono da academia.', 'gd.gymFriends': 'Academias amigas',
+    'gd.noFriends': 'Ainda sem amizades de academia.', 'gd.friends': 'Amigas', 'gd.wantsConnect': 'Quer conectar',
+    'gd.reqSent': 'Solicitação enviada', 'gd.membersTitle': 'Membros', 'gd.noMembers': 'Ainda sem membros.',
+    'gd.ownerSuffix': 'dono',
+
+    'gym.create': 'Criar uma academia', 'gym.name': 'Nome da academia', 'gym.city': 'Cidade', 'gym.state': 'Estado / região',
+    'gym.country': 'País', 'gym.locationHint': 'A localização ativa os rankings de Cidade / Estado / País / Continente / Mundo.',
+    'gym.descOptional': 'Descrição (opcional)', 'gym.createBtn': 'Criar academia', 'gym.createNew': 'Criar uma nova academia',
+    'gym.search': 'Buscar academias', 'gym.searchPlaceholder': 'Nome ou cidade', 'gym.yourGymSuffix': 'sua academia',
+    'gym.none': 'Nenhuma academia encontrada. Crie a primeira!', 'gym.nameReqTitle': 'Nome obrigatório',
+    'gym.nameReqBody': 'Dê um nome à sua academia.', 'gym.createFail': 'Não foi possível criar a academia',
   },
   fr: {
     'tab.home': 'Accueil', 'tab.puzzles': 'Exercices', 'tab.matches': 'Combats',
@@ -576,6 +618,20 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'md.acceptWagerTitle': 'Accepter le pari ?',
     'md.acceptWagerBody': 'Tu mises {n} Elo. Si tu gagnes tu l’emportes ; si tu perds, c’est perdu.',
     'md.acceptBtn': 'Accepter', 'md.tryAgain': 'Réessaie.',
+
+    'gd.member': 'membre', 'gd.members': 'membres', 'gd.leave': 'Quitter cette salle', 'gd.join': 'Rejoindre cette salle',
+    'gd.welcome': 'Bienvenue à {name} !', 'gd.requestFriend': 'Demander une amitié de salle',
+    'gd.requestSent': 'Demande envoyée au propriétaire de la salle.', 'gd.gymFriends': 'Salles amies',
+    'gd.noFriends': 'Aucune amitié de salle pour l’instant.', 'gd.friends': 'Amies', 'gd.wantsConnect': 'Veut se connecter',
+    'gd.reqSent': 'Demande envoyée', 'gd.membersTitle': 'Membres', 'gd.noMembers': 'Aucun membre pour l’instant.',
+    'gd.ownerSuffix': 'propriétaire',
+
+    'gym.create': 'Créer une salle', 'gym.name': 'Nom de la salle', 'gym.city': 'Ville', 'gym.state': 'État / région',
+    'gym.country': 'Pays', 'gym.locationHint': 'La localisation alimente les classements Ville / État / Pays / Continent / Monde.',
+    'gym.descOptional': 'Description (optionnel)', 'gym.createBtn': 'Créer la salle', 'gym.createNew': 'Créer une nouvelle salle',
+    'gym.search': 'Chercher des salles', 'gym.searchPlaceholder': 'Nom ou ville', 'gym.yourGymSuffix': 'ta salle',
+    'gym.none': 'Aucune salle trouvée. Crée la première !', 'gym.nameReqTitle': 'Nom requis',
+    'gym.nameReqBody': 'Donne un nom à ta salle.', 'gym.createFail': 'Impossible de créer la salle',
   },
 };
 
