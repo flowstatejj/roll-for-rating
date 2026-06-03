@@ -154,19 +154,43 @@ export async function fetchFriendlyOpponents(userId: string, myGymId: string): P
 // ---------------------------------------------------------------------------
 // Open mats
 // ---------------------------------------------------------------------------
-export async function fetchOpenMats(query = ''): Promise<OpenMat[]> {
+export interface OpenMatFilters {
+  query?: string;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
+}
+
+export async function fetchOpenMats(filters: OpenMatFilters = {}): Promise<OpenMat[]> {
   let req = supabase.from('open_mats').select('*').order('created_at', { ascending: false }).limit(100);
-  const q = query.trim();
-  if (q) req = req.or(`city.ilike.%${q}%,title.ilike.%${q}%`);
+  const q = (filters.query ?? '').trim();
+  if (q) req = req.or(`title.ilike.%${q}%,address.ilike.%${q}%`);
+  // Location filters use case-insensitive exact match (values come from the
+  // region dropdowns, which are sourced from real data).
+  if (filters.country) req = req.ilike('country', filters.country);
+  if (filters.state) req = req.ilike('state', filters.state);
+  if (filters.city) req = req.ilike('city', filters.city);
   const { data, error } = await req;
   if (error) throw error;
   return (data ?? []) as OpenMat[];
+}
+
+/** Distinct country/state/city combos present in open mats — feeds the cascading filters. */
+export async function fetchOpenMatRegions(): Promise<Pick<OpenMat, 'city' | 'state' | 'country'>[]> {
+  const { data, error } = await supabase
+    .from('open_mats')
+    .select('city, state, country')
+    .limit(1000);
+  if (error) throw error;
+  return (data ?? []) as Pick<OpenMat, 'city' | 'state' | 'country'>[];
 }
 
 export async function createOpenMat(args: {
   createdBy: string;
   title: string;
   city: string;
+  state: string;
+  country: string;
   address: string;
   schedule: string;
   notes: string;
@@ -176,6 +200,8 @@ export async function createOpenMat(args: {
     created_by: args.createdBy,
     title: args.title.trim(),
     city: args.city.trim() || null,
+    state: args.state.trim() || null,
+    country: args.country.trim() || null,
     address: args.address.trim() || null,
     schedule: args.schedule.trim() || null,
     notes: args.notes.trim() || null,

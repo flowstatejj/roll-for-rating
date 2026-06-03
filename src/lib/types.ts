@@ -123,6 +123,8 @@ export interface OpenMat {
   title: string;
   gym_id: string | null;
   city: string | null;
+  state: string | null;
+  country: string | null;
   address: string | null;
   schedule: string | null;
   notes: string | null;
