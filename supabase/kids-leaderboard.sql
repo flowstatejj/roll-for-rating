@@ -1,5 +1,5 @@
 -- ============================================================================
--- Roll for Rating — 13-and-under leaderboard
+-- Rollr — 13-and-under leaderboard
 -- Run after managed-juniors.sql. Safe to re-run.
 --
 -- A GLOBAL ranking of under-14 members that exposes ONLY a first name + rating.

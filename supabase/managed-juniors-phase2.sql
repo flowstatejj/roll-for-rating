@@ -1,5 +1,5 @@
 -- ============================================================================
--- Roll for Rating — Managed juniors [Phase 2]: compete on a junior's behalf
+-- Rollr — Managed juniors [Phase 2]: compete on a junior's behalf
 -- Run AFTER managed-juniors.sql (Phase 1). Safe to re-run.
 --
 -- Lets a guardian create / accept / decline / cancel matches for the under-14

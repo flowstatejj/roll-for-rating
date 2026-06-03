@@ -1,5 +1,5 @@
 -- ============================================================================
--- Roll for Rating — extra written puzzles (run after written-puzzles.sql)
+-- Rollr — extra written puzzles (run after written-puzzles.sql)
 -- Safe to re-run: each row is only inserted if a written puzzle with the same
 -- title doesn't already exist. Grading is belt-aware (handled by grade-puzzle),
 -- so `rating` here is the puzzle's difficulty/Elo.

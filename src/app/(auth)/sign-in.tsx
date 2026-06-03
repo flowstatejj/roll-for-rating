@@ -42,7 +42,7 @@ export default function SignInScreen() {
             <Ionicons name="trophy" size={32} color={theme.accentText} />
           </View>
           <ThemedText type="title" style={styles.brand}>
-            Roll for Rating
+            Rollr
           </ThemedText>
           <ThemedText themeColor="textSecondary" style={{ textAlign: 'center' }}>
             {t('auth.tagline')}

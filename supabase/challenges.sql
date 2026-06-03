@@ -1,5 +1,5 @@
 -- ============================================================================
--- Roll for Rating — "Open for a challenge" + Elo wagers
+-- Rollr — "Open for a challenge" + Elo wagers
 -- Run this in the Supabase SQL Editor (after schema.sql + social.sql). Re-runnable.
 -- ============================================================================
 

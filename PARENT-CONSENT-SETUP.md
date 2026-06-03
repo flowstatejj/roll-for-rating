@@ -53,7 +53,7 @@ so you can send it to the parent manually (good enough for testing).
 
 ```bash
 supabase secrets set RESEND_API_KEY=re_xxxxxxxx
-supabase secrets set CONSENT_FROM_EMAIL="Roll for Rating <noreply@yourdomain.com>"
+supabase secrets set CONSENT_FROM_EMAIL="Rollr <noreply@yourdomain.com>"
 # Optional: only if your functions URL differs from <project>.supabase.co/functions/v1
 # supabase secrets set PUBLIC_FUNCTIONS_URL="https://<project>.supabase.co/functions/v1"
 ```

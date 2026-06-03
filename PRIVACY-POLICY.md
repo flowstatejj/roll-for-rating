@@ -1,8 +1,8 @@
-# Privacy Policy — Roll for Rating
+# Privacy Policy — Rollr
 
 _Last updated: [FILL IN DATE]_
 
-Roll for Rating ("the app", "we", "us") is a Brazilian Jiu-Jitsu matching and
+Rollr ("the app", "we", "us") is a Brazilian Jiu-Jitsu matching and
 rating app. This policy explains what we collect, why, and your choices.
 Questions: **[FILL IN CONTACT EMAIL]**.
 

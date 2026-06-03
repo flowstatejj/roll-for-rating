@@ -1,5 +1,5 @@
 -- ============================================================================
--- Roll for Rating — Competition records (Smoothcomp / IBJJF / ADCC)
+-- Rollr — Competition records (Smoothcomp / IBJJF / ADCC)
 -- Run this in the Supabase SQL Editor (after schema.sql). Safe to re-run.
 -- ============================================================================
 

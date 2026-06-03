@@ -1,5 +1,5 @@
 -- ============================================================================
--- Roll for Rating — In-app notifications (table + triggers + realtime)
+-- Rollr — In-app notifications (table + triggers + realtime)
 -- Run in the Supabase SQL Editor (after schema.sql, social.sql, public-matches,
 -- messages). Safe to re-run.
 -- ============================================================================

@@ -53,13 +53,13 @@ Deno.serve(async (req) => {
       method: "POST",
       headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        from: Deno.env.get("CONSENT_FROM_EMAIL") ?? "Roll for Rating <onboarding@resend.dev>",
+        from: Deno.env.get("CONSENT_FROM_EMAIL") ?? "Rollr <onboarding@resend.dev>",
         to: pc.parent_email,
-        subject: "Approve your child's Roll for Rating account",
+        subject: "Approve your child's Rollr account",
         html: `
           <div style="font-family:system-ui,Arial,sans-serif;max-width:520px;margin:auto">
-            <h2>Roll for Rating</h2>
-            <p>Your child created an account on Roll for Rating, a Jiu-Jitsu matching &amp; rating app.
+            <h2>Rollr</h2>
+            <p>Your child created an account on Rollr, a Jiu-Jitsu matching &amp; rating app.
                Their account stays restricted until you approve it.</p>
             <p style="margin:28px 0">
               <a href="${link}" style="background:#2f81f7;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:700">

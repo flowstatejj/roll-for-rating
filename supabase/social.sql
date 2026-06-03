@@ -1,5 +1,5 @@
 -- ============================================================================
--- Roll for Rating — Community layer (gyms, gym friendships, open mats)
+-- Rollr — Community layer (gyms, gym friendships, open mats)
 -- Run this in the Supabase SQL Editor (after schema.sql). Safe to re-run.
 -- ============================================================================
 
