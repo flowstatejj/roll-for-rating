@@ -63,7 +63,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'nav.submissionHunt': 'Submission Hunt', 'nav.quests': 'Quests', 'nav.seasons': 'Seasons',
     'nav.tournaments': 'Tournaments', 'nav.tournament': 'Tournament', 'nav.gymRankings': 'Gym Rankings',
 
-    'onb.welcome': 'Welcome to Rollr', 'onb.intro': "Turn open mats into a ranked ladder. Here's the gist:",
+    'onb.welcome': 'Welcome to Roll for Rating', 'onb.intro': "Turn open mats into a ranked ladder. Here's the gist:",
     'onb.step1Title': 'Challenge someone',
     'onb.step1Body': 'Pick an opponent and a referee at the mat — both agree in the app.',
     'onb.step2Title': 'Roll, then the ref records it',
@@ -342,7 +342,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'nav.submissionHunt': 'Caza de sumisiones', 'nav.quests': 'Misiones', 'nav.seasons': 'Temporadas',
     'nav.tournaments': 'Torneos', 'nav.tournament': 'Torneo', 'nav.gymRankings': 'Ranking de gimnasios',
 
-    'onb.welcome': 'Bienvenido a Rollr', 'onb.intro': 'Convierte los open mats en una clasificación. La idea:',
+    'onb.welcome': 'Bienvenido a Roll for Rating', 'onb.intro': 'Convierte los open mats en una clasificación. La idea:',
     'onb.step1Title': 'Reta a alguien',
     'onb.step1Body': 'Elige un oponente y un árbitro en el tatami: ambos aceptan en la app.',
     'onb.step2Title': 'Rueda y el árbitro lo registra',
@@ -621,7 +621,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'nav.submissionHunt': 'Caça às finalizações', 'nav.quests': 'Missões', 'nav.seasons': 'Temporadas',
     'nav.tournaments': 'Torneios', 'nav.tournament': 'Torneio', 'nav.gymRankings': 'Ranking de academias',
 
-    'onb.welcome': 'Bem-vindo ao Rollr', 'onb.intro': 'Transforme os open mats num ranking. A ideia:',
+    'onb.welcome': 'Bem-vindo ao Roll for Rating', 'onb.intro': 'Transforme os open mats num ranking. A ideia:',
     'onb.step1Title': 'Desafie alguém',
     'onb.step1Body': 'Escolha um oponente e um árbitro no tatame — ambos aceitam no app.',
     'onb.step2Title': 'Role e o árbitro registra',
@@ -900,7 +900,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'nav.submissionHunt': 'Chasse aux soumissions', 'nav.quests': 'Quêtes', 'nav.seasons': 'Saisons',
     'nav.tournaments': 'Tournois', 'nav.tournament': 'Tournoi', 'nav.gymRankings': 'Classement des salles',
 
-    'onb.welcome': 'Bienvenue sur Rollr', 'onb.intro': 'Transforme les open mats en classement. Le principe :',
+    'onb.welcome': 'Bienvenue sur Roll for Rating', 'onb.intro': 'Transforme les open mats en classement. Le principe :',
     'onb.step1Title': 'Défie quelqu’un',
     'onb.step1Body': 'Choisis un adversaire et un arbitre sur le tapis — les deux acceptent dans l’app.',
     'onb.step2Title': 'Combats, puis l’arbitre l’enregistre',

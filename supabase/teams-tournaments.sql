@@ -1,5 +1,5 @@
 -- ============================================================================
--- Rollr — Teams (gym power ranking) + Tournaments (point-race events)
+-- Roll for Rating — Teams (gym power ranking) + Tournaments (point-race events)
 -- Run in the Supabase SQL Editor (after schema.sql + social.sql). Re-runnable.
 -- ============================================================================
 

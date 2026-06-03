@@ -1,4 +1,4 @@
-# App Store / TestFlight prep — Rollr
+# App Store / TestFlight prep — Roll for Rating
 
 Status of getting the app onto iPhones via the Apple Developer account.
 
@@ -33,7 +33,7 @@ Status of getting the app onto iPhones via the Apple Developer account.
    → App Privacy. Also answer the App Privacy "data collection" questions
    (collects: contact info, user content, identifiers; not used for tracking).
 4. **App icon** — currently the **default Expo placeholder** (`assets/images/
-   icon.png` + `assets/expo.icon`). Replace with a real Rollr icon
+   icon.png` + `assets/expo.icon`). Replace with a real Roll for Rating icon
    (1024×1024, no transparency) before launch.
 5. **Store listing** — name, subtitle, description, keywords, **support URL**,
    category (Sports), and **screenshots** (need a build running on a device or
@@ -58,7 +58,7 @@ the biggest review risk. How each tier works:
   the full profile stays private; a server function returns only that
   projection).
 
-**Do NOT enrol in the "Kids Category."** Rollr is a general grappling
+**Do NOT enrol in the "Kids Category."** Roll for Rating is a general grappling
 app that *supports* juniors, not a kids' app, and it uses third-party services
 (Supabase, Anthropic) that the Kids Category forbids. Answer the App Store age
 questionnaire as a general app → expect a **12+** rating.
@@ -79,7 +79,7 @@ review notes (below).
 > Notes field. Critical because reviewers cannot fully exercise an in-person app.
 
 ```
-Rollr records IN-PERSON Brazilian Jiu-Jitsu matches. A match needs
+Roll for Rating records IN-PERSON Brazilian Jiu-Jitsu matches. A match needs
 three real people who are physically together: two competitors who agree to the
 match in the app, plus a third person (a referee/witness) who records the
 result. Because of this, a single reviewer on one device cannot complete a full

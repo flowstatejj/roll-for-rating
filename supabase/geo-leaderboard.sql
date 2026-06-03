@@ -1,5 +1,5 @@
 -- ============================================================================
--- Rollr — Geographic leaderboard levels  [Phase A]
+-- Roll for Rating — Geographic leaderboard levels  [Phase A]
 -- Run after social.sql + kids-leaderboard.sql. Safe to re-run.
 --
 -- A member's geography comes from their gym (city/state/country); continent is

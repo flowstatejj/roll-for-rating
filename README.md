@@ -1,4 +1,4 @@
-# Rollr 🥋
+# Roll for Rating 🥋
 
 Gamified Jiu-Jitsu rolling. Two competitors agree to a match in the app, a
 third person referees and records the result, and Elo-style ratings update

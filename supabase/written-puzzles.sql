@@ -1,5 +1,5 @@
 -- ============================================================================
--- Rollr — Written-puzzle grading (used by the grade-puzzle function)
+-- Roll for Rating — Written-puzzle grading (used by the grade-puzzle function)
 -- Run this in the Supabase SQL Editor (after puzzles.sql). Safe to re-run.
 -- ============================================================================
 

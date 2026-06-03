@@ -1,5 +1,5 @@
 -- ============================================================================
--- Rollr — Kid-vs-kid challenges off the leaderboard  [Phase B]
+-- Roll for Rating — Kid-vs-kid challenges off the leaderboard  [Phase B]
 -- Run after managed-juniors-phase2.sql + geo-leaderboard.sql. Safe to re-run.
 --
 -- INVITE model: a guardian challenges another kid on the 13-&-under board on

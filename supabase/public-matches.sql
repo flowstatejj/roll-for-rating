@@ -1,5 +1,5 @@
 -- ============================================================================
--- Rollr — Public matches: publish toggle, views, reactions
+-- Roll for Rating — Public matches: publish toggle, views, reactions
 -- Run in the Supabase SQL Editor (after schema.sql). Safe to re-run.
 -- ============================================================================
 

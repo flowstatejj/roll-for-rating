@@ -1,5 +1,5 @@
 -- ============================================================================
--- Rollr — Notification i18n upgrade
+-- Roll for Rating — Notification i18n upgrade
 -- Adds a structured `data` jsonb payload to every notification so the app can
 -- render the title/body in the member's CURRENT language (English title/body
 -- are kept as a fallback for older clients + push payloads).

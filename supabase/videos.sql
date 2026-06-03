@@ -1,5 +1,5 @@
 -- ============================================================================
--- Rollr — Match videos
+-- Roll for Rating — Match videos
 -- Run this in the Supabase SQL Editor (after schema.sql). Safe to re-run.
 -- ============================================================================
 

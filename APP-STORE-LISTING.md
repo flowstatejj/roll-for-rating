@@ -1,9 +1,9 @@
-# App Store listing — Rollr (draft)
+# App Store listing — Roll for Rating (draft)
 
 Copy/paste into App Store Connect. Character limits noted; tweak freely.
 
 ## App name (max 30)
-`Rollr`
+`Roll for Rating`
 
 ## Subtitle (max 30)
 `Chess ratings for Jiu-Jitsu`
@@ -16,9 +16,9 @@ Copy/paste into App Store Connect. Character limits noted; tweak freely.
 
 ## Description (max 4000)
 ```
-Rollr brings a real, earned rating to Brazilian Jiu-Jitsu — like a chess rating for the mats.
+Roll for Rating brings a real, earned rating to Brazilian Jiu-Jitsu — like a chess rating for the mats.
 
-Most rolls are forgotten the moment they end. Rollr makes them count. Agree to a match with a training partner in the app, have a third person referee and record the result, and your Elo rating moves with every win, loss, and draw. No more guessing who's leveling up — let the mats decide.
+Most rolls are forgotten the moment they end. Roll for Rating makes them count. Agree to a match with a training partner in the app, have a third person referee and record the result, and your Elo rating moves with every win, loss, and draw. No more guessing who's leveling up — let the mats decide.
 
 HOW IT WORKS
 • Challenge a partner in the app and set up where and when to meet (an open mat, after class, wherever).
@@ -48,14 +48,14 @@ SAFE FOR YOUNGER GRAPPLERS
 • Accounts for members under 18 require a parent or guardian's approval before they can compete.
 • Younger members get extra protections: no wagering, and limited public visibility.
 
-Whether you're a white belt chasing your first stripe or a competitor tracking every roll, Rollr turns training into progress you can see.
+Whether you're a white belt chasing your first stripe or a competitor tracking every roll, Roll for Rating turns training into progress you can see.
 
 Train. Roll. Rank up.
 ```
 
 ## What's New (release notes — v1.0.0)
 ```
-First release of Rollr! Track real BJJ matches with an Elo rating, climb global and gym leaderboards, sharpen your game with puzzles, and find people to roll with. Welcome to the mats.
+First release of Roll for Rating! Track real BJJ matches with an Elo rating, climb global and gym leaderboards, sharpen your game with puzzles, and find people to roll with. Welcome to the mats.
 ```
 
 ## Other App Store Connect fields

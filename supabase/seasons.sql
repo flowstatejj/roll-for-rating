@@ -1,5 +1,5 @@
 -- ============================================================================
--- Rollr — Seasons (a parallel points race that resets each season)
+-- Roll for Rating — Seasons (a parallel points race that resets each season)
 -- Run in the Supabase SQL Editor (after schema.sql). Safe to re-run.
 -- ============================================================================
 

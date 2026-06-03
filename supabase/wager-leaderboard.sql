@@ -1,5 +1,5 @@
 -- ============================================================================
--- Rollr — "Biggest Pots" leaderboard (Elo won via wagers)
+-- Roll for Rating — "Biggest Pots" leaderboard (Elo won via wagers)
 -- Run after challenges.sql. Safe to re-run.
 -- ============================================================================
 create or replace function public.wager_leaderboard(p_limit integer default 50)

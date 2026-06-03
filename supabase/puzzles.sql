@@ -1,5 +1,5 @@
 -- ============================================================================
--- Rollr — Puzzles feature
+-- Roll for Rating — Puzzles feature
 -- Run this in the Supabase SQL Editor (after schema.sql). Safe to re-run.
 -- ============================================================================
 

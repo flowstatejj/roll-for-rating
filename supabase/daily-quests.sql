@@ -1,5 +1,5 @@
 -- ============================================================================
--- Rollr — Daily activity streak + weekly Quests
+-- Roll for Rating — Daily activity streak + weekly Quests
 -- Run in the Supabase SQL Editor (after schema.sql + puzzles.sql). Re-runnable.
 -- ============================================================================
 

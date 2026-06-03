@@ -1,5 +1,5 @@
 -- ============================================================================
--- Rollr — Submission Hunt (collect submission types for bonus Elo)
+-- Roll for Rating — Submission Hunt (collect submission types for bonus Elo)
 -- Run in the Supabase SQL Editor (after schema.sql). Safe to re-run.
 -- ============================================================================
 

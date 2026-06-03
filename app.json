@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Rollr",
+    "name": "Roll for Rating",
     "slug": "jj-ladder",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "rollr",
+    "scheme": "rollcall",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
@@ -45,8 +45,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Rollr uses your photos so you can attach match videos.",
-          "cameraPermission": "Rollr uses your camera so you can record match videos."
+          "photosPermission": "Roll for Rating uses your photos so you can attach match videos.",
+          "cameraPermission": "Roll for Rating uses your camera so you can record match videos."
         }
       ]
     ],

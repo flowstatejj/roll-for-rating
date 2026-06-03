@@ -5,10 +5,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 function page(message: string, status = 200) {
   return new Response(
     `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
-     <title>Rollr</title></head>
+     <title>Roll for Rating</title></head>
      <body style="font-family:system-ui,Arial,sans-serif;background:#0d1117;color:#e6edf3;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0">
        <div style="max-width:460px;text-align:center;padding:32px">
-         <h1 style="color:#2f81f7">Rollr</h1>
+         <h1 style="color:#2f81f7">Roll for Rating</h1>
          <p style="font-size:18px;line-height:1.5">${message}</p>
        </div>
      </body></html>`,

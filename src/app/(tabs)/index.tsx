@@ -107,7 +107,7 @@ export default function HomeScreen() {
               <Ionicons name="body" size={16} color={theme.accentText} />
             </View>
             <ThemedText style={styles.brandText} numberOfLines={1}>
-              Rollr
+              Roll for Rating
             </ThemedText>
           </View>
           <View style={[styles.topSide, styles.topRight]}>

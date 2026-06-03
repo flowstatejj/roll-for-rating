@@ -1,5 +1,5 @@
 -- ============================================================================
--- Rollr — Parent-managed junior (under-14) accounts  [Phase 1]
+-- Roll for Rating — Parent-managed junior (under-14) accounts  [Phase 1]
 -- Run AFTER schema.sql, social.sql, and minors.sql. Safe to re-run.
 --
 -- Under-14 ("kid") accounts are created and operated by a parent/guardian's

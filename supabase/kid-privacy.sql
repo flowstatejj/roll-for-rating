@@ -1,5 +1,5 @@
 -- ============================================================================
--- Rollr — 13-and-under privacy hardening
+-- Roll for Rating — 13-and-under privacy hardening
 -- Run after managed-juniors.sql. Safe to re-run.
 --
 -- Guarantees a managed junior's record holds NO identifying last name: the

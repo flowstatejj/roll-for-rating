@@ -1,5 +1,5 @@
 -- ============================================================================
--- Rollr — Referee rules for matches involving a minor
+-- Roll for Rating — Referee rules for matches involving a minor
 -- Run after managed-juniors.sql (re-declares enforce_minor_match). Safe to re-run.
 --
 -- Adds: a match involving a minor must be refereed by a BLUE BELT OR HIGHER who

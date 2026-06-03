@@ -1,5 +1,5 @@
 -- ============================================================================
--- Rollr — Age tiers + parental consent (minor protections)
+-- Roll for Rating — Age tiers + parental consent (minor protections)
 -- Run in the Supabase SQL Editor (after schema.sql, social.sql, public-matches,
 -- challenges). Safe to re-run. Everything is enforced server-side (RLS +
 -- triggers) so the app can never bypass it.

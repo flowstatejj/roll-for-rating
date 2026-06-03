@@ -5,7 +5,7 @@
 
 import { Colors } from '@/constants/theme';
 
-// Rollr ships dark-by-default (chess.com style). Swap this back to read
+// Roll for Rating ships dark-by-default (chess.com style). Swap this back to read
 // useColorScheme() later if we want it to follow the device setting.
 export function useTheme() {
   return Colors.dark;

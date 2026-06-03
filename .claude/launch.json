@@ -2,7 +2,7 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "_comment": "Rollr runs on 8088 to avoid colliding with the other app (which uses Expo's default 8081)",
+      "_comment": "Roll for Rating runs on 8088 to avoid colliding with the other app (which uses Expo's default 8081)",
       "name": "rollcall-web",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["expo", "start", "--web", "--port", "8088"],
