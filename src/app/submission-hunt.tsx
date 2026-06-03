@@ -81,7 +81,7 @@ export default function SubmissionHuntScreen() {
       </Card>
 
       {unclaimed.length > 0 && (
-        <Button label={`${t('sh.claim')} +${unclaimed.length * 15} Elo`} icon="cash" loading={claiming} onPress={claim} />
+        <Button label={`${t('sh.claim')} +${unclaimed.length * 15} ROR`} icon="cash" loading={claiming} onPress={claim} />
       )}
 
       <View style={styles.grid}>

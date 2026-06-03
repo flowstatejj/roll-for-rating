@@ -31,7 +31,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'profile.deleteAccount': 'Delete account',
 
     'home.startMatch': 'Start a Match', 'home.startMatchSub': 'Challenge someone at the mat',
-    'home.yourRating': 'YOUR RATING', 'home.winStreak': 'win streak', 'home.viewRankings': 'View rankings ›',
+    'home.yourRating': 'YOUR ROR', 'home.winStreak': 'win streak', 'home.viewRankings': 'View rankings ›',
     'home.yourStats': 'Your Stats', 'home.statRating': 'Rating', 'home.statWins': 'Wins',
     'home.statWinRate': 'Win rate', 'home.statDrawRate': 'Draw rate', 'home.statMatches': 'Matches',
     'home.needsAttention': 'Needs your attention', 'home.recentMatches': 'Recent matches',
@@ -96,8 +96,8 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'comm.seasonsSub': 'The seasonal points race + champions',
     'comm.tournamentsSub': 'Join events and race for wins',
     'comm.gymRankingsSub': 'Which academy is strongest',
-    'comm.submissionHuntSub': 'Collect submissions for bonus Elo',
-    'comm.biggestPotsSub': 'High rollers — most Elo won via wagers',
+    'comm.submissionHuntSub': 'Collect submissions for bonus ROR',
+    'comm.biggestPotsSub': 'High rollers — most ROR won via wagers',
     'comm.browseGyms': 'Browse gyms', 'comm.browseGymsSub': 'Explore academies and switch gyms',
 
     'pz.intro': 'Test your jiu-jitsu IQ. Correct answers raise your rating; wrong ones cost you.',
@@ -121,9 +121,9 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'mn.opponent': 'Opponent', 'mn.referee': 'Referee', 'mn.tapToChoose': 'Tap to choose',
     'mn.searchOpponent': 'Search for an opponent', 'mn.searchReferee': 'Search for a referee',
     'mn.searchPlaceholder': 'Name or @username', 'mn.noMatches': 'No matching grapplers.',
-    'mn.wagerLabel': 'Wager (optional)', 'mn.wagerPlaceholder': 'Extra Elo staked — winner takes it',
+    'mn.wagerLabel': 'Wager (optional)', 'mn.wagerPlaceholder': 'Extra ROR staked — winner takes it',
     'mn.allIn': 'All-in', 'mn.none': 'None',
-    'mn.wagerExplain': 'On a decisive result the winner takes the wagered rating from the loser, on top of normal Elo. Accepting the challenge means agreeing to the wager.',
+    'mn.wagerExplain': 'On a decisive result the winner takes the wagered rating from the loser, on top of normal ROR. Accepting the challenge means agreeing to the wager.',
     'mn.publishTitle': 'Publish publicly',
     'mn.publishSub': 'If both fighters agree, the match shows in Watch for everyone to view & react.',
     'mn.pendingConsent': 'Your account is waiting for a parent/guardian to approve it. You can set up a match once it’s approved.',
@@ -132,7 +132,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'md.statusPendingOpponent': 'Awaiting opponent', 'md.statusPendingReferee': 'Awaiting referee',
     'md.statusCompleted': 'Completed', 'md.statusDeclined': 'Declined', 'md.statusCancelled': 'Cancelled',
-    'md.wageredSuffix': 'Elo wagered — winner takes it', 'md.wonPot': 'won the {n} Elo pot!',
+    'md.wageredSuffix': 'ROR wagered — winner takes it', 'md.wonPot': 'won the {n} ROR pot!',
     'md.stakes': 'STAKES', 'md.wageredWord': 'wagered', 'md.win': 'Win', 'md.lose': 'Lose',
     'md.challenger': 'Challenger', 'md.opponent': 'Opponent', 'md.winnerTag': 'Winner', 'md.you': '(you)',
     'md.referee': 'REFEREE', 'md.whenWhere': 'WHEN & WHERE', 'md.message': 'Message participants',
@@ -151,7 +151,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'md.resultRecorded': 'Result recorded and ratings updated.', 'md.error': 'Error',
     'md.incomplete': 'Incomplete', 'md.pickWinner': 'Pick the winner, or mark it a draw.',
     'md.acceptWagerTitle': 'Accept the wager?',
-    'md.acceptWagerBody': "You're staking {n} Elo. Win and you take it; lose and it's gone.",
+    'md.acceptWagerBody': "You're staking {n} ROR. Win and you take it; lose and it's gone.",
     'md.acceptBtn': 'Accept', 'md.tryAgain': 'Try again.',
 
     'gd.member': 'member', 'gd.members': 'members', 'gd.leave': 'Leave this gym', 'gd.join': 'Join this gym',
@@ -204,14 +204,14 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'gr.emptyTitle': 'No gyms ranked yet', 'gr.emptySub': 'Gyms with members appear here.',
     'gr.wins': 'wins', 'gr.avg': 'avg',
 
-    'hr.intro': 'Most Elo won through wagered matches.',
+    'hr.intro': 'Most ROR won through wagered matches.',
     'hr.emptyTitle': 'No pots won yet', 'hr.emptySub': 'Win a wagered match to claim the top spot.',
     'hr.potWon': 'pot won', 'hr.potsWon': 'pots won',
 
-    'sh.intro': 'Finish matches with different submissions to collect them. Each new one is worth +15 Elo.',
+    'sh.intro': 'Finish matches with different submissions to collect them. Each new one is worth +15 ROR.',
     'sh.fullSet': '🥋 Submission Specialist — full set!', 'sh.collected': 'submissions collected',
     'sh.claim': 'Claim', 'sh.ready': 'ready', 'sh.claimedTitle': 'Bonus claimed!',
-    'sh.claimedBody': '+{n} Elo — new rating {r}', 'sh.nothingNew': 'Nothing new to claim yet.',
+    'sh.claimedBody': '+{n} ROR — new ROR {r}', 'sh.nothingNew': 'Nothing new to claim yet.',
     'sh.claimFail': 'Could not claim',
 
     'cp.intro': 'Import your tournament record. Each win is +15 rating, each loss −10. Re-importing a platform refreshes its contribution.',
@@ -227,7 +227,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'q.day': 'day', 'q.days': 'days', 'q.streakSub': 'Daily streak — open the app each day to keep it alive',
     'q.weekQuests': "This week's quests", 'q.claimed': 'Claimed', 'q.reset': 'Quests reset every week.',
-    'q.completeTitle': 'Quest complete!', 'q.completeBody': '+{n} Elo — new rating {r}', 'q.notYet': 'Not yet',
+    'q.completeTitle': 'Quest complete!', 'q.completeBody': '+{n} ROR — new ROR {r}', 'q.notYet': 'Not yet',
 
     'se.left': 'left', 'se.perWin': '+10 points per win', 'se.you': 'You', 'se.pts': 'pts',
     'se.standings': 'Standings', 'se.noPointsTitle': 'No points yet',
@@ -310,7 +310,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'profile.deleteAccount': 'Eliminar cuenta',
 
     'home.startMatch': 'Iniciar un combate', 'home.startMatchSub': 'Reta a alguien en el tatami',
-    'home.yourRating': 'TU PUNTUACIÓN', 'home.winStreak': 'racha de victorias', 'home.viewRankings': 'Ver clasificación ›',
+    'home.yourRating': 'TU ROR', 'home.winStreak': 'racha de victorias', 'home.viewRankings': 'Ver clasificación ›',
     'home.yourStats': 'Tus estadísticas', 'home.statRating': 'Puntuación', 'home.statWins': 'Victorias',
     'home.statWinRate': '% de victorias', 'home.statDrawRate': '% de empates', 'home.statMatches': 'Combates',
     'home.needsAttention': 'Requiere tu atención', 'home.recentMatches': 'Combates recientes',
@@ -375,8 +375,8 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'comm.seasonsSub': 'La carrera de puntos de temporada + campeones',
     'comm.tournamentsSub': 'Únete a eventos y compite por victorias',
     'comm.gymRankingsSub': 'Qué academia es la más fuerte',
-    'comm.submissionHuntSub': 'Colecciona sumisiones para Elo extra',
-    'comm.biggestPotsSub': 'High rollers: más Elo ganado en apuestas',
+    'comm.submissionHuntSub': 'Colecciona sumisiones para ROR extra',
+    'comm.biggestPotsSub': 'High rollers: más ROR ganado en apuestas',
     'comm.browseGyms': 'Explorar gimnasios', 'comm.browseGymsSub': 'Explora academias y cambia de gimnasio',
 
     'pz.intro': 'Pon a prueba tu IQ de jiu-jitsu. Las respuestas correctas suben tu puntuación; las incorrectas la bajan.',
@@ -400,9 +400,9 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'mn.opponent': 'Oponente', 'mn.referee': 'Árbitro', 'mn.tapToChoose': 'Toca para elegir',
     'mn.searchOpponent': 'Buscar un oponente', 'mn.searchReferee': 'Buscar un árbitro',
     'mn.searchPlaceholder': 'Nombre o @usuario', 'mn.noMatches': 'No hay competidores que coincidan.',
-    'mn.wagerLabel': 'Apuesta (opcional)', 'mn.wagerPlaceholder': 'Elo extra en juego: el ganador se lo lleva',
+    'mn.wagerLabel': 'Apuesta (opcional)', 'mn.wagerPlaceholder': 'ROR extra en juego: el ganador se lo lleva',
     'mn.allIn': 'Todo', 'mn.none': 'Ninguna',
-    'mn.wagerExplain': 'En un resultado decisivo el ganador se lleva el Elo apostado del perdedor, además del Elo normal. Aceptar el reto implica aceptar la apuesta.',
+    'mn.wagerExplain': 'En un resultado decisivo el ganador se lleva el ROR apostado del perdedor, además del ROR normal. Aceptar el reto implica aceptar la apuesta.',
     'mn.publishTitle': 'Publicar públicamente',
     'mn.publishSub': 'Si ambos aceptan, el combate aparece en Ver para que todos lo vean y reaccionen.',
     'mn.pendingConsent': 'Tu cuenta espera la aprobación de un padre/tutor. Podrás crear un combate cuando esté aprobada.',
@@ -411,7 +411,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'md.statusPendingOpponent': 'Esperando al oponente', 'md.statusPendingReferee': 'Esperando al árbitro',
     'md.statusCompleted': 'Completado', 'md.statusDeclined': 'Rechazado', 'md.statusCancelled': 'Cancelado',
-    'md.wageredSuffix': 'Elo apostado: el ganador se lo lleva', 'md.wonPot': 'ganó el bote de {n} Elo!',
+    'md.wageredSuffix': 'ROR apostado: el ganador se lo lleva', 'md.wonPot': 'ganó el bote de {n} ROR!',
     'md.stakes': 'EN JUEGO', 'md.wageredWord': 'apostado', 'md.win': 'Gana', 'md.lose': 'Pierde',
     'md.challenger': 'Retador', 'md.opponent': 'Oponente', 'md.winnerTag': 'Ganador', 'md.you': '(tú)',
     'md.referee': 'ÁRBITRO', 'md.whenWhere': 'CUÁNDO Y DÓNDE', 'md.message': 'Mensaje a los participantes',
@@ -430,7 +430,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'md.resultRecorded': 'Resultado registrado y puntuaciones actualizadas.', 'md.error': 'Error',
     'md.incomplete': 'Incompleto', 'md.pickWinner': 'Elige al ganador o marca empate.',
     'md.acceptWagerTitle': '¿Aceptar la apuesta?',
-    'md.acceptWagerBody': 'Apuestas {n} Elo. Si ganas te lo llevas; si pierdes se va.',
+    'md.acceptWagerBody': 'Apuestas {n} ROR. Si ganas te lo llevas; si pierdes se va.',
     'md.acceptBtn': 'Aceptar', 'md.tryAgain': 'Inténtalo de nuevo.',
 
     'gd.member': 'miembro', 'gd.members': 'miembros', 'gd.leave': 'Salir de este gimnasio', 'gd.join': 'Unirse a este gimnasio',
@@ -483,14 +483,14 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'gr.emptyTitle': 'Aún no hay gimnasios clasificados', 'gr.emptySub': 'Los gimnasios con miembros aparecen aquí.',
     'gr.wins': 'victorias', 'gr.avg': 'media',
 
-    'hr.intro': 'Más Elo ganado en combates apostados.',
+    'hr.intro': 'Más ROR ganado en combates apostados.',
     'hr.emptyTitle': 'Aún no se han ganado botes', 'hr.emptySub': 'Gana un combate apostado para llegar a lo más alto.',
     'hr.potWon': 'bote ganado', 'hr.potsWon': 'botes ganados',
 
-    'sh.intro': 'Finaliza combates con distintas sumisiones para coleccionarlas. Cada nueva vale +15 Elo.',
+    'sh.intro': 'Finaliza combates con distintas sumisiones para coleccionarlas. Cada nueva vale +15 ROR.',
     'sh.fullSet': '🥋 Especialista en sumisiones: ¡colección completa!', 'sh.collected': 'sumisiones coleccionadas',
     'sh.claim': 'Reclamar', 'sh.ready': 'listo', 'sh.claimedTitle': '¡Bono reclamado!',
-    'sh.claimedBody': '+{n} Elo — nueva puntuación {r}', 'sh.nothingNew': 'Aún no hay nada nuevo que reclamar.',
+    'sh.claimedBody': '+{n} ROR — nuevo ROR {r}', 'sh.nothingNew': 'Aún no hay nada nuevo que reclamar.',
     'sh.claimFail': 'No se pudo reclamar',
 
     'cp.intro': 'Importa tu historial de competición. Cada victoria es +15 de puntuación, cada derrota −10. Reimportar una plataforma actualiza su contribución.',
@@ -506,7 +506,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'q.day': 'día', 'q.days': 'días', 'q.streakSub': 'Racha diaria: abre la app cada día para mantenerla.',
     'q.weekQuests': 'Misiones de esta semana', 'q.claimed': 'Reclamado', 'q.reset': 'Las misiones se reinician cada semana.',
-    'q.completeTitle': '¡Misión completada!', 'q.completeBody': '+{n} Elo — nueva puntuación {r}', 'q.notYet': 'Aún no',
+    'q.completeTitle': '¡Misión completada!', 'q.completeBody': '+{n} ROR — nuevo ROR {r}', 'q.notYet': 'Aún no',
 
     'se.left': 'restantes', 'se.perWin': '+10 puntos por victoria', 'se.you': 'Tú', 'se.pts': 'pts',
     'se.standings': 'Clasificación', 'se.noPointsTitle': 'Aún no hay puntos',
@@ -589,7 +589,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'profile.deleteAccount': 'Excluir conta',
 
     'home.startMatch': 'Iniciar uma luta', 'home.startMatchSub': 'Desafie alguém no tatame',
-    'home.yourRating': 'SUA PONTUAÇÃO', 'home.winStreak': 'sequência de vitórias', 'home.viewRankings': 'Ver ranking ›',
+    'home.yourRating': 'SUA ROR', 'home.winStreak': 'sequência de vitórias', 'home.viewRankings': 'Ver ranking ›',
     'home.yourStats': 'Suas estatísticas', 'home.statRating': 'Pontuação', 'home.statWins': 'Vitórias',
     'home.statWinRate': '% de vitórias', 'home.statDrawRate': '% de empates', 'home.statMatches': 'Lutas',
     'home.needsAttention': 'Precisa da sua atenção', 'home.recentMatches': 'Lutas recentes',
@@ -654,8 +654,8 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'comm.seasonsSub': 'A corrida de pontos da temporada + campeões',
     'comm.tournamentsSub': 'Entre em eventos e dispute vitórias',
     'comm.gymRankingsSub': 'Qual academia é a mais forte',
-    'comm.submissionHuntSub': 'Colecione finalizações por Elo bônus',
-    'comm.biggestPotsSub': 'High rollers — mais Elo ganho em apostas',
+    'comm.submissionHuntSub': 'Colecione finalizações por ROR bônus',
+    'comm.biggestPotsSub': 'High rollers — mais ROR ganho em apostas',
     'comm.browseGyms': 'Explorar academias', 'comm.browseGymsSub': 'Explore academias e troque de academia',
 
     'pz.intro': 'Teste seu QI de jiu-jitsu. Respostas certas sobem sua pontuação; erradas descem.',
@@ -679,9 +679,9 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'mn.opponent': 'Oponente', 'mn.referee': 'Árbitro', 'mn.tapToChoose': 'Toque para escolher',
     'mn.searchOpponent': 'Buscar um oponente', 'mn.searchReferee': 'Buscar um árbitro',
     'mn.searchPlaceholder': 'Nome ou @usuário', 'mn.noMatches': 'Nenhum competidor encontrado.',
-    'mn.wagerLabel': 'Aposta (opcional)', 'mn.wagerPlaceholder': 'Elo extra em jogo — o vencedor leva',
+    'mn.wagerLabel': 'Aposta (opcional)', 'mn.wagerPlaceholder': 'ROR extra em jogo — o vencedor leva',
     'mn.allIn': 'Tudo', 'mn.none': 'Nenhuma',
-    'mn.wagerExplain': 'Num resultado decisivo o vencedor leva o Elo apostado do perdedor, além do Elo normal. Aceitar o desafio significa aceitar a aposta.',
+    'mn.wagerExplain': 'Num resultado decisivo o vencedor leva o ROR apostado do perdedor, além do ROR normal. Aceitar o desafio significa aceitar a aposta.',
     'mn.publishTitle': 'Publicar publicamente',
     'mn.publishSub': 'Se ambos concordarem, a luta aparece em Assistir para todos verem e reagirem.',
     'mn.pendingConsent': 'Sua conta aguarda a aprovação de um responsável. Você poderá criar uma luta quando for aprovada.',
@@ -690,7 +690,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'md.statusPendingOpponent': 'Aguardando oponente', 'md.statusPendingReferee': 'Aguardando árbitro',
     'md.statusCompleted': 'Concluído', 'md.statusDeclined': 'Recusado', 'md.statusCancelled': 'Cancelado',
-    'md.wageredSuffix': 'Elo apostado — o vencedor leva', 'md.wonPot': 'ganhou o pote de {n} Elo!',
+    'md.wageredSuffix': 'ROR apostado — o vencedor leva', 'md.wonPot': 'ganhou o pote de {n} ROR!',
     'md.stakes': 'EM JOGO', 'md.wageredWord': 'apostado', 'md.win': 'Ganha', 'md.lose': 'Perde',
     'md.challenger': 'Desafiante', 'md.opponent': 'Oponente', 'md.winnerTag': 'Vencedor', 'md.you': '(você)',
     'md.referee': 'ÁRBITRO', 'md.whenWhere': 'QUANDO E ONDE', 'md.message': 'Mensagem aos participantes',
@@ -709,7 +709,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'md.resultRecorded': 'Resultado registrado e pontuações atualizadas.', 'md.error': 'Erro',
     'md.incomplete': 'Incompleto', 'md.pickWinner': 'Escolha o vencedor ou marque empate.',
     'md.acceptWagerTitle': 'Aceitar a aposta?',
-    'md.acceptWagerBody': 'Você aposta {n} Elo. Se ganhar leva; se perder, foi.',
+    'md.acceptWagerBody': 'Você aposta {n} ROR. Se ganhar leva; se perder, foi.',
     'md.acceptBtn': 'Aceitar', 'md.tryAgain': 'Tente novamente.',
 
     'gd.member': 'membro', 'gd.members': 'membros', 'gd.leave': 'Sair desta academia', 'gd.join': 'Entrar nesta academia',
@@ -762,14 +762,14 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'gr.emptyTitle': 'Ainda sem academias no ranking', 'gr.emptySub': 'Academias com membros aparecem aqui.',
     'gr.wins': 'vitórias', 'gr.avg': 'média',
 
-    'hr.intro': 'Mais Elo ganho em lutas apostadas.',
+    'hr.intro': 'Mais ROR ganho em lutas apostadas.',
     'hr.emptyTitle': 'Ainda sem potes ganhos', 'hr.emptySub': 'Vença uma luta apostada para chegar ao topo.',
     'hr.potWon': 'pote ganho', 'hr.potsWon': 'potes ganhos',
 
-    'sh.intro': 'Finalize lutas com finalizações diferentes para coletá-las. Cada nova vale +15 Elo.',
+    'sh.intro': 'Finalize lutas com finalizações diferentes para coletá-las. Cada nova vale +15 ROR.',
     'sh.fullSet': '🥋 Especialista em finalizações — coleção completa!', 'sh.collected': 'finalizações coletadas',
     'sh.claim': 'Resgatar', 'sh.ready': 'pronto', 'sh.claimedTitle': 'Bônus resgatado!',
-    'sh.claimedBody': '+{n} Elo — nova pontuação {r}', 'sh.nothingNew': 'Nada novo para resgatar ainda.',
+    'sh.claimedBody': '+{n} ROR — novo ROR {r}', 'sh.nothingNew': 'Nada novo para resgatar ainda.',
     'sh.claimFail': 'Não foi possível resgatar',
 
     'cp.intro': 'Importe seu histórico de competição. Cada vitória é +15 de pontuação, cada derrota −10. Reimportar uma plataforma atualiza a contribuição dela.',
@@ -785,7 +785,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'q.day': 'dia', 'q.days': 'dias', 'q.streakSub': 'Sequência diária: abra o app todo dia para mantê-la.',
     'q.weekQuests': 'Missões desta semana', 'q.claimed': 'Resgatado', 'q.reset': 'As missões reiniciam toda semana.',
-    'q.completeTitle': 'Missão concluída!', 'q.completeBody': '+{n} Elo — nova pontuação {r}', 'q.notYet': 'Ainda não',
+    'q.completeTitle': 'Missão concluída!', 'q.completeBody': '+{n} ROR — novo ROR {r}', 'q.notYet': 'Ainda não',
 
     'se.left': 'restantes', 'se.perWin': '+10 pontos por vitória', 'se.you': 'Você', 'se.pts': 'pts',
     'se.standings': 'Classificação', 'se.noPointsTitle': 'Ainda sem pontos',
@@ -868,7 +868,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'profile.deleteAccount': 'Supprimer le compte',
 
     'home.startMatch': 'Lancer un combat', 'home.startMatchSub': 'Défie quelqu’un sur le tapis',
-    'home.yourRating': 'TON CLASSEMENT', 'home.winStreak': 'série de victoires', 'home.viewRankings': 'Voir le classement ›',
+    'home.yourRating': 'TON ROR', 'home.winStreak': 'série de victoires', 'home.viewRankings': 'Voir le classement ›',
     'home.yourStats': 'Tes statistiques', 'home.statRating': 'Classement', 'home.statWins': 'Victoires',
     'home.statWinRate': '% de victoires', 'home.statDrawRate': '% de nuls', 'home.statMatches': 'Combats',
     'home.needsAttention': 'Nécessite ton attention', 'home.recentMatches': 'Combats récents',
@@ -933,8 +933,8 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'comm.seasonsSub': 'La course aux points de la saison + champions',
     'comm.tournamentsSub': 'Rejoins des événements et cours après les victoires',
     'comm.gymRankingsSub': 'Quelle salle est la plus forte',
-    'comm.submissionHuntSub': 'Collectionne des soumissions pour de l’Elo bonus',
-    'comm.biggestPotsSub': 'High rollers — le plus d’Elo gagné en paris',
+    'comm.submissionHuntSub': 'Collectionne des soumissions pour de l’ROR bonus',
+    'comm.biggestPotsSub': 'High rollers — le plus d’ROR gagné en paris',
     'comm.browseGyms': 'Parcourir les salles', 'comm.browseGymsSub': 'Explore les salles et change de salle',
 
     'pz.intro': 'Teste ton QI de jiu-jitsu. Les bonnes réponses montent ton classement ; les mauvaises le baissent.',
@@ -958,9 +958,9 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'mn.opponent': 'Adversaire', 'mn.referee': 'Arbitre', 'mn.tapToChoose': 'Appuie pour choisir',
     'mn.searchOpponent': 'Chercher un adversaire', 'mn.searchReferee': 'Chercher un arbitre',
     'mn.searchPlaceholder': 'Nom ou @pseudo', 'mn.noMatches': 'Aucun grappler correspondant.',
-    'mn.wagerLabel': 'Pari (optionnel)', 'mn.wagerPlaceholder': 'Elo supplémentaire misé — le gagnant l’emporte',
+    'mn.wagerLabel': 'Pari (optionnel)', 'mn.wagerPlaceholder': 'ROR supplémentaire misé — le gagnant l’emporte',
     'mn.allIn': 'Tapis', 'mn.none': 'Aucun',
-    'mn.wagerExplain': 'Sur un résultat décisif, le gagnant prend l’Elo misé au perdant, en plus de l’Elo normal. Accepter le défi, c’est accepter le pari.',
+    'mn.wagerExplain': 'Sur un résultat décisif, le gagnant prend l’ROR misé au perdant, en plus de l’ROR normal. Accepter le défi, c’est accepter le pari.',
     'mn.publishTitle': 'Publier publiquement',
     'mn.publishSub': 'Si les deux acceptent, le combat apparaît dans Regarder pour que tous le voient et réagissent.',
     'mn.pendingConsent': 'Ton compte attend l’approbation d’un parent/tuteur. Tu pourras créer un combat une fois approuvé.',
@@ -969,7 +969,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'md.statusPendingOpponent': 'En attente de l’adversaire', 'md.statusPendingReferee': 'En attente de l’arbitre',
     'md.statusCompleted': 'Terminé', 'md.statusDeclined': 'Refusé', 'md.statusCancelled': 'Annulé',
-    'md.wageredSuffix': 'Elo misé — le gagnant l’emporte', 'md.wonPot': 'a gagné la cagnotte de {n} Elo !',
+    'md.wageredSuffix': 'ROR misé — le gagnant l’emporte', 'md.wonPot': 'a gagné la cagnotte de {n} ROR !',
     'md.stakes': 'ENJEUX', 'md.wageredWord': 'misé', 'md.win': 'Gagne', 'md.lose': 'Perd',
     'md.challenger': 'Challenger', 'md.opponent': 'Adversaire', 'md.winnerTag': 'Gagnant', 'md.you': '(toi)',
     'md.referee': 'ARBITRE', 'md.whenWhere': 'QUAND ET OÙ', 'md.message': 'Message aux participants',
@@ -988,7 +988,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'md.resultRecorded': 'Résultat enregistré et classements mis à jour.', 'md.error': 'Erreur',
     'md.incomplete': 'Incomplet', 'md.pickWinner': 'Choisis le gagnant, ou marque un nul.',
     'md.acceptWagerTitle': 'Accepter le pari ?',
-    'md.acceptWagerBody': 'Tu mises {n} Elo. Si tu gagnes tu l’emportes ; si tu perds, c’est perdu.',
+    'md.acceptWagerBody': 'Tu mises {n} ROR. Si tu gagnes tu l’emportes ; si tu perds, c’est perdu.',
     'md.acceptBtn': 'Accepter', 'md.tryAgain': 'Réessaie.',
 
     'gd.member': 'membre', 'gd.members': 'membres', 'gd.leave': 'Quitter cette salle', 'gd.join': 'Rejoindre cette salle',
@@ -1041,14 +1041,14 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'gr.emptyTitle': 'Aucune salle classée pour l’instant', 'gr.emptySub': 'Les salles avec des membres apparaissent ici.',
     'gr.wins': 'victoires', 'gr.avg': 'moy.',
 
-    'hr.intro': 'Le plus d’Elo gagné dans des combats avec pari.',
+    'hr.intro': 'Le plus d’ROR gagné dans des combats avec pari.',
     'hr.emptyTitle': 'Aucune cagnotte gagnée pour l’instant', 'hr.emptySub': 'Gagne un combat avec pari pour prendre la tête.',
     'hr.potWon': 'cagnotte gagnée', 'hr.potsWon': 'cagnottes gagnées',
 
-    'sh.intro': 'Termine des combats avec différentes soumissions pour les collectionner. Chaque nouvelle vaut +15 Elo.',
+    'sh.intro': 'Termine des combats avec différentes soumissions pour les collectionner. Chaque nouvelle vaut +15 ROR.',
     'sh.fullSet': '🥋 Spécialiste des soumissions — collection complète !', 'sh.collected': 'soumissions collectées',
     'sh.claim': 'Réclamer', 'sh.ready': 'prêt', 'sh.claimedTitle': 'Bonus réclamé !',
-    'sh.claimedBody': '+{n} Elo — nouveau classement {r}', 'sh.nothingNew': 'Rien de nouveau à réclamer pour l’instant.',
+    'sh.claimedBody': '+{n} ROR — nouveau ROR {r}', 'sh.nothingNew': 'Rien de nouveau à réclamer pour l’instant.',
     'sh.claimFail': 'Impossible de réclamer',
 
     'cp.intro': 'Importe ton bilan en compétition. Chaque victoire vaut +15 au classement, chaque défaite −10. Réimporter une plateforme actualise sa contribution.',
@@ -1064,7 +1064,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'q.day': 'jour', 'q.days': 'jours', 'q.streakSub': 'Série quotidienne — ouvre l’app chaque jour pour la garder.',
     'q.weekQuests': 'Quêtes de la semaine', 'q.claimed': 'Réclamé', 'q.reset': 'Les quêtes se réinitialisent chaque semaine.',
-    'q.completeTitle': 'Quête terminée !', 'q.completeBody': '+{n} Elo — nouveau classement {r}', 'q.notYet': 'Pas encore',
+    'q.completeTitle': 'Quête terminée !', 'q.completeBody': '+{n} ROR — nouveau ROR {r}', 'q.notYet': 'Pas encore',
 
     'se.left': 'restants', 'se.perWin': '+10 points par victoire', 'se.you': 'Toi', 'se.pts': 'pts',
     'se.standings': 'Classement', 'se.noPointsTitle': 'Aucun point pour l’instant',
