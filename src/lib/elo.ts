@@ -5,27 +5,30 @@ const K = 32;
 const FLOOR = 100;
 // Mismatch damping: the bigger the rating gap, the less ROR is risked or gained,
 // so strong players can't farm rating off much weaker ones. Tunable.
-const MISMATCH_SCALE = 500; // gap (in points) over which the factor falls to the floor
-const MISMATCH_FLOOR = 0.1; // a huge mismatch is still worth at least 10% of normal
+const MISMATCH_SCALE = 500; // gap (in points) over which the factor falls to 0
+const MIN_DECISIVE = 1; // a decisive result always moves ROR by at least this many points
 
 export function expectedScore(rating: number, opponent: number): number {
   return 1 / (1 + 10 ** ((opponent - rating) / 400));
 }
 
-/** 1.0 for an even match, tapering to MISMATCH_FLOOR as the rating gap grows. */
+/** 1.0 for an even match, tapering linearly to 0 as the rating gap reaches MISMATCH_SCALE. */
 export function mismatchFactor(rating: number, opponent: number): number {
-  return Math.max(MISMATCH_FLOOR, 1 - Math.abs(rating - opponent) / MISMATCH_SCALE);
+  return Math.max(0, 1 - Math.abs(rating - opponent) / MISMATCH_SCALE);
 }
 
 /**
  * Projected rating change for `rating` vs `opponent` on a win or a loss,
- * including the mismatch damping, the wager transfer, and the rating floor.
+ * including the mismatch damping, a ±1 floor on decisive results, the wager
+ * transfer, and the rating floor.
  */
 export function projectSwing(rating: number, opponent: number, wager = 0): { win: number; loss: number } {
   const e = expectedScore(rating, opponent);
   const m = mismatchFactor(rating, opponent);
-  const winRaw = rating + Math.round(K * (1 - e) * m) + wager;
-  const lossRaw = rating + Math.round(K * (0 - e) * m) - wager;
+  const winDelta = Math.max(MIN_DECISIVE, Math.round(K * (1 - e) * m));
+  const lossDelta = Math.min(-MIN_DECISIVE, Math.round(K * (0 - e) * m));
+  const winRaw = rating + winDelta + wager;
+  const lossRaw = rating + lossDelta - wager;
   return {
     win: Math.max(FLOOR, winRaw) - rating,
     loss: Math.max(FLOOR, lossRaw) - rating,
