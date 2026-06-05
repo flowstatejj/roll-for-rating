@@ -5,7 +5,7 @@ const K = 32;
 const FLOOR = 100;
 // Mismatch damping: the bigger the rating gap, the less ROR is risked or gained,
 // so strong players can't farm rating off much weaker ones. Tunable.
-const MISMATCH_SCALE = 500; // gap (in points) over which the factor falls to 0
+const MISMATCH_SCALE = 1000; // gap (in points) over which the factor falls to 0
 const MIN_DECISIVE = 1; // a decisive result always moves ROR by at least this many points
 
 export function expectedScore(rating: number, opponent: number): number {

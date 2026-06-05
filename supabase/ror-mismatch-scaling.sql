@@ -7,9 +7,9 @@
 -- opponents (and also doesn't risk much against them). The wager transfer is
 -- unchanged (wagers are already limited to opponents within 10% of your ROR).
 --
--- Factor: 1.0 for an even match, falling linearly to 0 across a 500-point gap.
---   factor = greatest(0, 1 - gap / 500)
---   gap 0 -> 1.00   gap 100 -> 0.80   gap 250 -> 0.50   gap 500+ -> 0
+-- Factor: 1.0 for an even match, falling linearly to 0 across a 1000-point gap.
+--   factor = greatest(0, 1 - gap / 1000)
+--   gap 0 -> 1.00   gap 250 -> 0.75   gap 500 -> 0.50   gap 1000+ -> 0
 -- A DECISIVE result still always moves each player's ROR by at least 1 point
 -- (a win is worth >= +1, a loss costs <= -1), so a match always counts.
 -- ============================================================================
@@ -46,7 +46,7 @@ begin
   o_expected := public.elo_expected(o_rating, c_rating);
 
   -- Damp the ROR swing by the rating gap (symmetric for both players).
-  mismatch := greatest(0.0, 1 - abs(c_rating - o_rating) / 500.0);
+  mismatch := greatest(0.0, 1 - abs(c_rating - o_rating) / 1000.0);
 
   c_delta := round(k * (c_score - c_expected) * mismatch);
   o_delta := round(k * (o_score - o_expected) * mismatch);
