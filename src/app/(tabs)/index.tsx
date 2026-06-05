@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Dimensions, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MatchCard } from '@/components/match-card';
@@ -21,8 +21,6 @@ import { tierFor } from '@/lib/tiers';
 import { supabase } from '@/lib/supabase';
 import type { MatchWithPeople } from '@/lib/types';
 
-const SCREEN_W = Dimensions.get('window').width;
-const HERO_W = Math.min(SCREEN_W - 64, 360);
 
 export default function HomeScreen() {
   const { profile, refreshProfile, session } = useAuth();
@@ -135,15 +133,10 @@ export default function HomeScreen() {
           contentContainerStyle={styles.scroll}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.text} />}>
-          {/* Hero cards */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.heroRow}
-            snapToInterval={HERO_W + Spacing.two}
-            decelerationRate="fast">
-            <Pressable onPress={() => router.push('/match/new')}>
-              <View style={[styles.hero, { width: HERO_W, backgroundColor: theme.accent }]}>
+          {/* Hero cards — both visible side by side, centered */}
+          <View style={styles.heroRow}>
+            <Pressable style={{ flex: 1 }} onPress={() => router.push('/match/new')}>
+              <View style={[styles.hero, { backgroundColor: theme.accent }]}>
                 <Ionicons name="flame" size={40} color={theme.accentText} style={{ opacity: 0.9 }} />
                 <View style={{ gap: 2 }}>
                   <ThemedText style={{ color: theme.accentText, fontSize: 24, fontWeight: '800' }}>
@@ -156,8 +149,8 @@ export default function HomeScreen() {
               </View>
             </Pressable>
 
-            <Pressable onPress={() => router.push('/(tabs)/leaderboard')}>
-              <View style={[styles.hero, { width: HERO_W, backgroundColor: theme.tile, borderColor: theme.tileBorder, borderWidth: 1 }]}>
+            <Pressable style={{ flex: 1 }} onPress={() => router.push('/(tabs)/leaderboard')}>
+              <View style={[styles.hero, { backgroundColor: theme.tile, borderColor: theme.tileBorder, borderWidth: 1 }]}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                   <ThemedText type="smallBold" themeColor="textSecondary">
                     {t('home.yourRating')}
@@ -186,7 +179,7 @@ export default function HomeScreen() {
                 </View>
               </View>
             </Pressable>
-          </ScrollView>
+          </View>
 
           {/* Stats tiles */}
           <SectionLabel>{t('home.yourStats')}</SectionLabel>
@@ -286,7 +279,7 @@ const styles = StyleSheet.create({
   logoMark: { width: 26, height: 26, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
   brandText: { fontSize: 17, fontWeight: '800', letterSpacing: 0.2 },
   scroll: { padding: Spacing.three, gap: Spacing.three, paddingBottom: 110 },
-  heroRow: { gap: Spacing.two, paddingRight: Spacing.three },
+  heroRow: { flexDirection: 'row', gap: Spacing.two, justifyContent: 'center', alignSelf: 'center', width: '100%', maxWidth: 520 },
   hero: {
     height: 150,
     borderRadius: 14,
