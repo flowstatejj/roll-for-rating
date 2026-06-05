@@ -14,6 +14,7 @@ import { projectSwing } from '@/lib/elo';
 import { fetchJuniors } from '@/lib/juniors';
 import {
   cancelMatch,
+  confirmResult,
   fetchMatch,
   fetchMatchReactions,
   fetchMatchViewCount,
@@ -107,6 +108,11 @@ export default function MatchDetailScreen() {
   const amOpponent = myIds.has(match.opponent_id);
   const amReferee = match.referee_id === userId;
   const amCompetitor = myIds.has(match.challenger_id) || amOpponent;
+  const isWaived = match.referee_waived;
+  const amProposer = match.result_proposed_by != null && myIds.has(match.result_proposed_by);
+  // On a waived match either competitor logs the result; on a reffed match the referee does.
+  const canRecord = match.status === 'pending_referee' && (isWaived ? amCompetitor : amReferee);
+  const otherName = myIds.has(match.challenger_id) ? match.opponent.display_name : match.challenger.display_name;
 
   async function act(fn: () => Promise<void>, successMsg?: string) {
     setBusy(true);
@@ -160,7 +166,11 @@ export default function MatchDetailScreen() {
           /* non-fatal */
         }
       }
-    }, t('md.resultRecorded'));
+    }, isWaived ? t('md.loggedAwaitConfirm') : t('md.resultRecorded'));
+  }
+
+  function confirmWaived(accept: boolean) {
+    act(() => confirmResult(match!.id, accept), accept ? t('md.confirmedToast') : t('md.disputedToast'));
   }
 
   return (
@@ -229,19 +239,36 @@ export default function MatchDetailScreen() {
         />
       </Card>
 
-      {/* Referee */}
+      {/* Referee (or waived: filmed + mutually confirmed) */}
       <Card style={styles.refCard}>
-        <Avatar name={match.referee.display_name} size={36} />
-        <View style={{ flex: 1 }}>
-          <ThemedText type="small" themeColor="textSecondary">
-            {t('md.referee')}
-          </ThemedText>
-          <ThemedText style={{ fontWeight: '700' }}>
-            {match.referee.display_name}
-            {amReferee ? ` ${t('md.you')}` : ''}
-          </ThemedText>
-        </View>
-        <Ionicons name="eye-outline" size={20} color={theme.textSecondary} />
+        {isWaived || !match.referee ? (
+          <>
+            <Ionicons name="videocam" size={28} color={theme.accent} />
+            <View style={{ flex: 1 }}>
+              <ThemedText type="small" themeColor="textSecondary">
+                {t('md.referee')}
+              </ThemedText>
+              <ThemedText style={{ fontWeight: '700' }}>{t('md.noReferee')}</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {t('md.noRefereeSub')}
+              </ThemedText>
+            </View>
+          </>
+        ) : (
+          <>
+            <Avatar name={match.referee.display_name} size={36} />
+            <View style={{ flex: 1 }}>
+              <ThemedText type="small" themeColor="textSecondary">
+                {t('md.referee')}
+              </ThemedText>
+              <ThemedText style={{ fontWeight: '700' }}>
+                {match.referee.display_name}
+                {amReferee ? ` ${t('md.you')}` : ''}
+              </ThemedText>
+            </View>
+            <Ionicons name="eye-outline" size={20} color={theme.textSecondary} />
+          </>
+        )}
       </Card>
 
       {/* When & where (set in chat) */}
@@ -346,12 +373,21 @@ export default function MatchDetailScreen() {
         </Card>
       )}
 
-      {/* Referee records result */}
-      {match.status === 'pending_referee' && amReferee && (
+      {/* Record result — referee, or either competitor on a waived match */}
+      {canRecord && (
         <Card style={{ gap: Spacing.three }}>
           <ThemedText type="subtitle" style={{ fontSize: 18 }}>
-            {t('md.recordResult')}
+            {isWaived ? t('md.logResult') : t('md.recordResult')}
           </ThemedText>
+
+          {isWaived && (
+            <View style={[styles.drawNote, { borderColor: theme.accent }]}>
+              <Ionicons name="videocam-outline" size={16} color={theme.accent} />
+              <ThemedText type="small" style={{ color: theme.text, flex: 1 }}>
+                {t('md.waivedRecordNote').replace('{name}', otherName)}
+              </ThemedText>
+            </View>
+          )}
 
           <View style={{ gap: Spacing.one }}>
             <ThemedText type="smallBold" themeColor="textSecondary">{t('md.whoWon')}</ThemedText>
@@ -386,15 +422,49 @@ export default function MatchDetailScreen() {
 
           <TextField label={t('md.notes')} value={notes} onChangeText={setNotes} placeholder={t('md.notesPlaceholder')} multiline />
 
-          <Button label={t('md.submitResult')} icon="trophy" onPress={submitResult} loading={busy} />
+          <Button label={isWaived ? t('md.logResultBtn') : t('md.submitResult')} icon="trophy" onPress={submitResult} loading={busy} />
         </Card>
       )}
 
-      {match.status === 'pending_referee' && !amReferee && (
+      {/* Reffed match: non-referees wait for the referee */}
+      {match.status === 'pending_referee' && !isWaived && !amReferee && (
         <Card style={{ alignItems: 'center' }}>
           <ThemedText themeColor="textSecondary">
-            {t('md.waitingRef').replace('{name}', match.referee.display_name)}
+            {t('md.waitingRef').replace('{name}', match.referee?.display_name ?? '')}
           </ThemedText>
+        </Card>
+      )}
+
+      {/* Waived match: result logged, waiting on mutual confirmation */}
+      {match.status === 'pending_confirmation' && (
+        <Card style={{ gap: Spacing.three }}>
+          <ThemedText type="subtitle" style={{ fontSize: 18 }}>
+            {t('md.confirmTitle')}
+          </ThemedText>
+          <ThemedText>
+            {match.result === 'draw'
+              ? t('md.draw')
+              : `${match.winner_id === match.challenger_id ? match.challenger.display_name : match.opponent.display_name} ${t('md.won')}`}
+            {match.method ? ` · ${match.method}` : ''}
+          </ThemedText>
+          {amCompetitor && amProposer && (
+            <>
+              <ThemedText type="small" themeColor="textSecondary">
+                {t('md.awaitingConfirm').replace('{name}', otherName)}
+              </ThemedText>
+              <Button label={t('md.withdraw')} variant="ghost" onPress={() => confirmWaived(false)} loading={busy} />
+            </>
+          )}
+          {amCompetitor && !amProposer && (
+            <>
+              <ThemedText type="small" themeColor="textSecondary">{t('md.confirmPrompt')}</ThemedText>
+              <Button label={t('md.confirmResult')} icon="checkmark-circle" onPress={() => confirmWaived(true)} loading={busy} />
+              <Button label={t('md.dispute')} variant="danger" icon="alert-circle" onPress={() => confirmWaived(false)} loading={busy} />
+            </>
+          )}
+          {!amCompetitor && (
+            <ThemedText type="small" themeColor="textSecondary">{t('md.awaitingConfirmGeneric')}</ThemedText>
+          )}
         </Card>
       )}
 
@@ -434,6 +504,7 @@ function StatusBanner({ match }: { match: MatchWithPeople }) {
   const map: Record<string, { text: string; color: string }> = {
     pending_opponent: { text: t('md.statusPendingOpponent'), color: '#D9822B' },
     pending_referee: { text: t('md.statusPendingReferee'), color: theme.accent },
+    pending_confirmation: { text: t('md.statusPendingConfirm'), color: '#D9822B' },
     completed: { text: t('md.statusCompleted'), color: theme.success },
     declined: { text: t('md.statusDeclined'), color: theme.textSecondary },
     cancelled: { text: t('md.statusCancelled'), color: theme.textSecondary },

@@ -11,6 +11,7 @@ export type ConsentStatus = 'not_required' | 'pending' | 'verified';
 export type MatchStatus =
   | 'pending_opponent'
   | 'pending_referee'
+  | 'pending_confirmation'
   | 'completed'
   | 'declined'
   | 'cancelled';
@@ -136,7 +137,11 @@ export interface Match {
   id: string;
   challenger_id: string;
   opponent_id: string;
-  referee_id: string;
+  /** null when the referee is waived (both competitors confirm the result instead). */
+  referee_id: string | null;
+  referee_waived: boolean;
+  /** on a waived match: the competitor who logged the pending result. */
+  result_proposed_by: string | null;
   status: MatchStatus;
   winner_id: string | null;
   result: ResultType | null;
@@ -221,7 +226,7 @@ export interface AppNotification {
 export interface MatchWithPeople extends Match {
   challenger: Pick<Profile, 'id' | 'username' | 'display_name' | 'belt_rank' | 'rating'>;
   opponent: Pick<Profile, 'id' | 'username' | 'display_name' | 'belt_rank' | 'rating'>;
-  referee: Pick<Profile, 'id' | 'username' | 'display_name' | 'belt_rank' | 'rating'>;
+  referee: Pick<Profile, 'id' | 'username' | 'display_name' | 'belt_rank' | 'rating'> | null;
 }
 
 export const BELT_LABELS: Record<BeltRank, string> = {

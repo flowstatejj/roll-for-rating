@@ -15,6 +15,8 @@ function pendingLabel(status: MatchStatus, t: (k: string) => string): string {
       return t('mrow.pending');
     case 'pending_referee':
       return t('mrow.awaitingRef');
+    case 'pending_confirmation':
+      return t('mrow.awaitingConfirm');
     case 'declined':
       return t('md.statusDeclined');
     case 'cancelled':

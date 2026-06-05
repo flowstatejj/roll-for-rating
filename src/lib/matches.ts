@@ -157,7 +157,8 @@ export async function fetchMatch(matchId: string): Promise<MatchWithPeople> {
 export async function createMatch(args: {
   challengerId: string;
   opponentId: string;
-  refereeId: string;
+  refereeId: string | null;
+  refereeWaived?: boolean;
   wager?: number;
   isPublic?: boolean;
 }): Promise<string> {
@@ -166,7 +167,8 @@ export async function createMatch(args: {
     .insert({
       challenger_id: args.challengerId,
       opponent_id: args.opponentId,
-      referee_id: args.refereeId,
+      referee_id: args.refereeWaived ? null : args.refereeId,
+      referee_waived: !!args.refereeWaived,
       wager: Math.max(0, Math.round(args.wager ?? 0)),
       is_public: !!args.isPublic,
     })
@@ -235,6 +237,15 @@ export async function recordResult(args: {
     p_result: args.result,
     p_method: args.method ?? null,
     p_notes: args.notes ?? null,
+  });
+  if (error) throw error;
+}
+
+/** On a waived match, the OTHER competitor confirms (true) or disputes (false) the logged result. */
+export async function confirmResult(matchId: string, accept: boolean) {
+  const { error } = await supabase.rpc('confirm_match_result', {
+    p_match_id: matchId,
+    p_accept: accept,
   });
   if (error) throw error;
 }

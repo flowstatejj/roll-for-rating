@@ -37,7 +37,16 @@ export default function NewMatchScreen() {
   const [results, setResults] = useState<Profile[]>([]);
   const [wager, setWager] = useState('');
   const [isPublic, setIsPublic] = useState(false);
+  const [waiveRef, setWaiveRef] = useState(false);
   const [creating, setCreating] = useState(false);
+
+  // Wager band: you can only stake ROR against someone within 10% of your ROR.
+  const myRor = profile?.rating ?? 0;
+  const bandLo = Math.round(myRor * 0.9);
+  const bandHi = Math.round(myRor * 1.1);
+  const opponentInBand = !opponent || Math.abs((opponent.rating ?? 0) - myRor) <= 0.1 * myRor;
+  // Minors can't waive the referee (kid protections); the DB enforces this too.
+  const canWaive = !profile?.is_minor && !competingAsJunior && !opponent?.is_minor;
 
   // Load any managed juniors so an adult can compete on their behalf.
   useEffect(() => {
@@ -85,6 +94,11 @@ export default function NewMatchScreen() {
     return () => clearTimeout(t);
   }, [runSearch]);
 
+  // Clear a staked wager if the chosen opponent falls outside the 10% ROR band.
+  useEffect(() => {
+    if (opponent && !opponentInBand && wager) setWager('');
+  }, [opponent, opponentInBand, wager]);
+
   function choose(p: Profile) {
     if (active === 'opponent') {
       setOpponent(p);
@@ -97,8 +111,13 @@ export default function NewMatchScreen() {
   }
 
   async function create() {
-    if (!opponent || !referee) {
-      Alert.alert(t('mn.pickBothTitle'), t('mn.pickBothBody'));
+    if (!opponent || (!waiveRef && !referee)) {
+      Alert.alert(t('mn.pickBothTitle'), waiveRef ? t('mn.pickOppBody') : t('mn.pickBothBody'));
+      return;
+    }
+    const wagerVal = competingAsJunior ? 0 : parseInt(wager, 10) || 0;
+    if (wagerVal > 0 && !opponentInBand) {
+      Alert.alert(t('mn.wagerBandTitle'), t('mn.wagerBandBody').replace('{lo}', String(bandLo)).replace('{hi}', String(bandHi)));
       return;
     }
     setCreating(true);
@@ -106,9 +125,10 @@ export default function NewMatchScreen() {
       const id = await createMatch({
         challengerId,
         opponentId: opponent.id,
-        refereeId: referee.id,
+        refereeId: waiveRef ? null : referee!.id,
+        refereeWaived: waiveRef,
         // Juniors never wager / never publish (the DB enforces this too).
-        wager: competingAsJunior ? 0 : parseInt(wager, 10) || 0,
+        wager: wagerVal,
         isPublic: competingAsJunior ? false : isPublic,
       });
       router.replace(`/match/${id}`);
@@ -160,14 +180,40 @@ export default function NewMatchScreen() {
           onPress={() => setActive('opponent')}
           onClear={() => setOpponent(null)}
         />
-        <SlotButton
-          label={t('mn.referee')}
-          person={referee}
-          active={active === 'referee'}
-          onPress={() => setActive('referee')}
-          onClear={() => setReferee(null)}
-        />
+        {!waiveRef && (
+          <SlotButton
+            label={t('mn.referee')}
+            person={referee}
+            active={active === 'referee'}
+            onPress={() => setActive('referee')}
+            onClear={() => setReferee(null)}
+          />
+        )}
       </View>
+
+      {/* Waive referee — adults only; minor matches always need a neutral ref */}
+      {canWaive && (
+        <Card style={styles.publicRow}>
+          <Ionicons name="videocam-outline" size={20} color={waiveRef ? theme.accent : theme.textSecondary} />
+          <View style={{ flex: 1 }}>
+            <ThemedText style={{ fontWeight: '800' }}>{t('mn.waiveTitle')}</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              {t('mn.waiveSub')}
+            </ThemedText>
+          </View>
+          <Switch
+            value={waiveRef}
+            onValueChange={(v) => {
+              setWaiveRef(v);
+              if (v) {
+                setReferee(null);
+                setActive('opponent');
+              }
+            }}
+            trackColor={{ true: theme.accent }}
+          />
+        </Card>
+      )}
 
       <TextField
         label={active === 'opponent' ? t('mn.searchOpponent') : t('mn.searchReferee')}
@@ -204,25 +250,34 @@ export default function NewMatchScreen() {
 
       {/* Wagering is adults-only (hidden for every minor, and when a junior competes) */}
       {!profile?.is_minor && !competingAsJunior && (
-        <>
-          <TextField
-            label={t('mn.wagerLabel')}
-            value={wager}
-            onChangeText={setWager}
-            keyboardType="number-pad"
-            placeholder={t('mn.wagerPlaceholder')}
-          />
-          <View style={styles.wagerChips}>
-            {['25', '50', '100'].map((v) => (
-              <WagerChip key={v} label={v} active={wager === v} onPress={() => setWager(v)} />
-            ))}
-            <WagerChip label={`${t('mn.allIn')} (${allIn})`} active={wager === String(allIn)} onPress={() => setWager(String(allIn))} />
-            <WagerChip label={t('mn.none')} active={wager === '' || wager === '0'} onPress={() => setWager('')} />
-          </View>
-          <ThemedText type="small" themeColor="textSecondary">
-            {t('mn.wagerExplain')}
-          </ThemedText>
-        </>
+        opponent && !opponentInBand ? (
+          <Card style={styles.publicRow}>
+            <Ionicons name="information-circle-outline" size={20} color={theme.textSecondary} />
+            <ThemedText type="small" themeColor="textSecondary" style={{ flex: 1 }}>
+              {t('mn.wagerOutOfBand').replace('{lo}', String(bandLo)).replace('{hi}', String(bandHi))}
+            </ThemedText>
+          </Card>
+        ) : (
+          <>
+            <TextField
+              label={t('mn.wagerLabel')}
+              value={wager}
+              onChangeText={setWager}
+              keyboardType="number-pad"
+              placeholder={t('mn.wagerPlaceholder')}
+            />
+            <View style={styles.wagerChips}>
+              {['25', '50', '100'].map((v) => (
+                <WagerChip key={v} label={v} active={wager === v} onPress={() => setWager(v)} />
+              ))}
+              <WagerChip label={`${t('mn.allIn')} (${allIn})`} active={wager === String(allIn)} onPress={() => setWager(String(allIn))} />
+              <WagerChip label={t('mn.none')} active={wager === '' || wager === '0'} onPress={() => setWager('')} />
+            </View>
+            <ThemedText type="small" themeColor="textSecondary">
+              {t('mn.wagerExplain')} {t('mn.wagerBandHint').replace('{lo}', String(bandLo)).replace('{hi}', String(bandHi))}
+            </ThemedText>
+          </>
+        )
       )}
 
       {/* Public publishing — hidden for under-14 (kids) and for junior matches */}
@@ -253,7 +308,7 @@ export default function NewMatchScreen() {
         icon="send"
         onPress={create}
         loading={creating}
-        disabled={!opponent || !referee || (!!profile?.is_minor && profile.consent_status !== 'verified')}
+        disabled={!opponent || (!waiveRef && !referee) || (!!profile?.is_minor && profile.consent_status !== 'verified')}
       />
     </Screen>
   );

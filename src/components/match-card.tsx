@@ -15,6 +15,8 @@ function statusMeta(status: MatchStatus, theme: ReturnType<typeof useTheme>, t: 
       return { label: t('md.statusPendingOpponent'), color: '#D9822B' };
     case 'pending_referee':
       return { label: t('md.statusPendingReferee'), color: theme.accent };
+    case 'pending_confirmation':
+      return { label: t('md.statusPendingConfirm'), color: '#D9822B' };
     case 'completed':
       return { label: t('md.statusCompleted'), color: theme.success };
     case 'declined':
@@ -76,9 +78,9 @@ export function MatchCard({ match, currentUserId }: { match: MatchWithPeople; cu
 
         <View style={styles.footer}>
           <View style={styles.refRow}>
-            <Ionicons name="eye-outline" size={14} color={theme.textSecondary} />
+            <Ionicons name={match.referee ? 'eye-outline' : 'videocam-outline'} size={14} color={theme.textSecondary} />
             <ThemedText type="small" themeColor="textSecondary">
-              {t('mc.ref')}: {match.referee.display_name}
+              {match.referee ? `${t('mc.ref')}: ${match.referee.display_name}` : t('md.noReferee')}
             </ThemedText>
           </View>
           {match.status === 'completed' && match.result && (

@@ -79,10 +79,14 @@ export default function HomeScreen() {
 
   if (loading || !profile) return <Loading />;
 
+  const isCompetitor = (m: MatchWithPeople) => m.challenger_id === userId || m.opponent_id === userId;
   const needsMe = matches.filter(
     (m) =>
       (m.status === 'pending_opponent' && m.opponent_id === userId) ||
-      (m.status === 'pending_referee' && m.referee_id === userId),
+      // reffed: I'm the referee; waived: either competitor can log it
+      (m.status === 'pending_referee' && (m.referee_waived ? isCompetitor(m) : m.referee_id === userId)) ||
+      // waived result logged: the other competitor needs to confirm it
+      (m.status === 'pending_confirmation' && isCompetitor(m) && m.result_proposed_by !== userId),
   );
   const recent = matches.slice(0, 5);
   const total = profile.wins + profile.losses + profile.draws;
