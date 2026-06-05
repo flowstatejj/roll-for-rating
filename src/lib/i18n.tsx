@@ -117,6 +117,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'mn.intro': "Pick who you're rolling against and who's refereeing. Both must accept/record for ROR to count.",
     'mn.pickOppBody': 'Pick an opponent first.',
+    'mn.atStake': 'ROR at stake', 'mn.onWin': 'on a win', 'mn.onLoss': 'on a loss', 'mn.mismatchNote': 'Big rating gap — ROR is reduced both ways.',
     'mn.waiveTitle': 'No referee', 'mn.waiveSub': 'You both confirm the result instead. The match must be filmed.',
     'mn.wagerBandTitle': 'Out of range', 'mn.wagerBandBody': 'You can only wager against players within 10% of your ROR ({lo}–{hi}).',
     'mn.wagerOutOfBand': 'Wagering needs an opponent within 10% of your ROR ({lo}–{hi}).', 'mn.wagerBandHint': 'Within 10% of your ROR ({lo}–{hi}).',
@@ -410,6 +411,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'mn.intro': 'Elige contra quién ruedas y quién arbitra. Ambos deben aceptar/registrar para que cuente.',
     'mn.pickOppBody': 'Primero elige un oponente.',
+    'mn.atStake': 'ROR en juego', 'mn.onWin': 'si ganas', 'mn.onLoss': 'si pierdes', 'mn.mismatchNote': 'Gran diferencia de nivel: el ROR se reduce en ambos sentidos.',
     'mn.waiveTitle': 'Sin árbitro', 'mn.waiveSub': 'Confirman el resultado entre ambos. El combate debe grabarse.',
     'mn.wagerBandTitle': 'Fuera de rango', 'mn.wagerBandBody': 'Solo puedes apostar contra jugadores dentro del 10% de tu ROR ({lo}–{hi}).',
     'mn.wagerOutOfBand': 'Para apostar necesitas un oponente dentro del 10% de tu ROR ({lo}–{hi}).', 'mn.wagerBandHint': 'Dentro del 10% de tu ROR ({lo}–{hi}).',
@@ -703,6 +705,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'mn.intro': 'Escolha contra quem você vai rolar e quem arbitra. Ambos devem aceitar/registrar para contar.',
     'mn.pickOppBody': 'Escolha um oponente primeiro.',
+    'mn.atStake': 'ROR em jogo', 'mn.onWin': 'se vencer', 'mn.onLoss': 'se perder', 'mn.mismatchNote': 'Grande diferença de nível — o ROR é reduzido nos dois sentidos.',
     'mn.waiveTitle': 'Sem árbitro', 'mn.waiveSub': 'Vocês dois confirmam o resultado. A luta precisa ser filmada.',
     'mn.wagerBandTitle': 'Fora do alcance', 'mn.wagerBandBody': 'Você só pode apostar contra jogadores dentro de 10% do seu ROR ({lo}–{hi}).',
     'mn.wagerOutOfBand': 'Para apostar você precisa de um oponente dentro de 10% do seu ROR ({lo}–{hi}).', 'mn.wagerBandHint': 'Dentro de 10% do seu ROR ({lo}–{hi}).',
@@ -996,6 +999,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'mn.intro': 'Choisis ton adversaire et l’arbitre. Les deux doivent accepter/enregistrer pour que ça compte.',
     'mn.pickOppBody': 'Choisis d’abord un adversaire.',
+    'mn.atStake': 'ROR en jeu', 'mn.onWin': 'si tu gagnes', 'mn.onLoss': 'si tu perds', 'mn.mismatchNote': 'Gros écart de niveau — le ROR est réduit dans les deux sens.',
     'mn.waiveTitle': 'Sans arbitre', 'mn.waiveSub': 'Vous confirmez le résultat tous les deux. Le combat doit être filmé.',
     'mn.wagerBandTitle': 'Hors limite', 'mn.wagerBandBody': 'Tu ne peux parier que contre des joueurs à 10% de ton ROR ({lo}–{hi}).',
     'mn.wagerOutOfBand': 'Pour parier, il faut un adversaire à 10% de ton ROR ({lo}–{hi}).', 'mn.wagerBandHint': 'À 10% de ton ROR ({lo}–{hi}).',

@@ -8,6 +8,7 @@ import { Avatar, BeltChip, Button, Card, Screen, TextField } from '@/components/
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { projectSwing } from '@/lib/elo';
 import { useTranslation } from '@/lib/i18n';
 import { fetchJuniors } from '@/lib/juniors';
 import { createMatch, searchProfiles } from '@/lib/matches';
@@ -47,6 +48,9 @@ export default function NewMatchScreen() {
   const opponentInBand = !opponent || Math.abs((opponent.rating ?? 0) - myRor) <= 0.1 * myRor;
   // Minors can't waive the referee (kid protections); the DB enforces this too.
   const canWaive = !profile?.is_minor && !competingAsJunior && !opponent?.is_minor;
+  // ROR at stake for the chosen opponent (mismatch-damped, before any wager).
+  const swing = opponent ? projectSwing(myRor, opponent.rating ?? 0, 0) : null;
+  const bigGap = opponent ? Math.abs(myRor - (opponent.rating ?? 0)) > 150 : false;
 
   // Load any managed juniors so an adult can compete on their behalf.
   useEffect(() => {
@@ -212,6 +216,22 @@ export default function NewMatchScreen() {
             }}
             trackColor={{ true: theme.accent }}
           />
+        </Card>
+      )}
+
+      {opponent && swing && (
+        <Card style={{ gap: 4 }}>
+          <ThemedText type="smallBold" themeColor="textSecondary">{t('mn.atStake')}</ThemedText>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two, flexWrap: 'wrap' }}>
+            <ThemedText style={{ fontWeight: '800', color: theme.success }}>+{swing.win} ROR</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">{t('mn.onWin')}</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">·</ThemedText>
+            <ThemedText style={{ fontWeight: '800', color: theme.danger }}>{swing.loss} ROR</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">{t('mn.onLoss')}</ThemedText>
+          </View>
+          {bigGap && (
+            <ThemedText type="small" themeColor="textSecondary">{t('mn.mismatchNote')}</ThemedText>
+          )}
         </Card>
       )}
 
