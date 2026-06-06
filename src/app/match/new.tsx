@@ -24,7 +24,8 @@ export default function NewMatchScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const userId = session!.user.id;
-  const allIn = Math.max(0, (profile?.rating ?? 0) - 100);
+  // You can stake at most 10% of your own ROR on a single match.
+  const maxBet = Math.max(0, Math.round((profile?.rating ?? 0) * 0.1));
 
   const { opponent: opponentParam, league: leagueParam, week: weekParam } = useLocalSearchParams<{ opponent?: string; league?: string; week?: string }>();
   const inLeague = !!leagueParam;
@@ -133,6 +134,10 @@ export default function NewMatchScreen() {
     const wagerVal = inLeague || competingAsJunior ? 0 : parseInt(wager, 10) || 0;
     if (wagerVal > 0 && !opponentInBand) {
       Alert.alert(t('mn.wagerBandTitle'), t('mn.wagerBandBody').replace('{lo}', String(bandLo)).replace('{hi}', String(bandHi)));
+      return;
+    }
+    if (wagerVal > maxBet) {
+      Alert.alert(t('mn.wagerCapTitle'), t('mn.wagerCapBody').replace('{max}', String(maxBet)));
       return;
     }
     setCreating(true);
@@ -312,14 +317,14 @@ export default function NewMatchScreen() {
               placeholder={t('mn.wagerPlaceholder')}
             />
             <View style={styles.wagerChips}>
-              {['25', '50', '100'].map((v) => (
+              {['25', '50', '100'].filter((v) => Number(v) <= maxBet).map((v) => (
                 <WagerChip key={v} label={v} active={wager === v} onPress={() => setWager(v)} />
               ))}
-              <WagerChip label={`${t('mn.allIn')} (${allIn})`} active={wager === String(allIn)} onPress={() => setWager(String(allIn))} />
+              <WagerChip label={`${t('mn.maxBet')} (${maxBet})`} active={wager === String(maxBet)} onPress={() => setWager(String(maxBet))} />
               <WagerChip label={t('mn.none')} active={wager === '' || wager === '0'} onPress={() => setWager('')} />
             </View>
             <ThemedText type="small" themeColor="textSecondary">
-              {t('mn.wagerExplain')} {t('mn.wagerBandHint').replace('{lo}', String(bandLo)).replace('{hi}', String(bandHi))}
+              {t('mn.wagerExplain')} {t('mn.wagerCapHint').replace('{max}', String(maxBet))} {t('mn.wagerBandHint').replace('{lo}', String(bandLo)).replace('{hi}', String(bandHi))}
             </ThemedText>
           </>
         )

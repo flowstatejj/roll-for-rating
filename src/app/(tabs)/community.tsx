@@ -148,12 +148,6 @@ export default function CommunityScreen() {
         subtitle={t('comm.biggestPotsSub')}
         onPress={() => router.push('/high-rollers')}
       />
-      <ActionRow
-        icon="search"
-        title={t('comm.browseGyms')}
-        subtitle={t('comm.browseGymsSub')}
-        onPress={() => router.push('/gyms')}
-      />
     </Screen>
   );
 }
