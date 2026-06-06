@@ -284,7 +284,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'mc.respond': 'Respond', 'mc.recordResult': 'Record result', 'mc.ref': 'Ref',
 
-    'mv.label': 'Match video', 'mv.noVideo': 'No video yet', 'mv.remove': 'Remove', 'mv.uploading': 'Uploading…',
+    'mv.label': 'Match video', 'mv.noVideo': 'No video yet', 'mv.remove': 'Remove', 'mv.uploading': 'Uploading…', 'mv.save': 'Save / Share', 'mv.saveFail': "Couldn't save video",
     'mv.upload': 'Upload a video', 'mv.record': 'Record video',
     'mv.cameraTitle': 'Camera needed', 'mv.cameraBody': 'Allow camera access to record the match.',
     'mv.uploadFailTitle': 'Upload failed', 'mv.uploadFailBody': 'Could not add the video.',
@@ -579,7 +579,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'mc.respond': 'Responder', 'mc.recordResult': 'Registrar resultado', 'mc.ref': 'Árb.',
 
-    'mv.label': 'Vídeo del combate', 'mv.noVideo': 'Aún no hay vídeo', 'mv.remove': 'Quitar', 'mv.uploading': 'Subiendo…',
+    'mv.label': 'Vídeo del combate', 'mv.noVideo': 'Aún no hay vídeo', 'mv.remove': 'Quitar', 'mv.uploading': 'Subiendo…', 'mv.save': 'Guardar / Compartir', 'mv.saveFail': 'No se pudo guardar el vídeo',
     'mv.upload': 'Subir un vídeo', 'mv.record': 'Grabar vídeo',
     'mv.cameraTitle': 'Cámara necesaria', 'mv.cameraBody': 'Permite el acceso a la cámara para grabar el combate.',
     'mv.uploadFailTitle': 'Error al subir', 'mv.uploadFailBody': 'No se pudo añadir el vídeo.',
@@ -874,7 +874,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'mc.respond': 'Responder', 'mc.recordResult': 'Registrar resultado', 'mc.ref': 'Árb.',
 
-    'mv.label': 'Vídeo da luta', 'mv.noVideo': 'Ainda sem vídeo', 'mv.remove': 'Remover', 'mv.uploading': 'Enviando…',
+    'mv.label': 'Vídeo da luta', 'mv.noVideo': 'Ainda sem vídeo', 'mv.remove': 'Remover', 'mv.uploading': 'Enviando…', 'mv.save': 'Salvar / Compartilhar', 'mv.saveFail': 'Não foi possível salvar o vídeo',
     'mv.upload': 'Enviar um vídeo', 'mv.record': 'Gravar vídeo',
     'mv.cameraTitle': 'Câmera necessária', 'mv.cameraBody': 'Permita o acesso à câmera para gravar a luta.',
     'mv.uploadFailTitle': 'Falha no envio', 'mv.uploadFailBody': 'Não foi possível adicionar o vídeo.',
@@ -1169,7 +1169,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'mc.respond': 'Répondre', 'mc.recordResult': 'Enregistrer le résultat', 'mc.ref': 'Arb.',
 
-    'mv.label': 'Vidéo du combat', 'mv.noVideo': 'Aucune vidéo pour l’instant', 'mv.remove': 'Retirer', 'mv.uploading': 'Envoi…',
+    'mv.label': 'Vidéo du combat', 'mv.noVideo': 'Aucune vidéo pour l’instant', 'mv.remove': 'Retirer', 'mv.uploading': 'Envoi…', 'mv.save': 'Enregistrer / Partager', 'mv.saveFail': 'Impossible d’enregistrer la vidéo',
     'mv.upload': 'Envoyer une vidéo', 'mv.record': 'Enregistrer une vidéo',
     'mv.cameraTitle': 'Caméra requise', 'mv.cameraBody': 'Autorise l’accès à la caméra pour filmer le combat.',
     'mv.uploadFailTitle': 'Échec de l’envoi', 'mv.uploadFailBody': 'Impossible d’ajouter la vidéo.',

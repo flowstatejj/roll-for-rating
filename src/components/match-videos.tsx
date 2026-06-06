@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, Share, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Button, Card } from '@/components/ui/kit';
@@ -25,6 +26,7 @@ export function MatchVideos({
   const { t } = useTranslation();
   const [videos, setVideos] = useState<MatchVideo[]>([]);
   const [busy, setBusy] = useState(false);
+  const [savingId, setSavingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -69,6 +71,26 @@ export function MatchVideos({
     }
   }
 
+  // Download the match video and open the OS share sheet so a participant can
+  // keep it (Save Video) or use it (send / post). Public URL works everywhere.
+  async function saveVideo(v: MatchVideo) {
+    const url = videoPublicUrl(v.path);
+    try {
+      setSavingId(v.id);
+      if (Platform.OS === 'web') {
+        await Share.share({ message: url });
+        return;
+      }
+      const target = `${FileSystem.cacheDirectory}match-${v.id}.mp4`;
+      const { uri } = await FileSystem.downloadAsync(url, target);
+      await Share.share(Platform.OS === 'ios' ? { url: uri } : { url: uri, message: url });
+    } catch (e: any) {
+      Alert.alert(t('mv.saveFail'), e.message ?? t('md.tryAgain'));
+    } finally {
+      setSavingId(null);
+    }
+  }
+
   function confirmDelete(video: MatchVideo) {
     Alert.alert(t('mv.removeTitle'), t('mv.removeBody'), [
       { text: t('common.cancel'), style: 'cancel' },
@@ -102,12 +124,24 @@ export function MatchVideos({
         <View key={v.id} style={{ gap: Spacing.one }}>
           <VideoPlayerItem url={videoPublicUrl(v.path)} />
           {isParticipant && (
-            <Pressable onPress={() => confirmDelete(v)} style={styles.deleteRow}>
-              <Ionicons name="trash-outline" size={14} color={theme.danger} />
-              <ThemedText type="small" style={{ color: theme.danger }}>
-                {t('mv.remove')}
-              </ThemedText>
-            </Pressable>
+            <View style={styles.actionsRow}>
+              <Pressable onPress={() => saveVideo(v)} disabled={savingId === v.id} style={styles.deleteRow}>
+                {savingId === v.id ? (
+                  <ActivityIndicator size="small" color={theme.accent} />
+                ) : (
+                  <Ionicons name="download-outline" size={14} color={theme.accent} />
+                )}
+                <ThemedText type="small" style={{ color: theme.accent }}>
+                  {t('mv.save')}
+                </ThemedText>
+              </Pressable>
+              <Pressable onPress={() => confirmDelete(v)} style={styles.deleteRow}>
+                <Ionicons name="trash-outline" size={14} color={theme.danger} />
+                <ThemedText type="small" style={{ color: theme.danger }}>
+                  {t('mv.remove')}
+                </ThemedText>
+              </Pressable>
+            </View>
           )}
         </View>
       ))}
@@ -143,5 +177,6 @@ function VideoPlayerItem({ url }: { url: string }) {
 const styles = StyleSheet.create({
   label: { fontSize: 18, fontWeight: '800' },
   video: { width: '100%', aspectRatio: 16 / 9, borderRadius: 12, backgroundColor: '#000' },
-  deleteRow: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-end', paddingVertical: 2 },
+  deleteRow: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 2 },
+  actionsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: Spacing.three },
 });
