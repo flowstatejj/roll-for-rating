@@ -39,20 +39,30 @@ export async function pickAvatar(fromCamera: boolean): Promise<string | null> {
  *
  * Only call this for ADULT profiles — minors / managed juniors skip the face
  * check (their photo just needs to exist and is gated behind an accepted match
- * by storage RLS). Throws if verification can't run, so the caller can tell the
- * user to try again rather than silently accepting an unverified photo.
+ * by storage RLS).
+ *
+ * A real verdict of `false` (Claude saw no clear human face) blocks the upload.
+ * But if the check can't RUN — the function isn't deployed yet, the device is
+ * offline, or the AI errored — we degrade OPEN and allow the upload rather than
+ * hard-block it. The gate therefore turns on automatically once verify-face is
+ * deployed, with no client update needed.
  */
 export async function hasHumanFace(uri: string): Promise<boolean> {
-  const ext = (uri.split('?')[0].split('.').pop() || 'jpg').toLowerCase();
-  const media_type = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
-  const image_base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+  try {
+    const ext = (uri.split('?')[0].split('.').pop() || 'jpg').toLowerCase();
+    const media_type = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+    const image_base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
 
-  const { data, error } = await supabase.functions.invoke('verify-face', {
-    body: { image_base64, media_type },
-  });
-  if (error) throw error;
-  if (data?.error) throw new Error(data.error);
-  return data?.face === true;
+    const { data, error } = await supabase.functions.invoke('verify-face', {
+      body: { image_base64, media_type },
+    });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    return data?.face === true;
+  } catch (e) {
+    console.warn('Face check unavailable — allowing upload:', e);
+    return true;
+  }
 }
 
 /** Upload a local image URI as `profileId`'s avatar and save the path on the profile. */
