@@ -9,7 +9,7 @@ import { Avatar, BeltChip, Button, Card, EmptyState, Loading, Screen, TextField 
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { computeAchievements } from '@/lib/achievements';
-import { avatarSignedUrl, pickAvatar, uploadAvatar } from '@/lib/avatars';
+import { avatarSignedUrl, hasHumanFace, pickAvatar, uploadAvatar } from '@/lib/avatars';
 import { useAuth } from '@/lib/auth';
 import { deleteAccount } from '@/lib/account';
 import { requestParentConsent } from '@/lib/consent';
@@ -65,6 +65,11 @@ export default function ProfileScreen() {
     if (!uri) return;
     setUploadingPhoto(true);
     try {
+      const ok = await hasHumanFace(uri);
+      if (!ok) {
+        Alert.alert(t('pf.noFaceTitle'), t('pf.noFaceBody'));
+        return;
+      }
       await uploadAvatar(userId, uri);
       await refreshProfile();
     } catch (e: any) {

@@ -26,7 +26,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'common.cancel': 'Cancel', 'common.ok': 'OK',
 
     'profile.settings': 'Settings', 'profile.editProfile': 'Edit profile',
-    'pf.photoTitle': 'Profile photo', 'pf.photoBody': 'A clear photo of your face — so partners can recognize you on the mat.', 'pf.takePhoto': 'Take photo', 'pf.choosePhoto': 'Choose from library', 'pf.photoFail': "Couldn't upload photo", 'pf.photoRequired': 'Add a profile photo — required to compete.',
+    'pf.photoTitle': 'Profile photo', 'pf.photoBody': 'A clear photo of your face — so partners can recognize you on the mat.', 'pf.takePhoto': 'Take photo', 'pf.choosePhoto': 'Choose from library', 'pf.photoFail': "Couldn't upload photo", 'pf.photoRequired': 'Add a profile photo — required to compete.', 'pf.noFaceTitle': 'No face detected', 'pf.noFaceBody': "Use a clear photo of your face — we couldn't find one in that image.",
     'profile.importComp': 'Import competition record', 'profile.myJuniors': 'My juniors',
     'profile.juniorChallenges': 'Junior challenges', 'profile.signOut': 'Sign out',
     'profile.deleteAccount': 'Delete account',
@@ -321,7 +321,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'common.cancel': 'Cancelar', 'common.ok': 'OK',
 
     'profile.settings': 'Ajustes', 'profile.editProfile': 'Editar perfil',
-    'pf.photoTitle': 'Foto de perfil', 'pf.photoBody': 'Una foto clara de tu cara, para que tus compañeros te reconozcan en el tatami.', 'pf.takePhoto': 'Tomar foto', 'pf.choosePhoto': 'Elegir de la galería', 'pf.photoFail': 'No se pudo subir la foto', 'pf.photoRequired': 'Añade una foto de perfil: obligatoria para competir.',
+    'pf.photoTitle': 'Foto de perfil', 'pf.photoBody': 'Una foto clara de tu cara, para que tus compañeros te reconozcan en el tatami.', 'pf.takePhoto': 'Tomar foto', 'pf.choosePhoto': 'Elegir de la galería', 'pf.photoFail': 'No se pudo subir la foto', 'pf.photoRequired': 'Añade una foto de perfil: obligatoria para competir.', 'pf.noFaceTitle': 'No se detectó una cara', 'pf.noFaceBody': 'Usa una foto clara de tu cara: no encontramos ninguna en esa imagen.',
     'profile.importComp': 'Importar historial de competición', 'profile.myJuniors': 'Mis menores',
     'profile.juniorChallenges': 'Retos de menores', 'profile.signOut': 'Cerrar sesión',
     'profile.deleteAccount': 'Eliminar cuenta',
@@ -616,7 +616,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'common.cancel': 'Cancelar', 'common.ok': 'OK',
 
     'profile.settings': 'Configurações', 'profile.editProfile': 'Editar perfil',
-    'pf.photoTitle': 'Foto de perfil', 'pf.photoBody': 'Uma foto nítida do seu rosto, para que os parceiros te reconheçam no tatame.', 'pf.takePhoto': 'Tirar foto', 'pf.choosePhoto': 'Escolher da galeria', 'pf.photoFail': 'Não foi possível enviar a foto', 'pf.photoRequired': 'Adicione uma foto de perfil — obrigatória para competir.',
+    'pf.photoTitle': 'Foto de perfil', 'pf.photoBody': 'Uma foto nítida do seu rosto, para que os parceiros te reconheçam no tatame.', 'pf.takePhoto': 'Tirar foto', 'pf.choosePhoto': 'Escolher da galeria', 'pf.photoFail': 'Não foi possível enviar a foto', 'pf.photoRequired': 'Adicione uma foto de perfil — obrigatória para competir.', 'pf.noFaceTitle': 'Nenhum rosto detectado', 'pf.noFaceBody': 'Use uma foto nítida do seu rosto — não encontramos nenhum nessa imagem.',
     'profile.importComp': 'Importar histórico de competição', 'profile.myJuniors': 'Meus menores',
     'profile.juniorChallenges': 'Desafios de menores', 'profile.signOut': 'Sair',
     'profile.deleteAccount': 'Excluir conta',
@@ -911,7 +911,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'common.cancel': 'Annuler', 'common.ok': 'OK',
 
     'profile.settings': 'Paramètres', 'profile.editProfile': 'Modifier le profil',
-    'pf.photoTitle': 'Photo de profil', 'pf.photoBody': 'Une photo nette de ton visage, pour que les partenaires te reconnaissent sur le tatami.', 'pf.takePhoto': 'Prendre une photo', 'pf.choosePhoto': 'Choisir dans la galerie', 'pf.photoFail': 'Impossible d’envoyer la photo', 'pf.photoRequired': 'Ajoute une photo de profil — obligatoire pour participer.',
+    'pf.photoTitle': 'Photo de profil', 'pf.photoBody': 'Une photo nette de ton visage, pour que les partenaires te reconnaissent sur le tatami.', 'pf.takePhoto': 'Prendre une photo', 'pf.choosePhoto': 'Choisir dans la galerie', 'pf.photoFail': 'Impossible d’envoyer la photo', 'pf.photoRequired': 'Ajoute une photo de profil — obligatoire pour participer.', 'pf.noFaceTitle': 'Aucun visage détecté', 'pf.noFaceBody': "Utilise une photo nette de ton visage — nous n'en avons trouvé aucun.",
     'profile.importComp': "Importer l'historique de compétition", 'profile.myJuniors': 'Mes mineurs',
     'profile.juniorChallenges': 'Défis des mineurs', 'profile.signOut': 'Se déconnecter',
     'profile.deleteAccount': 'Supprimer le compte',

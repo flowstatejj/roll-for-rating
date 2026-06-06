@@ -1,3 +1,4 @@
+import FaceDetection from '@react-native-ml-kit/face-detection';
 import { decode } from 'base64-arraybuffer';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
@@ -30,6 +31,22 @@ export async function pickAvatar(fromCamera: boolean): Promise<string | null> {
     quality: 0.7,
   });
   return res.canceled ? null : res.assets[0].uri;
+}
+
+/**
+ * On-device check that the image contains at least one clear human face. Runs
+ * entirely on the phone (ML Kit) — the photo is never sent anywhere to verify.
+ * Fails OPEN if detection itself errors (e.g. on web, where there's no native
+ * module), but fails CLOSED when it runs and finds no face.
+ */
+export async function hasHumanFace(uri: string): Promise<boolean> {
+  try {
+    const faces = await FaceDetection.detect(uri, { performanceMode: 'accurate', minFaceSize: 0.15 });
+    return faces.length >= 1;
+  } catch (e) {
+    console.warn('face detection unavailable; skipping check', e);
+    return true;
+  }
 }
 
 /** Upload a local image URI as `profileId`'s avatar and save the path on the profile. */

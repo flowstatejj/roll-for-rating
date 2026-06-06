@@ -3,7 +3,9 @@
     "name": "Roll for Rating",
     "slug": "jj-ladder",
     "version": "1.0.0",
-    "runtimeVersion": { "policy": "appVersion" },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "updates": {
       "url": "https://u.expo.dev/8584796a-9507-4832-bcb7-c3c6d0c9d500"
     },
@@ -54,6 +56,15 @@
         {
           "photosPermission": "Roll for Rating uses your photos so you can attach match videos.",
           "cameraPermission": "Roll for Rating uses your camera so you can record match videos."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static",
+            "deploymentTarget": "15.1"
+          }
         }
       ]
     ],
