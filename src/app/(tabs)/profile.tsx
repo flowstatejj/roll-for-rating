@@ -65,10 +65,14 @@ export default function ProfileScreen() {
     if (!uri) return;
     setUploadingPhoto(true);
     try {
-      const ok = await hasHumanFace(uri);
-      if (!ok) {
-        Alert.alert(t('pf.noFaceTitle'), t('pf.noFaceBody'));
-        return;
+      // Adults must pass a face check; minors/teens just need a photo (theirs is
+      // gated behind an accepted match by storage RLS).
+      if (!profile?.is_minor) {
+        const ok = await hasHumanFace(uri);
+        if (!ok) {
+          Alert.alert(t('pf.noFaceTitle'), t('pf.noFaceBody'));
+          return;
+        }
       }
       await uploadAvatar(userId, uri);
       await refreshProfile();

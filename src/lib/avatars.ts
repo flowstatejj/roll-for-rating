@@ -33,17 +33,26 @@ export async function pickAvatar(fromCamera: boolean): Promise<string | null> {
 }
 
 /**
- * On-device check that the image contains at least one clear human face. Runs
- * entirely on the phone (ML Kit) — the photo is never sent anywhere to verify.
- * Fails OPEN if detection itself errors (e.g. on web, where there's no native
- * module), but fails CLOSED when it runs and finds no face.
+ * Server-side check that the image shows one clear human face, via the
+ * `verify-face` edge function (Claude vision). On-device ML Kit doesn't link
+ * under this app's New Architecture, so verification runs on the server.
+ *
+ * Only call this for ADULT profiles — minors / managed juniors skip the face
+ * check (their photo just needs to exist and is gated behind an accepted match
+ * by storage RLS). Throws if verification can't run, so the caller can tell the
+ * user to try again rather than silently accepting an unverified photo.
  */
-export async function hasHumanFace(_uri: string): Promise<boolean> {
-  // On-device ML Kit doesn't link under this app's New Architecture (the native
-  // module isn't available at runtime), so the on-device check is disabled.
-  // Face verification will move server-side (Claude vision). Until then, allow
-  // the upload rather than block it.
-  return true;
+export async function hasHumanFace(uri: string): Promise<boolean> {
+  const ext = (uri.split('?')[0].split('.').pop() || 'jpg').toLowerCase();
+  const media_type = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+  const image_base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+
+  const { data, error } = await supabase.functions.invoke('verify-face', {
+    body: { image_base64, media_type },
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return data?.face === true;
 }
 
 /** Upload a local image URI as `profileId`'s avatar and save the path on the profile. */
