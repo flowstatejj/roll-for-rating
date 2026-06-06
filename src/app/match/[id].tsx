@@ -48,6 +48,7 @@ export default function MatchDetailScreen() {
   // Referee result form state (submission-only: winner, or a draw)
   const [winner, setWinner] = useState<'challenger' | 'opponent' | 'draw' | null>(null);
   const [subType, setSubType] = useState<string | null>(null);
+  const [subCat, setSubCat] = useState<'kill' | 'break' | null>(null);
   const [method, setMethod] = useState('');
   const [notes, setNotes] = useState('');
 
@@ -158,6 +159,7 @@ export default function MatchDetailScreen() {
         result: finalResult,
         method: method.trim() || null,
         notes: notes.trim() || null,
+        subCategory: finalResult === 'submission' ? subCat : null,
       });
       if (winner !== 'draw' && subType) {
         try {
@@ -418,6 +420,17 @@ export default function MatchDetailScreen() {
                 {SUBMISSIONS.map((s) => (
                   <Choice key={s} compact label={s} selected={subType === s} onPress={() => setSubType(subType === s ? null : s)} />
                 ))}
+              </View>
+            </View>
+          )}
+
+          {/* League scoring can reward a choke (kill) over a joint lock (break). */}
+          {winner && winner !== 'draw' && match.league_id && (
+            <View style={{ gap: Spacing.one }}>
+              <ThemedText type="smallBold" themeColor="textSecondary">{t('md.subKind')}</ThemedText>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two }}>
+                <Choice compact label={t('md.kill')} selected={subCat === 'kill'} onPress={() => setSubCat(subCat === 'kill' ? null : 'kill')} />
+                <Choice compact label={t('md.break')} selected={subCat === 'break'} onPress={() => setSubCat(subCat === 'break' ? null : 'break')} />
               </View>
             </View>
           )}

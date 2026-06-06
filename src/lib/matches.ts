@@ -161,6 +161,8 @@ export async function createMatch(args: {
   refereeWaived?: boolean;
   wager?: number;
   isPublic?: boolean;
+  leagueId?: string | null;
+  leagueWeek?: number | null;
 }): Promise<string> {
   const { data, error } = await supabase
     .from('matches')
@@ -169,8 +171,11 @@ export async function createMatch(args: {
       opponent_id: args.opponentId,
       referee_id: args.refereeWaived ? null : args.refereeId,
       referee_waived: !!args.refereeWaived,
-      wager: Math.max(0, Math.round(args.wager ?? 0)),
+      // League matches are never wagered.
+      wager: args.leagueId ? 0 : Math.max(0, Math.round(args.wager ?? 0)),
       is_public: !!args.isPublic,
+      league_id: args.leagueId ?? null,
+      league_week: args.leagueId ? args.leagueWeek ?? null : null,
     })
     .select('id')
     .single();
@@ -230,6 +235,7 @@ export async function recordResult(args: {
   result: ResultType;
   method?: string | null;
   notes?: string | null;
+  subCategory?: 'kill' | 'break' | null; // submission type for league scoring
 }) {
   const { error } = await supabase.rpc('record_match_result', {
     p_match_id: args.matchId,
@@ -237,6 +243,7 @@ export async function recordResult(args: {
     p_result: args.result,
     p_method: args.method ?? null,
     p_notes: args.notes ?? null,
+    p_sub_category: args.subCategory ?? null,
   });
   if (error) throw error;
 }

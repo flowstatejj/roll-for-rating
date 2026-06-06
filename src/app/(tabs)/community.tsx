@@ -119,10 +119,10 @@ export default function CommunityScreen() {
         onPress={() => router.push('/quests')}
       />
       <ActionRow
-        icon="calendar-number"
-        title={t('nav.seasons')}
-        subtitle={t('comm.seasonsSub')}
-        onPress={() => router.push('/seasons')}
+        icon="people-circle"
+        title={t('nav.leagues')}
+        subtitle={t('comm.leaguesSub')}
+        onPress={() => router.push('/leagues')}
       />
       <ActionRow
         icon="trophy"

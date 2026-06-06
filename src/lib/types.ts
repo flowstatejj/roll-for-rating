@@ -71,6 +71,70 @@ export interface SeasonStanding {
   profile: { id: string; display_name: string; belt_rank: BeltRank; rating: number } | null;
 }
 
+export type LeagueAudience = 'all' | 'kids' | 'adults';
+export type LeagueVisibility = 'open' | 'private';
+
+export interface League {
+  id: string;
+  created_by: string;
+  name: string;
+  description: string | null;
+  audience: LeagueAudience;
+  ranked: boolean;
+  visibility: LeagueVisibility;
+  join_code: string;
+  meet_day: number; // 0=Sun .. 6=Sat
+  meet_time: string | null;
+  location: string | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  gym_id: string | null;
+  season_starts: string; // date
+  weeks: number;
+  win_points: number;
+  draw_points: number;
+  loss_points: number;
+  sub_kill_bonus: number;
+  sub_break_bonus: number;
+  created_at: string;
+  /** present on rows fetched with membership context */
+  member_count?: number;
+  is_member?: boolean;
+  is_organizer?: boolean;
+}
+
+export interface LeagueMember {
+  league_id: string;
+  user_id: string;
+  role: 'organizer' | 'member';
+  joined_week: number;
+  active: boolean;
+  joined_at: string;
+  profile: { id: string; display_name: string; belt_rank: BeltRank; rating: number; avatar_path: string | null } | null;
+}
+
+export interface LeagueFixture {
+  id: string;
+  league_id: string;
+  week_no: number;
+  player_a: string;
+  player_b: string | null; // null = bye
+  match_id: string | null;
+  a: { id: string; display_name: string; belt_rank: BeltRank } | null;
+  b: { id: string; display_name: string; belt_rank: BeltRank } | null;
+}
+
+export interface LeagueStanding {
+  user_id: string;
+  played: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  points: number;
+  profile?: { id: string; display_name: string; belt_rank: BeltRank; rating: number } | null;
+}
+
 export interface GymPower {
   gym_id: string;
   name: string;
@@ -158,6 +222,11 @@ export interface Match {
   is_public: boolean;
   meet_when: string | null;
   meet_where: string | null;
+  /** set when the match belongs to a league season */
+  league_id: string | null;
+  league_week: number | null;
+  /** submission category for league scoring: 'kill' (choke) vs 'break' (joint lock) */
+  sub_category: 'kill' | 'break' | null;
   challenger_rating_before: number | null;
   opponent_rating_before: number | null;
   challenger_rating_after: number | null;

@@ -70,7 +70,8 @@ function RootNavigator() {
       <Stack.Screen name="notifications" options={{ headerShown: true, title: t('nav.notifications') }} />
       <Stack.Screen name="submission-hunt" options={{ headerShown: true, title: t('nav.submissionHunt') }} />
       <Stack.Screen name="quests" options={{ headerShown: true, title: t('nav.quests') }} />
-      <Stack.Screen name="seasons" options={{ headerShown: true, title: t('nav.seasons') }} />
+      <Stack.Screen name="leagues" options={{ headerShown: true, title: t('nav.leagues') }} />
+      <Stack.Screen name="league/[id]" options={{ headerShown: true, title: t('nav.league') }} />
       <Stack.Screen name="tournaments" options={{ headerShown: true, title: t('nav.tournaments') }} />
       <Stack.Screen name="tournament/[id]" options={{ headerShown: true, title: t('nav.tournament') }} />
       <Stack.Screen name="gym-rankings" options={{ headerShown: true, title: t('nav.gymRankings') }} />

@@ -11,6 +11,7 @@ import { useAuth } from '@/lib/auth';
 import { projectSwing } from '@/lib/elo';
 import { useTranslation } from '@/lib/i18n';
 import { fetchJuniors } from '@/lib/juniors';
+import { fetchLeague, linkFixtureMatch } from '@/lib/leagues';
 import { createMatch, searchProfiles } from '@/lib/matches';
 import { supabase } from '@/lib/supabase';
 import type { Profile } from '@/lib/types';
@@ -25,7 +26,10 @@ export default function NewMatchScreen() {
   const userId = session!.user.id;
   const allIn = Math.max(0, (profile?.rating ?? 0) - 100);
 
-  const { opponent: opponentParam } = useLocalSearchParams<{ opponent?: string }>();
+  const { opponent: opponentParam, league: leagueParam, week: weekParam } = useLocalSearchParams<{ opponent?: string; league?: string; week?: string }>();
+  const inLeague = !!leagueParam;
+  const leagueWeek = weekParam ? parseInt(weekParam, 10) : null;
+  const [leagueName, setLeagueName] = useState<string | null>(null);
   // Who's competing: null = the signed-in user, otherwise one of their managed juniors.
   const [juniors, setJuniors] = useState<Profile[]>([]);
   const [competitor, setCompetitor] = useState<Profile | null>(null);
@@ -57,6 +61,12 @@ export default function NewMatchScreen() {
     if (!profile || profile.is_minor) return;
     fetchJuniors(profile.id).then(setJuniors).catch((e) => console.warn('load juniors', e));
   }, [profile]);
+
+  // Show which league this match is being logged for.
+  useEffect(() => {
+    if (!leagueParam) return;
+    fetchLeague(leagueParam).then((l) => setLeagueName(l?.name ?? null)).catch(() => {});
+  }, [leagueParam]);
 
   // Preselect an opponent when arriving from "Find opponents".
   useEffect(() => {
@@ -119,7 +129,8 @@ export default function NewMatchScreen() {
       Alert.alert(t('mn.pickBothTitle'), waiveRef ? t('mn.pickOppBody') : t('mn.pickBothBody'));
       return;
     }
-    const wagerVal = competingAsJunior ? 0 : parseInt(wager, 10) || 0;
+    // League matches are never wagered.
+    const wagerVal = inLeague || competingAsJunior ? 0 : parseInt(wager, 10) || 0;
     if (wagerVal > 0 && !opponentInBand) {
       Alert.alert(t('mn.wagerBandTitle'), t('mn.wagerBandBody').replace('{lo}', String(bandLo)).replace('{hi}', String(bandHi)));
       return;
@@ -134,7 +145,13 @@ export default function NewMatchScreen() {
         // Juniors never wager / never publish (the DB enforces this too).
         wager: wagerVal,
         isPublic: competingAsJunior ? false : isPublic,
+        leagueId: leagueParam ?? null,
+        leagueWeek,
       });
+      // Link this match back to its league fixture for the week.
+      if (inLeague && leagueWeek != null) {
+        await linkFixtureMatch(leagueParam!, leagueWeek, challengerId, opponent.id, id).catch(() => {});
+      }
       router.replace(`/match/${id}`);
     } catch (e: any) {
       Alert.alert(t('mn.createFail'), e.message ?? 'Try again.');
@@ -144,6 +161,14 @@ export default function NewMatchScreen() {
 
   return (
     <Screen>
+      {inLeague && (
+        <Card style={styles.publicRow}>
+          <Ionicons name="people-circle" size={20} color={theme.accent} />
+          <ThemedText style={{ flex: 1, fontWeight: '700' }}>
+            {t('mn.leagueMatch').replace('{name}', leagueName ?? '…')}
+          </ThemedText>
+        </Card>
+      )}
       <ThemedText themeColor="textSecondary">
         {t('mn.intro')}
       </ThemedText>
@@ -268,8 +293,8 @@ export default function NewMatchScreen() {
         )}
       </View>
 
-      {/* Wagering is adults-only (hidden for every minor, and when a junior competes) */}
-      {!profile?.is_minor && !competingAsJunior && (
+      {/* Wagering is adults-only (hidden for every minor, when a junior competes, and in leagues) */}
+      {!profile?.is_minor && !competingAsJunior && !inLeague && (
         opponent && !opponentInBand ? (
           <Card style={styles.publicRow}>
             <Ionicons name="information-circle-outline" size={20} color={theme.textSecondary} />
