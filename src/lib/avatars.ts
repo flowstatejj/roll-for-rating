@@ -1,3 +1,5 @@
+import { decode } from 'base64-arraybuffer';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 
 import { supabase } from './supabase';
@@ -36,8 +38,12 @@ export async function uploadAvatar(profileId: string, uri: string): Promise<stri
   const contentType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
   const path = `${profileId}/avatar.${ext}`;
 
-  const blob = await (await fetch(uri)).blob();
-  const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, blob, { contentType, upsert: true });
+  // RN can't make a Blob from an ArrayBuffer, so read the file as base64 and
+  // upload an ArrayBuffer directly (the supported Expo + Supabase path).
+  const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+  const { error: upErr } = await supabase.storage
+    .from(BUCKET)
+    .upload(path, decode(base64), { contentType, upsert: true });
   if (upErr) throw upErr;
 
   const { error: updErr } = await supabase.from('profiles').update({ avatar_path: path }).eq('id', profileId);
