@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Stack, useFocusEffect } from 'expo-router';
+import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Avatar, BeltChip, Card, EmptyState, Loading, Screen } from '@/components/ui/kit';
@@ -14,6 +14,7 @@ import { fetchWagerLeaderboard, type WagerLeader } from '@/lib/matches';
 export default function HighRollersScreen() {
   const { session } = useAuth();
   const theme = useTheme();
+  const router = useRouter();
   const { t } = useTranslation();
   const userId = session?.user.id;
   const [rows, setRows] = useState<WagerLeader[]>([]);
@@ -55,19 +56,21 @@ export default function HighRollersScreen() {
                       {rank}
                     </ThemedText>
                   </View>
-                  <Avatar name={r.display_name} size={40} />
-                  <View style={{ flex: 1, gap: 2 }}>
-                    <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>
-                      {r.display_name}
-                      {isMe ? ` ${t('lb.you')}` : ''}
-                    </ThemedText>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
-                      <BeltChip belt={r.belt_rank} size="sm" />
-                      <ThemedText type="small" themeColor="textSecondary">
-                        {r.wagered_wins} {r.wagered_wins === 1 ? t('hr.potWon') : t('hr.potsWon')}
+                  <Pressable onPress={() => router.push(`/user/${r.user_id}`)} style={styles.tap}>
+                    <Avatar name={r.display_name} size={40} />
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>
+                        {r.display_name}
+                        {isMe ? ` ${t('lb.you')}` : ''}
                       </ThemedText>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+                        <BeltChip belt={r.belt_rank} size="sm" />
+                        <ThemedText type="small" themeColor="textSecondary">
+                          {r.wagered_wins} {r.wagered_wins === 1 ? t('hr.potWon') : t('hr.potsWon')}
+                        </ThemedText>
+                      </View>
                     </View>
-                  </View>
+                  </Pressable>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                     <Ionicons name="cash" size={16} color={theme.success} />
                     <ThemedText style={{ fontWeight: '800', fontSize: 18, color: theme.success }}>
@@ -86,6 +89,7 @@ export default function HighRollersScreen() {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.two, paddingHorizontal: Spacing.two },
+  tap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   rank: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.two },
 });

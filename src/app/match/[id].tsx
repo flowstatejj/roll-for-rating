@@ -221,6 +221,7 @@ export default function MatchDetailScreen() {
           ratingAfter={match.challenger_rating_after}
           won={match.winner_id === match.challenger_id}
           isMe={match.challenger_id === userId}
+          onPress={match.challenger_id === userId ? undefined : () => router.push(`/user/${match.challenger.id}`)}
         />
         <View style={styles.vsRow}>
           <View style={[styles.line, { backgroundColor: theme.border }]} />
@@ -236,6 +237,7 @@ export default function MatchDetailScreen() {
           ratingAfter={match.opponent_rating_after}
           won={match.winner_id === match.opponent_id}
           isMe={match.opponent_id === userId}
+          onPress={match.opponent_id === userId ? undefined : () => router.push(`/user/${match.opponent.id}`)}
         />
       </Card>
 
@@ -524,6 +526,7 @@ function PersonRow({
   ratingAfter,
   won,
   isMe,
+  onPress,
 }: {
   person: MatchWithPeople['challenger'];
   tag: string;
@@ -531,13 +534,16 @@ function PersonRow({
   ratingAfter: number | null;
   won: boolean;
   isMe: boolean;
+  onPress?: () => void;
 }) {
   const theme = useTheme();
   const { t } = useTranslation();
   const delta = ratingBefore != null && ratingAfter != null ? ratingAfter - ratingBefore : null;
   const deltaColor = delta == null ? theme.textSecondary : delta > 0 ? theme.success : delta < 0 ? theme.danger : theme.textSecondary;
+  const Wrap: any = onPress ? Pressable : View;
   return (
-    <View
+    <Wrap
+      onPress={onPress}
       style={[
         styles.personRow,
         won && { backgroundColor: theme.success + '22', borderRadius: 10, paddingHorizontal: Spacing.two, paddingVertical: Spacing.two },
@@ -569,7 +575,7 @@ function PersonRow({
           </View>
         )}
       </View>
-    </View>
+    </Wrap>
   );
 }
 

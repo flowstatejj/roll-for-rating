@@ -95,7 +95,7 @@ export default function FindScreen() {
       ) : (
         <View style={{ gap: Spacing.two }}>
           {results.map((p) => (
-            <Pressable key={p.id} onPress={() => router.push(`/match/new?opponent=${p.id}`)}>
+            <Pressable key={p.id} onPress={() => router.push(`/user/${p.id}`)}>
               <Card style={styles.row}>
                 <Avatar name={p.display_name} size={44} />
                 <View style={{ flex: 1, gap: 2 }}>

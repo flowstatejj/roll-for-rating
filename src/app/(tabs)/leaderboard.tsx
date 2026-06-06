@@ -131,19 +131,21 @@ export default function LeaderboardScreen() {
                   {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
                   <View style={[styles.row, isMe && { backgroundColor: theme.accent + '22', borderRadius: 8 }]}>
                     <RankBadge rank={i + 1} />
-                    <Avatar name={p.display_name} size={40} />
-                    <View style={{ flex: 1, gap: 2 }}>
-                      <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>
-                        {p.display_name}
-                        {isMe ? ` ${t('lb.you')}` : ''}
-                      </ThemedText>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
-                        <BeltChip belt={p.belt_rank} size="sm" />
-                        <ThemedText type="small" themeColor="textSecondary">
-                          {p.wins}{t('lb.w')} · {p.losses}{t('lb.l')} · {p.draws}{t('lb.d')}
+                    <Pressable onPress={() => router.push(`/user/${p.id}`)} style={styles.tap}>
+                      <Avatar name={p.display_name} size={40} />
+                      <View style={{ flex: 1, gap: 2 }}>
+                        <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>
+                          {p.display_name}
+                          {isMe ? ` ${t('lb.you')}` : ''}
                         </ThemedText>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+                          <BeltChip belt={p.belt_rank} size="sm" />
+                          <ThemedText type="small" themeColor="textSecondary">
+                            {p.wins}{t('lb.w')} · {p.losses}{t('lb.l')} · {p.draws}{t('lb.d')}
+                          </ThemedText>
+                        </View>
                       </View>
-                    </View>
+                    </Pressable>
                     <ThemedText style={{ fontWeight: '800', fontSize: 20 }}>{p.rating}</ThemedText>
                     {!isMe && (
                       <Pressable
@@ -239,6 +241,7 @@ const styles = StyleSheet.create({
   chip: { paddingVertical: Spacing.one, paddingHorizontal: Spacing.three, borderRadius: 999, borderWidth: 1 },
   list: { paddingVertical: Spacing.one, paddingHorizontal: Spacing.one },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.two, paddingHorizontal: Spacing.two },
+  tap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   rank: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.two },
 });

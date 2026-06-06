@@ -59,6 +59,7 @@ function RootNavigator() {
       <Stack.Screen name="competitions" options={{ headerShown: true, title: t('nav.competitionRecord') }} />
       <Stack.Screen name="gyms" options={{ headerShown: true, title: t('nav.gyms') }} />
       <Stack.Screen name="gym/[id]" options={{ headerShown: true, title: t('nav.gym') }} />
+      <Stack.Screen name="user/[id]" options={{ headerShown: true, title: '' }} />
       <Stack.Screen name="find" options={{ headerShown: true, title: t('nav.findRoll') }} />
       <Stack.Screen name="open-mats" options={{ headerShown: true, title: t('nav.openMats') }} />
       <Stack.Screen name="high-rollers" options={{ headerShown: true, title: t('nav.biggestPots') }} />

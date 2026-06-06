@@ -59,6 +59,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'nav.match': 'Match', 'nav.puzzle': 'Puzzle', 'nav.competitionRecord': 'Competition Record',
     'nav.gyms': 'Gyms', 'nav.gym': 'Gym', 'nav.findRoll': 'Find a Roll', 'nav.openMats': 'Open Mats',
+    'up.notFound': 'Profile not found', 'up.protected': 'Protected account', 'up.protectedSub': "This member's profile is private.", 'up.since': 'Since', 'up.rating': 'RATING', 'up.wins': 'Wins', 'up.losses': 'Losses', 'up.draws': 'Draws', 'up.winPct': 'Win %',
     'nav.biggestPots': 'Biggest Pots', 'nav.matchChat': 'Match chat', 'nav.watch': 'Watch',
     'nav.rivalries': 'Rivalries', 'nav.champions': 'Champions', 'nav.notifications': 'Notifications',
     'nav.submissionHunt': 'Submission Hunt', 'nav.quests': 'Quests', 'nav.seasons': 'Seasons',
@@ -354,6 +355,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'nav.match': 'Combate', 'nav.puzzle': 'Ejercicio', 'nav.competitionRecord': 'Historial de competición',
     'nav.gyms': 'Gimnasios', 'nav.gym': 'Gimnasio', 'nav.findRoll': 'Buscar combate', 'nav.openMats': 'Open Mats',
+    'up.notFound': 'Perfil no encontrado', 'up.protected': 'Cuenta protegida', 'up.protectedSub': 'El perfil de este miembro es privado.', 'up.since': 'Desde', 'up.rating': 'PUNTUACIÓN', 'up.wins': 'Victorias', 'up.losses': 'Derrotas', 'up.draws': 'Empates', 'up.winPct': '% Vict.',
     'nav.biggestPots': 'Mayores botes', 'nav.matchChat': 'Chat del combate', 'nav.watch': 'Ver',
     'nav.rivalries': 'Rivalidades', 'nav.champions': 'Campeones', 'nav.notifications': 'Notificaciones',
     'nav.submissionHunt': 'Caza de sumisiones', 'nav.quests': 'Misiones', 'nav.seasons': 'Temporadas',
@@ -649,6 +651,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'nav.match': 'Luta', 'nav.puzzle': 'Exercício', 'nav.competitionRecord': 'Histórico de competição',
     'nav.gyms': 'Academias', 'nav.gym': 'Academia', 'nav.findRoll': 'Encontrar luta', 'nav.openMats': 'Open Mats',
+    'up.notFound': 'Perfil não encontrado', 'up.protected': 'Conta protegida', 'up.protectedSub': 'O perfil deste membro é privado.', 'up.since': 'Desde', 'up.rating': 'PONTUAÇÃO', 'up.wins': 'Vitórias', 'up.losses': 'Derrotas', 'up.draws': 'Empates', 'up.winPct': '% Vit.',
     'nav.biggestPots': 'Maiores apostas', 'nav.matchChat': 'Chat da luta', 'nav.watch': 'Assistir',
     'nav.rivalries': 'Rivalidades', 'nav.champions': 'Campeões', 'nav.notifications': 'Notificações',
     'nav.submissionHunt': 'Caça às finalizações', 'nav.quests': 'Missões', 'nav.seasons': 'Temporadas',
@@ -944,6 +947,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'nav.match': 'Combat', 'nav.puzzle': 'Exercice', 'nav.competitionRecord': 'Historique de compétition',
     'nav.gyms': 'Salles', 'nav.gym': 'Salle', 'nav.findRoll': 'Trouver un combat', 'nav.openMats': 'Open Mats',
+    'up.notFound': 'Profil introuvable', 'up.protected': 'Compte protégé', 'up.protectedSub': 'Le profil de ce membre est privé.', 'up.since': 'Depuis', 'up.rating': 'CLASSEMENT', 'up.wins': 'Victoires', 'up.losses': 'Défaites', 'up.draws': 'Nuls', 'up.winPct': '% Vict.',
     'nav.biggestPots': 'Plus gros gains', 'nav.matchChat': 'Chat du combat', 'nav.watch': 'Regarder',
     'nav.rivalries': 'Rivalités', 'nav.champions': 'Champions', 'nav.notifications': 'Notifications',
     'nav.submissionHunt': 'Chasse aux soumissions', 'nav.quests': 'Quêtes', 'nav.seasons': 'Saisons',
