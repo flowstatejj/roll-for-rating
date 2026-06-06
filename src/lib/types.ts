@@ -23,6 +23,8 @@ export interface Profile {
   username: string;
   display_name: string;
   belt_rank: BeltRank;
+  /** path in the private 'avatars' bucket; view via a signed URL (lib/avatars). */
+  avatar_path: string | null;
   rating: number;
   wins: number;
   losses: number;

@@ -13,6 +13,7 @@ import {
   type ViewProps,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Image } from 'expo-image';
 
 import { TatamiBackground } from '@/components/tatami-background';
 import { ThemedText } from '@/components/themed-text';
@@ -173,8 +174,17 @@ export function BeltChip({ belt, size = 'md' }: { belt: BeltRank; size?: 'sm' | 
 // ---------------------------------------------------------------------------
 // Avatar (initials)
 // ---------------------------------------------------------------------------
-export function Avatar({ name, size = 40 }: { name: string; size?: number }) {
+export function Avatar({ name, size = 40, uri }: { name: string; size?: number; uri?: string | null }) {
   const theme = useTheme();
+  if (uri) {
+    return (
+      <Image
+        source={{ uri }}
+        style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: theme.backgroundSelected }}
+        contentFit="cover"
+      />
+    );
+  }
   const initials = name
     .split(' ')
     .map((w) => w[0])

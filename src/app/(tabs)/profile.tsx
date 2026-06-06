@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Switch, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { MatchRow } from '@/components/match-row';
 import { ThemedText } from '@/components/themed-text';
@@ -9,6 +9,7 @@ import { Avatar, BeltChip, Button, Card, EmptyState, Loading, Screen, TextField 
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { computeAchievements } from '@/lib/achievements';
+import { avatarSignedUrl, pickAvatar, uploadAvatar } from '@/lib/avatars';
 import { useAuth } from '@/lib/auth';
 import { deleteAccount } from '@/lib/account';
 import { requestParentConsent } from '@/lib/consent';
@@ -42,6 +43,36 @@ export default function ProfileScreen() {
   const [matches, setMatches] = useState<MatchWithPeople[]>([]);
   const [solved, setSolved] = useState(0);
   const [champions, setChampions] = useState<Champion[]>([]);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  useEffect(() => {
+    avatarSignedUrl(profile?.avatar_path).then(setAvatarUrl);
+  }, [profile?.avatar_path]);
+
+  function changePhoto() {
+    if (!userId) return;
+    Alert.alert(t('pf.photoTitle'), t('pf.photoBody'), [
+      { text: t('pf.takePhoto'), onPress: () => doPhoto(true) },
+      { text: t('pf.choosePhoto'), onPress: () => doPhoto(false) },
+      { text: t('common.cancel'), style: 'cancel' },
+    ]);
+  }
+
+  async function doPhoto(fromCamera: boolean) {
+    if (!userId) return;
+    const uri = await pickAvatar(fromCamera);
+    if (!uri) return;
+    setUploadingPhoto(true);
+    try {
+      await uploadAvatar(userId, uri);
+      await refreshProfile();
+    } catch (e: any) {
+      Alert.alert(t('pf.photoFail'), e.message ?? t('md.tryAgain'));
+    } finally {
+      setUploadingPhoto(false);
+    }
+  }
 
   async function toggleOpen(value: boolean) {
     if (!userId) return;
@@ -183,7 +214,16 @@ export default function ProfileScreen() {
     <Screen>
       {/* Header */}
       <Card style={styles.header}>
-        <Avatar name={profile.display_name} size={72} />
+        <Pressable onPress={changePhoto}>
+          <Avatar name={profile.display_name} size={72} uri={avatarUrl} />
+          <View style={[styles.cameraBadge, { backgroundColor: theme.accent, borderColor: theme.tile }]}>
+            {uploadingPhoto ? (
+              <ActivityIndicator size="small" color={theme.accentText} />
+            ) : (
+              <Ionicons name="camera" size={13} color={theme.accentText} />
+            )}
+          </View>
+        </Pressable>
         <View style={{ flex: 1, gap: 4 }}>
           <ThemedText style={{ fontSize: 22, fontWeight: '800' }} numberOfLines={1}>
             {profile.display_name}
@@ -197,6 +237,19 @@ export default function ProfileScreen() {
           </View>
         </View>
       </Card>
+
+      {/* Profile photo required to compete */}
+      {!profile.avatar_path && (
+        <Pressable onPress={changePhoto}>
+          <Card style={[styles.openRow, { borderColor: theme.accent, borderWidth: 1 }]}>
+            <Ionicons name="camera" size={20} color={theme.accent} />
+            <ThemedText type="small" style={{ flex: 1 }}>
+              {t('pf.photoRequired')}
+            </ThemedText>
+            <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />
+          </Card>
+        </Pressable>
+      )}
 
       {/* Held titles */}
       {titles.length > 0 && (
@@ -453,6 +506,17 @@ function GridTile({
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  cameraBadge: {
+    position: 'absolute',
+    right: -2,
+    bottom: -2,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   titleRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   titleChip: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderRadius: 999, paddingHorizontal: Spacing.three, paddingVertical: 4 },
   tierTrack: { height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.25)', overflow: 'hidden' },
