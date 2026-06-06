@@ -135,7 +135,7 @@ export default function HomeScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.text} />}>
           {/* Hero cards — both visible side by side, centered */}
           <View style={styles.heroRow}>
-            <Pressable style={{ flex: 1 }} onPress={() => router.push('/match/new')}>
+            <Pressable style={{ width: '100%' }} onPress={() => router.push('/match/new')}>
               <View style={[styles.hero, { backgroundColor: theme.accent }]}>
                 <Ionicons name="flame" size={40} color={theme.accentText} style={{ opacity: 0.9 }} />
                 <View style={{ gap: 2 }}>
@@ -149,7 +149,7 @@ export default function HomeScreen() {
               </View>
             </Pressable>
 
-            <Pressable style={{ flex: 1 }} onPress={() => router.push('/(tabs)/leaderboard')}>
+            <Pressable style={{ width: '100%' }} onPress={() => router.push('/(tabs)/leaderboard')}>
               <View style={[styles.hero, { backgroundColor: theme.tile, borderColor: theme.tileBorder, borderWidth: 1 }]}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                   <ThemedText type="smallBold" themeColor="textSecondary">
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
   logoMark: { width: 26, height: 26, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
   brandText: { fontSize: 17, fontWeight: '800', letterSpacing: 0.2 },
   scroll: { padding: Spacing.three, gap: Spacing.three, paddingBottom: 110 },
-  heroRow: { flexDirection: 'row', gap: Spacing.two, justifyContent: 'center', alignSelf: 'center', width: '100%', maxWidth: 520 },
+  heroRow: { gap: Spacing.two, alignSelf: 'center', width: '100%', maxWidth: 520 },
   hero: {
     height: 150,
     borderRadius: 14,
