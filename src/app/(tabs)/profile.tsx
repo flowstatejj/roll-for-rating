@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { MatchRow } from '@/components/match-row';
+import { SocialLinks } from '@/components/social-links';
 import { ThemedText } from '@/components/themed-text';
 import { Avatar, BeltChip, Button, Card, EmptyState, Loading, Screen, TextField } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
@@ -18,6 +19,7 @@ import { winStreak } from '@/lib/elo';
 import { fetchMyMatches } from '@/lib/matches';
 import { fetchPuzzleStats } from '@/lib/puzzles';
 import { setOpenForChallenge } from '@/lib/social';
+import { cleanHandle, SOCIALS, SOCIAL_KEYS, type SocialKey } from '@/lib/socials';
 import { supabase } from '@/lib/supabase';
 import { tierFor } from '@/lib/tiers';
 import { fetchChampions, heldTitles, type Champion } from '@/lib/titles';
@@ -36,6 +38,9 @@ export default function ProfileScreen() {
   const [name, setName] = useState('');
   const [belt, setBelt] = useState<BeltRank>('white');
   const [city, setCity] = useState('');
+  const [socials, setSocials] = useState<Record<SocialKey, string>>({
+    instagram: '', tiktok: '', youtube: '', facebook: '',
+  });
   const [saving, setSaving] = useState(false);
   const [togglingOpen, setTogglingOpen] = useState(false);
   const [sendingConsent, setSendingConsent] = useState(false);
@@ -181,6 +186,12 @@ export default function ProfileScreen() {
     setName(profile!.display_name);
     setBelt(profile!.belt_rank);
     setCity(profile!.city ?? '');
+    setSocials({
+      instagram: profile!.instagram ?? '',
+      tiktok: profile!.tiktok ?? '',
+      youtube: profile!.youtube ?? '',
+      facebook: profile!.facebook ?? '',
+    });
     setEditing(true);
   }
 
@@ -191,10 +202,17 @@ export default function ProfileScreen() {
     }
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ display_name: name.trim(), belt_rank: belt, city: city.trim() || null })
-        .eq('id', profile!.id);
+      const update: Record<string, unknown> = {
+        display_name: name.trim(),
+        belt_rank: belt,
+        city: city.trim() || null,
+      };
+      // Social links are adults-only (a minor's other socials shouldn't be
+      // discoverable here).
+      if (!profile!.is_minor) {
+        for (const key of SOCIAL_KEYS) update[key] = cleanHandle(socials[key]) || null;
+      }
+      const { error } = await supabase.from('profiles').update(update).eq('id', profile!.id);
       if (error) throw error;
       await refreshProfile();
       setEditing(false);
@@ -246,6 +264,14 @@ export default function ProfileScreen() {
           </View>
         </View>
       </Card>
+
+      {/* Social links (adults only) */}
+      {!profile.is_minor && (profile.instagram || profile.tiktok || profile.youtube || profile.facebook) && (
+        <View style={styles.socialDisplay}>
+          <ThemedText type="small" themeColor="textSecondary">{t('pf.findMe')}</ThemedText>
+          <SocialLinks links={profile} />
+        </View>
+      )}
 
       {/* Profile photo required to compete */}
       {!profile.avatar_path && (
@@ -433,6 +459,27 @@ export default function ProfileScreen() {
               })}
             </View>
           </View>
+          {!profile.is_minor && (
+            <View style={{ gap: Spacing.two }}>
+              <ThemedText type="smallBold" themeColor="textSecondary">
+                {t('pf.social')}
+              </ThemedText>
+              {SOCIAL_KEYS.map((key) => (
+                <TextField
+                  key={key}
+                  label={SOCIALS[key].label}
+                  value={socials[key]}
+                  onChangeText={(v) => setSocials((s) => ({ ...s, [key]: v }))}
+                  placeholder={SOCIALS[key].placeholder}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              ))}
+              <ThemedText type="small" themeColor="textSecondary">
+                {t('pf.socialHint')}
+              </ThemedText>
+            </View>
+          )}
           <Button label="Save changes" onPress={save} loading={saving} />
           <Button label="Cancel" variant="ghost" onPress={() => setEditing(false)} />
         </Card>
@@ -532,6 +579,7 @@ const styles = StyleSheet.create({
   tierFill: { height: 6, borderRadius: 3, backgroundColor: '#fff' },
   achv: { flexBasis: '31%', flexGrow: 1, alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: Spacing.three, borderRadius: 10, borderWidth: 1 },
   openRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  socialDisplay: { alignItems: 'center', gap: Spacing.two, marginTop: -Spacing.one },
   recordRow: { flexDirection: 'row', marginTop: Spacing.three },
   sectionLabel: { fontSize: 18, fontWeight: '800', marginTop: Spacing.one },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },

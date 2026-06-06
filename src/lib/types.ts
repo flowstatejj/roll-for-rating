@@ -40,6 +40,11 @@ export interface Profile {
   consent_status: ConsentStatus;
   /** For a parent-managed junior: the guardian's profile id. Null otherwise. */
   managed_by: string | null;
+  /** Optional social handles/URLs (adults only). Build links via lib/socials. */
+  instagram: string | null;
+  tiktok: string | null;
+  youtube: string | null;
+  facebook: string | null;
   created_at: string;
 }
 
