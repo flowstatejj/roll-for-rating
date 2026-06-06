@@ -1,8 +1,6 @@
-import FaceDetection from '@react-native-ml-kit/face-detection';
 import { decode } from 'base64-arraybuffer';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
-import { Platform } from 'react-native';
 
 import { supabase } from './supabase';
 
@@ -40,13 +38,12 @@ export async function pickAvatar(fromCamera: boolean): Promise<string | null> {
  * Fails OPEN if detection itself errors (e.g. on web, where there's no native
  * module), but fails CLOSED when it runs and finds no face.
  */
-export async function hasHumanFace(uri: string): Promise<boolean> {
-  // No native detector on web — don't block there.
-  if (Platform.OS === 'web') return true;
-  // On a device, run it for real. If the native module throws (e.g. not linked),
-  // let the error propagate so it's visible instead of silently allowing anything.
-  const faces = await FaceDetection.detect(uri, { performanceMode: 'accurate', minFaceSize: 0.15 });
-  return faces.length >= 1;
+export async function hasHumanFace(_uri: string): Promise<boolean> {
+  // On-device ML Kit doesn't link under this app's New Architecture (the native
+  // module isn't available at runtime), so the on-device check is disabled.
+  // Face verification will move server-side (Claude vision). Until then, allow
+  // the upload rather than block it.
+  return true;
 }
 
 /** Upload a local image URI as `profileId`'s avatar and save the path on the profile. */
