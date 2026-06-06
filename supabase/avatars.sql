@@ -14,6 +14,10 @@
 
 alter table public.profiles add column if not exists avatar_path text;
 
+-- profiles has column-level UPDATE grants (see challenges.sql); allow users to
+-- set their own avatar_path too. (Grants are additive — this just adds the column.)
+grant update (avatar_path) on public.profiles to authenticated;
+
 -- Private bucket (no public URLs — access only via signed URLs gated by RLS).
 insert into storage.buckets (id, name, public)
 values ('avatars', 'avatars', false)
