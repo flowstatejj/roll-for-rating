@@ -144,6 +144,10 @@ export interface GymPower {
   total_wins: number;
 }
 
+export type TournamentFormat = 'round_robin' | 'single_elim' | 'double_elim' | 'rr_playoff';
+export type TournamentTeamRule = 'none' | 'duel' | 'quintet';
+export type TournamentTeamBuild = 'host' | 'captain' | 'auto';
+
 export interface Tournament {
   id: string;
   name: string;
@@ -151,6 +155,21 @@ export interface Tournament {
   starts_at: string;
   ends_at: string;
   created_at: string;
+  description: string | null;
+  format: TournamentFormat;
+  team_size: number; // 1 | 3 | 5
+  team_rule: TournamentTeamRule;
+  team_build: TournamentTeamBuild;
+  ranked: boolean;
+  win_points: number;
+  draw_points: number;
+  loss_points: number;
+  sub_kill_bonus: number;
+  sub_break_bonus: number;
+  mats: number;
+  status: 'setup' | 'running' | 'complete';
+  visibility: 'open' | 'private';
+  join_code: string | null;
 }
 
 export interface TournamentStanding {
@@ -159,6 +178,62 @@ export interface TournamentStanding {
   belt_rank: BeltRank;
   rating: number;
   wins: number;
+}
+
+export interface TournamentStandingPro {
+  user_id: string; // entrant profile id OR team id
+  played: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  points: number;
+  name?: string; // resolved display name (player) or team name
+  belt_rank?: BeltRank;
+}
+
+export interface TournamentTeam {
+  id: string;
+  tournament_id: string;
+  name: string;
+  captain_id: string | null;
+  seed: number | null;
+  members?: { user_id: string; slot: number | null; display_name: string; belt_rank: BeltRank }[];
+}
+
+export interface TournamentMat {
+  id: string;
+  tournament_id: string;
+  mat_no: number;
+  referee_id: string | null;
+  referee?: { display_name: string } | null;
+}
+
+export interface TournamentBout {
+  id: string;
+  tournament_id: string;
+  bracket: 'main' | 'losers' | 'playoff';
+  round_no: number;
+  position: number;
+  a_entrant: string | null;
+  b_entrant: string | null;
+  a_team: string | null;
+  b_team: string | null;
+  mat_id: string | null;
+  referee_id: string | null;
+  status: 'pending' | 'live' | 'done' | 'bye';
+  winner: 'a' | 'b' | 'draw' | null;
+  result: ResultType | null;
+  sub_category: 'kill' | 'break' | null;
+  a_score: number;
+  b_score: number;
+  a_idx: number;
+  b_idx: number;
+  match_id: string | null;
+  next_bout_id: string | null;
+  next_slot: 'a' | 'b' | null;
+  // resolved labels
+  a_name?: string | null;
+  b_name?: string | null;
 }
 
 // ---------------------------------------------------------------------------

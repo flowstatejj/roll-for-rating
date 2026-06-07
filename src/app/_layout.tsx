@@ -74,6 +74,7 @@ function RootNavigator() {
       <Stack.Screen name="league/[id]" options={{ headerShown: true, title: t('nav.league') }} />
       <Stack.Screen name="tournaments" options={{ headerShown: true, title: t('nav.tournaments') }} />
       <Stack.Screen name="tournament/[id]" options={{ headerShown: true, title: t('nav.tournament') }} />
+      <Stack.Screen name="tournament/bout/[id]" options={{ headerShown: true, title: t('tn.record') }} />
       <Stack.Screen name="gym-rankings" options={{ headerShown: true, title: t('nav.gymRankings') }} />
       <Stack.Screen name="settings" options={{ headerShown: true, title: t('settings.title') }} />
       <Stack.Screen name="juniors" options={{ headerShown: true, title: t('profile.myJuniors') }} />

@@ -1,31 +1,24 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Button, Card, EmptyState, Loading, Screen, TextField } from '@/components/ui/kit';
+import { Button, Card, EmptyState, Screen, TextField } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
 import { createTournament, fetchTournaments } from '@/lib/tournaments';
-import type { Tournament } from '@/lib/types';
+import type { Tournament, TournamentFormat, TournamentTeamBuild, TournamentTeamRule } from '@/lib/types';
 
-const DURATIONS = [
-  { tkey: 'tr.dur1w', days: 7 },
-  { tkey: 'tr.dur2w', days: 14 },
-  { tkey: 'tr.dur1m', days: 30 },
-];
-
-function status(t: Tournament): { tkey: string; color: string } {
-  const now = Date.now();
-  const s = new Date(t.starts_at).getTime();
-  const e = new Date(t.ends_at).getTime();
-  if (now < s) return { tkey: 'tr.upcoming', color: '#D9822B' };
-  if (now > e) return { tkey: 'tr.ended', color: '#9aa2ad' };
-  return { tkey: 'tr.live', color: '#5c9a3a' };
-}
+type Preset = '3-1-0' | '2-1-0' | 'wins';
+const PRESETS: Record<Preset, { win: number; draw: number; loss: number }> = {
+  '3-1-0': { win: 3, draw: 1, loss: 0 },
+  '2-1-0': { win: 2, draw: 1, loss: 0 },
+  wins: { win: 1, draw: 0, loss: 0 },
+};
+const FORMATS: TournamentFormat[] = ['single_elim', 'round_robin', 'double_elim', 'rr_playoff'];
 
 export default function TournamentsScreen() {
   const { session } = useAuth();
@@ -35,118 +28,203 @@ export default function TournamentsScreen() {
   const userId = session!.user.id;
 
   const [items, setItems] = useState<Tournament[]>([]);
-  const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
-  const [name, setName] = useState('');
-  const [days, setDays] = useState(14);
   const [busy, setBusy] = useState(false);
+
+  // form
+  const [name, setName] = useState('');
+  const [desc, setDesc] = useState('');
+  const [format, setFormat] = useState<TournamentFormat>('single_elim');
+  const [teamSize, setTeamSize] = useState(1);
+  const [teamRule, setTeamRule] = useState<TournamentTeamRule>('none');
+  const [teamBuild, setTeamBuild] = useState<TournamentTeamBuild>('host');
+  const [ranked, setRanked] = useState(false);
+  const [preset, setPreset] = useState<Preset>('3-1-0');
+  const [killBonus, setKillBonus] = useState('0');
+  const [breakBonus, setBreakBonus] = useState('0');
+  const [mats, setMats] = useState('1');
 
   const load = useCallback(async () => {
     try {
       setItems(await fetchTournaments());
     } catch (e) {
-      console.warn('tournaments failed', e);
-    } finally {
-      setLoading(false);
+      console.warn('tournaments load failed', e);
     }
   }, []);
-
   useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  function pickSize(sz: number) {
+    setTeamSize(sz);
+    if (sz === 1) setTeamRule('none');
+    else if (teamRule === 'none') setTeamRule(sz === 5 ? 'quintet' : 'duel');
+  }
 
   async function submit() {
     if (!name.trim()) {
-      Alert.alert(t('tr.nameReqTitle'), t('tr.nameReqBody'));
+      Alert.alert(t('tn.name'), t('tn.nameReq'));
       return;
     }
     setBusy(true);
     try {
-      const starts = new Date();
-      const ends = new Date(starts.getTime() + days * 86400000);
+      const p = PRESETS[preset];
       const id = await createTournament({
         name,
         hostId: userId,
-        startsAt: starts.toISOString(),
-        endsAt: ends.toISOString(),
+        description: desc,
+        format,
+        teamSize,
+        teamRule,
+        teamBuild,
+        ranked,
+        winPoints: p.win,
+        drawPoints: p.draw,
+        lossPoints: p.loss,
+        subKillBonus: Math.max(0, parseInt(killBonus, 10) || 0),
+        subBreakBonus: Math.max(0, parseInt(breakBonus, 10) || 0),
+        mats: Math.max(1, Math.min(20, parseInt(mats, 10) || 1)),
+        visibility: 'open',
       });
-      router.replace(`/tournament/${id}`);
+      setCreating(false);
+      setName(''); setDesc('');
+      router.push(`/tournament/${id}`);
     } catch (e: any) {
-      Alert.alert(t('tr.createFail'), e.message ?? t('md.tryAgain'));
+      Alert.alert(t('tn.createFail'), e.message ?? t('md.tryAgain'));
     } finally {
       setBusy(false);
     }
   }
 
-  if (loading) return <Loading />;
-
   return (
     <Screen>
       <Stack.Screen options={{ title: t('nav.tournaments') }} />
-      <ThemedText themeColor="textSecondary">
-        {t('tr.intro')}
-      </ThemedText>
 
       {creating ? (
         <Card style={{ gap: Spacing.three }}>
-          <ThemedText style={{ fontSize: 18, fontWeight: '800' }}>{t('tr.newTitle')}</ThemedText>
-          <TextField label={t('tr.name')} value={name} onChangeText={setName} placeholder="Spring Throwdown" />
-          <View style={{ gap: Spacing.one }}>
-            <ThemedText type="smallBold" themeColor="textSecondary">{t('tr.runsFor')}</ThemedText>
+          <ThemedText style={{ fontWeight: '800', fontSize: 18 }}>{t('tn.create')}</ThemedText>
+          <TextField label={t('tn.name')} value={name} onChangeText={setName} placeholder={t('tn.namePh')} />
+          <TextField label={t('tn.desc')} value={desc} onChangeText={setDesc} placeholder={t('tn.descPh')} multiline />
+
+          <Field label={t('tn.format')}>
             <View style={styles.chips}>
-              {DURATIONS.map((d) => {
-                const active = days === d.days;
-                return (
-                  <Pressable
-                    key={d.days}
-                    onPress={() => setDays(d.days)}
-                    style={[styles.chip, { backgroundColor: active ? theme.accent : theme.tile, borderColor: active ? theme.accent : theme.tileBorder }]}>
-                    <ThemedText style={{ color: active ? theme.accentText : theme.text, fontWeight: '700', fontSize: 13 }}>{t(d.tkey)}</ThemedText>
-                  </Pressable>
-                );
-              })}
+              {FORMATS.map((f) => (
+                <Chip key={f} label={t(`tn.fmt.${f}`)} active={format === f} onPress={() => setFormat(f)} />
+              ))}
             </View>
+          </Field>
+
+          <Field label={t('tn.teamSize')}>
+            <View style={styles.chips}>
+              {[1, 3, 5].map((sz) => (
+                <Chip key={sz} label={sz === 1 ? t('tn.individual') : `${sz}v${sz}`} active={teamSize === sz} onPress={() => pickSize(sz)} />
+              ))}
+            </View>
+          </Field>
+
+          {teamSize > 1 && (
+            <>
+              <Field label={t('tn.teamRule')}>
+                <View style={styles.chips}>
+                  <Chip label={t('tn.rule.duel')} active={teamRule === 'duel'} onPress={() => setTeamRule('duel')} />
+                  <Chip label={t('tn.rule.quintet')} active={teamRule === 'quintet'} onPress={() => setTeamRule('quintet')} />
+                </View>
+              </Field>
+              <Field label={t('tn.teamBuild')}>
+                <View style={styles.chips}>
+                  {(['host', 'captain', 'auto'] as TournamentTeamBuild[]).map((b) => (
+                    <Chip key={b} label={t(`tn.build.${b}`)} active={teamBuild === b} onPress={() => setTeamBuild(b)} />
+                  ))}
+                </View>
+              </Field>
+            </>
+          )}
+
+          <View style={styles.switchRow}>
+            <View style={{ flex: 1 }}>
+              <ThemedText style={{ fontWeight: '700' }}>{t('tn.ranked')}</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">{t('tn.rankedHint')}</ThemedText>
+            </View>
+            <Switch value={ranked} onValueChange={setRanked} trackColor={{ true: theme.accent }} />
           </View>
-          <Button label={t('tr.createBtn')} icon="trophy" loading={busy} onPress={submit} />
+
+          <Field label={t('tn.scoring')}>
+            <View style={styles.chips}>
+              <Chip label="3 / 1 / 0" active={preset === '3-1-0'} onPress={() => setPreset('3-1-0')} />
+              <Chip label="2 / 1 / 0" active={preset === '2-1-0'} onPress={() => setPreset('2-1-0')} />
+              <Chip label={t('tn.winsOnly')} active={preset === 'wins'} onPress={() => setPreset('wins')} />
+            </View>
+          </Field>
+          <View style={{ flexDirection: 'row', gap: Spacing.two }}>
+            <View style={{ flex: 1 }}><TextField label={t('tn.killBonus')} value={killBonus} onChangeText={setKillBonus} keyboardType="number-pad" /></View>
+            <View style={{ flex: 1 }}><TextField label={t('tn.breakBonus')} value={breakBonus} onChangeText={setBreakBonus} keyboardType="number-pad" /></View>
+            <View style={{ width: 90 }}><TextField label={t('tn.mats')} value={mats} onChangeText={setMats} keyboardType="number-pad" /></View>
+          </View>
+          <ThemedText type="small" themeColor="textSecondary">{t('tn.subBonusHint')}</ThemedText>
+
+          <Button label={t('tn.createBtn')} icon="add-circle" onPress={submit} loading={busy} />
           <Button label={t('common.cancel')} variant="ghost" onPress={() => setCreating(false)} />
         </Card>
       ) : (
-        <Button label={t('tr.create')} icon="trophy" onPress={() => setCreating(true)} />
+        <Button label={t('tn.create')} icon="add-circle" variant="secondary" onPress={() => setCreating(true)} />
       )}
 
       {items.length === 0 ? (
-        <EmptyState icon="trophy-outline" title={t('tr.emptyTitle')} subtitle={t('tr.emptySub')} />
+        <EmptyState icon="trophy-outline" title={t('tn.emptyTitle')} subtitle={t('tn.emptySub')} />
       ) : (
         <View style={{ gap: Spacing.two }}>
-          {items.map((ev) => {
-            const st = status(ev);
-            return (
-              <Pressable key={ev.id} onPress={() => router.push(`/tournament/${ev.id}`)}>
-                <Card style={styles.row}>
-                  <View style={[styles.icon, { backgroundColor: theme.backgroundSelected }]}>
-                    <Ionicons name="trophy" size={20} color={theme.accent} />
+          {items.map((tr) => (
+            <Pressable key={tr.id} onPress={() => router.push(`/tournament/${tr.id}`)}>
+              <Card style={styles.row}>
+                <View style={[styles.icon, { backgroundColor: theme.backgroundSelected }]}>
+                  <Ionicons name="trophy" size={22} color={theme.text} />
+                </View>
+                <View style={{ flex: 1, gap: 3 }}>
+                  <ThemedText style={{ fontWeight: '800' }} numberOfLines={1}>{tr.name}</ThemedText>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: Spacing.one }}>
+                    <Tag text={t(`tn.fmt.${tr.format}`)} tint={theme.textSecondary} />
+                    <Tag text={tr.team_rule === 'none' ? t('tn.individual') : `${tr.team_size}v${tr.team_size}`} tint={theme.textSecondary} />
+                    <Tag text={tr.ranked ? t('tn.rankedChip') : t('tn.casualChip')} tint={tr.ranked ? theme.accent : theme.textSecondary} />
+                    <Tag text={t(`tn.status.${tr.status}`)} tint={tr.status === 'running' ? theme.success : theme.textSecondary} />
                   </View>
-                  <View style={{ flex: 1, gap: 2 }}>
-                    <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>{ev.name}</ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {new Date(ev.starts_at).toLocaleDateString()} – {new Date(ev.ends_at).toLocaleDateString()}
-                    </ThemedText>
-                  </View>
-                  <View style={[styles.badge, { backgroundColor: st.color + '22' }]}>
-                    <ThemedText style={{ color: st.color, fontWeight: '800', fontSize: 12 }}>{t(st.tkey)}</ThemedText>
-                  </View>
-                </Card>
-              </Pressable>
-            );
-          })}
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
+              </Card>
+            </Pressable>
+          ))}
         </View>
       )}
     </Screen>
   );
 }
 
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <View style={{ gap: Spacing.one }}>
+      <ThemedText type="smallBold" themeColor="textSecondary">{label}</ThemedText>
+      {children}
+    </View>
+  );
+}
+function Chip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  const theme = useTheme();
+  return (
+    <Pressable onPress={onPress} style={[styles.chip, { backgroundColor: active ? theme.accent : theme.tile, borderColor: active ? theme.accent : theme.tileBorder }]}>
+      <ThemedText style={{ color: active ? theme.accentText : theme.text, fontWeight: '700', fontSize: 13 }}>{label}</ThemedText>
+    </Pressable>
+  );
+}
+function Tag({ text, tint }: { text: string; tint: string }) {
+  return (
+    <View style={[styles.tag, { borderColor: tint }]}>
+      <ThemedText type="small" style={{ color: tint, fontWeight: '700' }}>{text}</ThemedText>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
-  chip: { paddingVertical: Spacing.two, paddingHorizontal: Spacing.three, borderRadius: 999, borderWidth: 1 },
+  chip: { paddingVertical: Spacing.one, paddingHorizontal: Spacing.three, borderRadius: 999, borderWidth: 1 },
+  switchRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  icon: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  badge: { borderRadius: 999, paddingHorizontal: Spacing.two, paddingVertical: 3 },
+  icon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  tag: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 1 },
 });
