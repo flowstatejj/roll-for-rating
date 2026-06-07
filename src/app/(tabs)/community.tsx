@@ -89,12 +89,6 @@ export default function CommunityScreen() {
 
       {/* Actions */}
       <ActionRow
-        icon="play-circle"
-        title={t('nav.watch')}
-        subtitle={t('comm.watchSub')}
-        onPress={() => router.push('/watch')}
-      />
-      <ActionRow
         icon="flame"
         title={t('nav.findRoll')}
         subtitle={t('comm.findRollSub')}
@@ -147,6 +141,12 @@ export default function CommunityScreen() {
         title={t('nav.biggestPots')}
         subtitle={t('comm.biggestPotsSub')}
         onPress={() => router.push('/high-rollers')}
+      />
+      <ActionRow
+        icon="play-circle"
+        title={t('nav.watch')}
+        subtitle={t('comm.watchSub')}
+        onPress={() => router.push('/watch')}
       />
     </Screen>
   );
