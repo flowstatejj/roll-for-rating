@@ -13,11 +13,10 @@ import { createLeague, fetchMyLeagues, fetchOpenLeagues, joinLeagueByCode, WEEKD
 import type { League, LeagueAudience, LeagueVisibility } from '@/lib/types';
 
 type Tab = 'mine' | 'browse';
-type Preset = '3-1-0' | '2-1-0' | 'wins';
-const PRESETS: Record<Preset, { win: number; draw: number; loss: number }> = {
-  '3-1-0': { win: 3, draw: 1, loss: 0 },
-  '2-1-0': { win: 2, draw: 1, loss: 0 },
-  wins: { win: 1, draw: 0, loss: 0 },
+// Parse a signed integer from a text box (blank / "-" / junk -> 0).
+const intval = (s: string) => {
+  const n = parseInt(s, 10);
+  return Number.isNaN(n) ? 0 : n;
 };
 
 function todayISO() {
@@ -50,7 +49,9 @@ export default function LeaguesScreen() {
   const [location, setLocation] = useState('');
   const [city, setCity] = useState('');
   const [weeks, setWeeks] = useState('8');
-  const [preset, setPreset] = useState<Preset>('3-1-0');
+  const [winPts, setWinPts] = useState('3');
+  const [drawPts, setDrawPts] = useState('1');
+  const [lossPts, setLossPts] = useState('0');
   const [killBonus, setKillBonus] = useState('0');
   const [breakBonus, setBreakBonus] = useState('0');
 
@@ -73,7 +74,6 @@ export default function LeaguesScreen() {
     }
     setBusy(true);
     try {
-      const p = PRESETS[preset];
       const league = await createLeague({
         createdBy: userId,
         name,
@@ -87,11 +87,11 @@ export default function LeaguesScreen() {
         city,
         seasonStarts: todayISO(),
         weeks: Math.max(1, Math.min(52, parseInt(weeks, 10) || 8)),
-        winPoints: p.win,
-        drawPoints: p.draw,
-        lossPoints: p.loss,
-        subKillBonus: Math.max(0, parseInt(killBonus, 10) || 0),
-        subBreakBonus: Math.max(0, parseInt(breakBonus, 10) || 0),
+        winPoints: intval(winPts),
+        drawPoints: intval(drawPts),
+        lossPoints: intval(lossPts),
+        subKillBonus: intval(killBonus),
+        subBreakBonus: intval(breakBonus),
       });
       setCreating(false);
       setName(''); setDesc(''); setLocation(''); setCity('');
@@ -187,15 +187,16 @@ export default function LeaguesScreen() {
           <TextField label={t('le.city')} value={city} onChangeText={setCity} autoCapitalize="words" />
 
           <Field label={t('le.scoring')}>
-            <View style={styles.chips}>
-              <Chip label="3 / 1 / 0" active={preset === '3-1-0'} onPress={() => setPreset('3-1-0')} />
-              <Chip label="2 / 1 / 0" active={preset === '2-1-0'} onPress={() => setPreset('2-1-0')} />
-              <Chip label={t('le.winsOnly')} active={preset === 'wins'} onPress={() => setPreset('wins')} />
+            <View style={{ flexDirection: 'row', gap: Spacing.two }}>
+              <View style={{ flex: 1 }}><TextField label={t('le.win')} value={winPts} onChangeText={setWinPts} keyboardType="numbers-and-punctuation" /></View>
+              <View style={{ flex: 1 }}><TextField label={t('le.draw')} value={drawPts} onChangeText={setDrawPts} keyboardType="numbers-and-punctuation" /></View>
+              <View style={{ flex: 1 }}><TextField label={t('le.loss')} value={lossPts} onChangeText={setLossPts} keyboardType="numbers-and-punctuation" /></View>
             </View>
           </Field>
+          <ThemedText type="small" themeColor="textSecondary">{t('le.scoreHint')}</ThemedText>
           <View style={{ flexDirection: 'row', gap: Spacing.two }}>
-            <View style={{ flex: 1 }}><TextField label={t('le.killBonus')} value={killBonus} onChangeText={setKillBonus} keyboardType="number-pad" /></View>
-            <View style={{ flex: 1 }}><TextField label={t('le.breakBonus')} value={breakBonus} onChangeText={setBreakBonus} keyboardType="number-pad" /></View>
+            <View style={{ flex: 1 }}><TextField label={t('le.killBonus')} value={killBonus} onChangeText={setKillBonus} keyboardType="numbers-and-punctuation" /></View>
+            <View style={{ flex: 1 }}><TextField label={t('le.breakBonus')} value={breakBonus} onChangeText={setBreakBonus} keyboardType="numbers-and-punctuation" /></View>
           </View>
           <ThemedText type="small" themeColor="textSecondary">{t('le.subBonusHint')}</ThemedText>
 

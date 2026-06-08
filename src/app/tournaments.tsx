@@ -12,11 +12,10 @@ import { useTranslation } from '@/lib/i18n';
 import { createTournament, fetchTournaments } from '@/lib/tournaments';
 import type { Tournament, TournamentFormat, TournamentTeamBuild, TournamentTeamRule } from '@/lib/types';
 
-type Preset = '3-1-0' | '2-1-0' | 'wins';
-const PRESETS: Record<Preset, { win: number; draw: number; loss: number }> = {
-  '3-1-0': { win: 3, draw: 1, loss: 0 },
-  '2-1-0': { win: 2, draw: 1, loss: 0 },
-  wins: { win: 1, draw: 0, loss: 0 },
+// Parse a signed integer from a text box (blank / "-" / junk -> 0).
+const intval = (s: string) => {
+  const n = parseInt(s, 10);
+  return Number.isNaN(n) ? 0 : n;
 };
 const FORMATS: TournamentFormat[] = ['single_elim', 'round_robin', 'double_elim', 'rr_playoff'];
 
@@ -39,7 +38,9 @@ export default function TournamentsScreen() {
   const [teamRule, setTeamRule] = useState<TournamentTeamRule>('none');
   const [teamBuild, setTeamBuild] = useState<TournamentTeamBuild>('host');
   const [ranked, setRanked] = useState(false);
-  const [preset, setPreset] = useState<Preset>('3-1-0');
+  const [winPts, setWinPts] = useState('3');
+  const [drawPts, setDrawPts] = useState('1');
+  const [lossPts, setLossPts] = useState('0');
   const [killBonus, setKillBonus] = useState('0');
   const [breakBonus, setBreakBonus] = useState('0');
   const [mats, setMats] = useState('1');
@@ -66,7 +67,6 @@ export default function TournamentsScreen() {
     }
     setBusy(true);
     try {
-      const p = PRESETS[preset];
       const id = await createTournament({
         name,
         hostId: userId,
@@ -76,11 +76,11 @@ export default function TournamentsScreen() {
         teamRule,
         teamBuild,
         ranked,
-        winPoints: p.win,
-        drawPoints: p.draw,
-        lossPoints: p.loss,
-        subKillBonus: Math.max(0, parseInt(killBonus, 10) || 0),
-        subBreakBonus: Math.max(0, parseInt(breakBonus, 10) || 0),
+        winPoints: intval(winPts),
+        drawPoints: intval(drawPts),
+        lossPoints: intval(lossPts),
+        subKillBonus: intval(killBonus),
+        subBreakBonus: intval(breakBonus),
         mats: Math.max(1, Math.min(20, parseInt(mats, 10) || 1)),
         visibility: 'open',
       });
@@ -147,15 +147,16 @@ export default function TournamentsScreen() {
           </View>
 
           <Field label={t('tn.scoring')}>
-            <View style={styles.chips}>
-              <Chip label="3 / 1 / 0" active={preset === '3-1-0'} onPress={() => setPreset('3-1-0')} />
-              <Chip label="2 / 1 / 0" active={preset === '2-1-0'} onPress={() => setPreset('2-1-0')} />
-              <Chip label={t('tn.winsOnly')} active={preset === 'wins'} onPress={() => setPreset('wins')} />
+            <View style={{ flexDirection: 'row', gap: Spacing.two }}>
+              <View style={{ flex: 1 }}><TextField label={t('tn.win')} value={winPts} onChangeText={setWinPts} keyboardType="numbers-and-punctuation" /></View>
+              <View style={{ flex: 1 }}><TextField label={t('tn.draw')} value={drawPts} onChangeText={setDrawPts} keyboardType="numbers-and-punctuation" /></View>
+              <View style={{ flex: 1 }}><TextField label={t('tn.loss')} value={lossPts} onChangeText={setLossPts} keyboardType="numbers-and-punctuation" /></View>
             </View>
           </Field>
+          <ThemedText type="small" themeColor="textSecondary">{t('tn.scoreHint')}</ThemedText>
           <View style={{ flexDirection: 'row', gap: Spacing.two }}>
-            <View style={{ flex: 1 }}><TextField label={t('tn.killBonus')} value={killBonus} onChangeText={setKillBonus} keyboardType="number-pad" /></View>
-            <View style={{ flex: 1 }}><TextField label={t('tn.breakBonus')} value={breakBonus} onChangeText={setBreakBonus} keyboardType="number-pad" /></View>
+            <View style={{ flex: 1 }}><TextField label={t('tn.killBonus')} value={killBonus} onChangeText={setKillBonus} keyboardType="numbers-and-punctuation" /></View>
+            <View style={{ flex: 1 }}><TextField label={t('tn.breakBonus')} value={breakBonus} onChangeText={setBreakBonus} keyboardType="numbers-and-punctuation" /></View>
             <View style={{ width: 90 }}><TextField label={t('tn.mats')} value={mats} onChangeText={setMats} keyboardType="number-pad" /></View>
           </View>
           <ThemedText type="small" themeColor="textSecondary">{t('tn.subBonusHint')}</ThemedText>
