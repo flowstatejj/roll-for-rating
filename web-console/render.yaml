@@ -1,0 +1,20 @@
+# Render static-site blueprint for the Roll for Rating organizer console.
+# Connect this repo in the Render dashboard (New → Blueprint) OR create a
+# Static Site manually with Root Directory = web-console and the settings below.
+services:
+  - type: web
+    name: rfr-console
+    runtime: static
+    rootDir: web-console
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    pullRequestPreviewsEnabled: true
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_SUPABASE_URL
+        value: https://vrpmqwkpsrftjokwzwsi.supabase.co
+      - key: VITE_SUPABASE_ANON_KEY
+        value: sb_publishable_uxIpt5SCF_dBWb31RidXrw_xq24gvOL
