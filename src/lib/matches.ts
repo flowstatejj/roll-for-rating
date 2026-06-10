@@ -1,3 +1,4 @@
+import { fetchBlockedIds } from './safety';
 import { supabase } from './supabase';
 import type { BeltRank, MatchWithPeople, Profile, ResultType } from './types';
 
@@ -327,7 +328,8 @@ export async function searchProfiles(query: string, excludeIds: string[]): Promi
   if (q.length > 0) {
     req = req.or(`username.ilike.%${q}%,display_name.ilike.%${q}%`);
   }
-  const { data, error } = await req;
+  const [{ data, error }, blocked] = await Promise.all([req, fetchBlockedIds()]);
   if (error) throw error;
-  return (data ?? []).filter((p) => !excludeIds.includes(p.id));
+  const hide = new Set([...excludeIds, ...blocked]);
+  return (data ?? []).filter((p) => !hide.has(p.id));
 }

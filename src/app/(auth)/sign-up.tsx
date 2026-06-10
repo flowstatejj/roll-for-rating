@@ -1,6 +1,9 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
+
+const TERMS_URL = 'https://roll.flowstatejj.com/terms.html';
 
 import { ThemedText } from '@/components/themed-text';
 import { Button, Screen, TextField } from '@/components/ui/kit';
@@ -28,6 +31,7 @@ export default function SignUpScreen() {
   const [dobD, setDobD] = useState('');
   const [dobY, setDobY] = useState('');
   const [parentEmail, setParentEmail] = useState('');
+  const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const dob = parseDob(dobM, dobD, dobY);
@@ -57,6 +61,10 @@ export default function SignUpScreen() {
     }
     if (isMinor && !parentEmail.trim()) {
       Alert.alert(t('su.parentEmail'), t('su.parentEmailReqBody'));
+      return;
+    }
+    if (!agreed) {
+      Alert.alert(t('su.agreeReqTitle'), t('su.agreeReqBody'));
       return;
     }
     setLoading(true);
@@ -200,7 +208,22 @@ export default function SignUpScreen() {
             </View>
           )}
 
-          <Button label={t('su.title')} onPress={onSubmit} loading={loading} disabled={isKid} />
+          <Pressable onPress={() => setAgreed((v) => !v)} style={styles.agreeRow}>
+            <Ionicons
+              name={agreed ? 'checkbox' : 'square-outline'}
+              size={22}
+              color={agreed ? theme.accent : theme.textSecondary}
+            />
+            <ThemedText type="small" style={{ flex: 1 }}>
+              {t('su.agreePrefix')}{' '}
+              <ThemedText type="small" style={{ color: theme.accent, fontWeight: '700' }} onPress={() => Linking.openURL(TERMS_URL)}>
+                {t('su.agreeTerms')}
+              </ThemedText>
+              {'. '}{t('su.agreeZeroTol')}
+            </ThemedText>
+          </Pressable>
+
+          <Button label={t('su.title')} onPress={onSubmit} loading={loading} disabled={isKid || !agreed} />
 
           <View style={styles.footer}>
             <ThemedText themeColor="textSecondary">{t('su.haveAccount')}</ThemedText>
@@ -219,6 +242,7 @@ const styles = StyleSheet.create({
   belts: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   dobRow: { flexDirection: 'row', gap: Spacing.two, alignItems: 'flex-end' },
   kidNotice: { gap: 4, borderWidth: 1, borderRadius: 10, padding: Spacing.three },
+  agreeRow: { flexDirection: 'row', gap: Spacing.two, alignItems: 'flex-start' },
   beltOption: {
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,

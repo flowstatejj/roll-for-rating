@@ -1,4 +1,5 @@
 import { continentForCountry } from './geo';
+import { fetchBlockedIds } from './safety';
 import { supabase } from './supabase';
 import type { BeltRank, Gym, GymFriend, GymWithMeta, OpenMat, Profile } from './types';
 
@@ -241,7 +242,8 @@ export async function fetchOpenChallengers(
   if (filters.minRating != null) req = req.gte('rating', filters.minRating);
   if (filters.maxRating != null) req = req.lte('rating', filters.maxRating);
 
-  const { data, error } = await req;
+  const [{ data, error }, blocked] = await Promise.all([req, fetchBlockedIds()]);
   if (error) throw error;
-  return (data ?? []) as Profile[];
+  const hide = new Set(blocked);
+  return (data ?? []).filter((p: Profile) => !hide.has(p.id)) as Profile[];
 }

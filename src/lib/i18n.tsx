@@ -122,6 +122,8 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'su.kidNoticeBody': 'Under-14 accounts are created and managed by a parent or guardian from their own account. Ask them to sign in (or sign up) and add you under “My juniors”.',
     'su.parentEmail': 'Parent / guardian email',
     'su.teenNote': 'Under 18: we’ll email your parent/guardian a link to approve the account. Once approved you can match anyone and appear on leaderboards — wagering stays adults-only.',
+    'su.agreePrefix': 'I agree to the', 'su.agreeTerms': 'Terms & Community Guidelines', 'su.agreeZeroTol': 'There is zero tolerance for objectionable content or abusive users.', 'su.agreeReqTitle': 'Please agree to the terms', 'su.agreeReqBody': 'You must accept the Terms & Community Guidelines to create an account.',
+    'sf.block': 'Block', 'sf.unblock': 'Unblock', 'sf.report': 'Report', 'sf.blockConfirmTitle': 'Block this user?', 'sf.blockConfirmBody': "They won't be able to challenge or match you, and you won't see each other.", 'sf.blockedTitle': 'Blocked', 'sf.blockedBody': "You won't see each other or be matched.", 'sf.reportTitle': 'Report user', 'sf.reportBody': 'Why are you reporting them?', 'sf.rHarass': 'Harassment or bullying', 'sf.rInappropriate': 'Inappropriate content', 'sf.rSpam': 'Spam or scam', 'sf.rOther': 'Other', 'sf.reportedTitle': 'Report received', 'sf.reportedBody': 'Thanks — our team reviews reports within 24 hours.',
     'su.haveAccount': 'Already have an account?',
 
     'comm.yourGym': 'YOUR GYM', 'comm.yourGymFallback': 'Your gym',
@@ -456,6 +458,8 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'su.kidNoticeBody': 'Las cuentas de menores de 14 las crea y gestiona un padre o tutor desde su propia cuenta. Pídele que inicie sesión (o se registre) y te añada en “Mis menores”.',
     'su.parentEmail': 'Correo del padre/tutor',
     'su.teenNote': 'Menores de 18: enviaremos a tu padre/tutor un enlace para aprobar la cuenta. Tras la aprobación podrás competir con cualquiera y aparecer en clasificaciones; las apuestas son solo para adultos.',
+    'su.agreePrefix': 'Acepto los', 'su.agreeTerms': 'Términos y Normas de la Comunidad', 'su.agreeZeroTol': 'Hay tolerancia cero con el contenido objetable o los usuarios abusivos.', 'su.agreeReqTitle': 'Acepta los términos', 'su.agreeReqBody': 'Debes aceptar los Términos y Normas de la Comunidad para crear una cuenta.',
+    'sf.block': 'Bloquear', 'sf.unblock': 'Desbloquear', 'sf.report': 'Reportar', 'sf.blockConfirmTitle': '¿Bloquear a este usuario?', 'sf.blockConfirmBody': 'No podrá desafiarte ni emparejarse contigo, y no se verán.', 'sf.blockedTitle': 'Bloqueado', 'sf.blockedBody': 'No se verán ni serán emparejados.', 'sf.reportTitle': 'Reportar usuario', 'sf.reportBody': '¿Por qué lo reportas?', 'sf.rHarass': 'Acoso o intimidación', 'sf.rInappropriate': 'Contenido inapropiado', 'sf.rSpam': 'Spam o estafa', 'sf.rOther': 'Otro', 'sf.reportedTitle': 'Reporte recibido', 'sf.reportedBody': 'Gracias: nuestro equipo lo revisará en 24 horas.',
     'su.haveAccount': '¿Ya tienes cuenta?',
 
     'comm.yourGym': 'TU GIMNASIO', 'comm.yourGymFallback': 'Tu gimnasio',
@@ -790,6 +794,8 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'su.kidNoticeBody': 'Contas de menores de 14 são criadas e gerenciadas por um responsável na conta dele. Peça para ele entrar (ou se cadastrar) e te adicionar em “Meus menores”.',
     'su.parentEmail': 'E-mail do responsável',
     'su.teenNote': 'Menores de 18: enviaremos ao seu responsável um link para aprovar a conta. Após a aprovação você pode enfrentar qualquer um e aparecer nos rankings — apostas são só para adultos.',
+    'su.agreePrefix': 'Concordo com os', 'su.agreeTerms': 'Termos e Diretrizes da Comunidade', 'su.agreeZeroTol': 'Há tolerância zero com conteúdo censurável ou usuários abusivos.', 'su.agreeReqTitle': 'Aceite os termos', 'su.agreeReqBody': 'Você precisa aceitar os Termos e Diretrizes da Comunidade para criar uma conta.',
+    'sf.block': 'Bloquear', 'sf.unblock': 'Desbloquear', 'sf.report': 'Denunciar', 'sf.blockConfirmTitle': 'Bloquear este usuário?', 'sf.blockConfirmBody': 'Ele não poderá te desafiar nem ser pareado, e vocês não se verão.', 'sf.blockedTitle': 'Bloqueado', 'sf.blockedBody': 'Vocês não se verão nem serão pareados.', 'sf.reportTitle': 'Denunciar usuário', 'sf.reportBody': 'Por que está denunciando?', 'sf.rHarass': 'Assédio ou bullying', 'sf.rInappropriate': 'Conteúdo impróprio', 'sf.rSpam': 'Spam ou golpe', 'sf.rOther': 'Outro', 'sf.reportedTitle': 'Denúncia recebida', 'sf.reportedBody': 'Obrigado — nossa equipe revisa as denúncias em 24 horas.',
     'su.haveAccount': 'Já tem conta?',
 
     'comm.yourGym': 'SUA ACADEMIA', 'comm.yourGymFallback': 'Sua academia',
@@ -1124,6 +1130,8 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'su.kidNoticeBody': 'Les comptes des moins de 14 ans sont créés et gérés par un parent depuis son propre compte. Demande-lui de se connecter (ou s’inscrire) et de t’ajouter dans « Mes mineurs ».',
     'su.parentEmail': 'E-mail du parent/tuteur',
     'su.teenNote': 'Moins de 18 ans : nous enverrons à ton parent/tuteur un lien pour approuver le compte. Une fois approuvé, tu peux affronter tout le monde et apparaître aux classements — les paris restent réservés aux adultes.',
+    'su.agreePrefix': 'J’accepte les', 'su.agreeTerms': 'Conditions et règles de la communauté', 'su.agreeZeroTol': 'Tolérance zéro pour le contenu répréhensible ou les utilisateurs abusifs.', 'su.agreeReqTitle': 'Accepte les conditions', 'su.agreeReqBody': 'Tu dois accepter les Conditions et règles de la communauté pour créer un compte.',
+    'sf.block': 'Bloquer', 'sf.unblock': 'Débloquer', 'sf.report': 'Signaler', 'sf.blockConfirmTitle': 'Bloquer cet utilisateur ?', 'sf.blockConfirmBody': 'Il ne pourra pas te défier ni être apparié, et vous ne vous verrez plus.', 'sf.blockedTitle': 'Bloqué', 'sf.blockedBody': 'Vous ne vous verrez plus et ne serez pas appariés.', 'sf.reportTitle': 'Signaler l’utilisateur', 'sf.reportBody': 'Pourquoi le signales-tu ?', 'sf.rHarass': 'Harcèlement ou intimidation', 'sf.rInappropriate': 'Contenu inapproprié', 'sf.rSpam': 'Spam ou arnaque', 'sf.rOther': 'Autre', 'sf.reportedTitle': 'Signalement reçu', 'sf.reportedBody': 'Merci — notre équipe examine les signalements sous 24 heures.',
     'su.haveAccount': 'Déjà un compte ?',
 
     'comm.yourGym': 'TA SALLE', 'comm.yourGymFallback': 'Ta salle',

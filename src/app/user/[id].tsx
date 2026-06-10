@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 
 import { SocialLinks } from '@/components/social-links';
 import { ThemedText } from '@/components/themed-text';
@@ -12,6 +12,7 @@ import { useAuth } from '@/lib/auth';
 import { avatarSignedUrl } from '@/lib/avatars';
 import { useTranslation } from '@/lib/i18n';
 import { fetchProfileById } from '@/lib/profiles';
+import { amIBlocking, blockUser, reportUser, unblockUser } from '@/lib/safety';
 import { tierFor } from '@/lib/tiers';
 import { fetchChampions, heldTitles, type Champion } from '@/lib/titles';
 import type { Profile } from '@/lib/types';
@@ -28,6 +29,8 @@ export default function UserProfileScreen() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [champions, setChampions] = useState<Champion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [blocked, setBlocked] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -42,8 +45,54 @@ export default function UserProfileScreen() {
         }
       })
       .finally(() => alive && setLoading(false));
+    if (id !== userId) amIBlocking(id).then((b) => alive && setBlocked(b)).catch(() => {});
     return () => { alive = false; };
-  }, [id]);
+  }, [id, userId]);
+
+  async function toggleBlock() {
+    setBusy(true);
+    try {
+      if (blocked) { await unblockUser(id); setBlocked(false); }
+      else {
+        await blockUser(id);
+        setBlocked(true);
+        Alert.alert(t('sf.blockedTitle'), t('sf.blockedBody'));
+      }
+    } catch (e: any) {
+      Alert.alert(t('md.error'), e.message ?? t('md.tryAgain'));
+    } finally { setBusy(false); }
+  }
+
+  function confirmBlock() {
+    if (blocked) { toggleBlock(); return; }
+    Alert.alert(t('sf.blockConfirmTitle'), t('sf.blockConfirmBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('sf.block'), style: 'destructive', onPress: toggleBlock },
+    ]);
+  }
+
+  function reportFlow() {
+    const reasons: { key: string; label: string }[] = [
+      { key: 'harassment', label: t('sf.rHarass') },
+      { key: 'inappropriate', label: t('sf.rInappropriate') },
+      { key: 'spam', label: t('sf.rSpam') },
+      { key: 'other', label: t('sf.rOther') },
+    ];
+    Alert.alert(t('sf.reportTitle'), t('sf.reportBody'), [
+      ...reasons.map((r) => ({
+        text: r.label,
+        onPress: async () => {
+          try {
+            await reportUser({ reportedUserId: id, reason: r.key });
+            Alert.alert(t('sf.reportedTitle'), t('sf.reportedBody'));
+          } catch (e: any) {
+            Alert.alert(t('md.error'), e.message ?? t('md.tryAgain'));
+          }
+        },
+      })),
+      { text: t('common.cancel'), style: 'cancel' as const },
+    ]);
+  }
 
   if (loading) return <Loading />;
 
@@ -79,7 +128,7 @@ export default function UserProfileScreen() {
   const tier = tierFor(profile.rating);
   const titles = heldTitles(champions);
   const memberSince = new Date(profile.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
-  const canChallenge = !isMe && !profile.is_minor;
+  const canChallenge = !isMe && !profile.is_minor && !blocked;
 
   return (
     <Screen>
@@ -144,6 +193,20 @@ export default function UserProfileScreen() {
 
       {canChallenge && (
         <Button label={t('find.challenge')} icon="flame" onPress={() => router.push(`/match/new?opponent=${profile.id}`)} />
+      )}
+
+      {/* Trust & safety: block / report (not on your own profile) */}
+      {!isMe && (
+        <View style={{ gap: Spacing.two, marginTop: Spacing.two }}>
+          <Button
+            label={blocked ? t('sf.unblock') : t('sf.block')}
+            icon={blocked ? 'lock-open-outline' : 'ban-outline'}
+            variant="ghost"
+            loading={busy}
+            onPress={confirmBlock}
+          />
+          <Button label={t('sf.report')} icon="flag-outline" variant="ghost" onPress={reportFlow} />
+        </View>
       )}
     </Screen>
   );
