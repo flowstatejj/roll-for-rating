@@ -41,10 +41,12 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#0d1117",
+          "image": "./assets/images/icon.png",
+          "imageWidth": 180,
           "android": {
-            "image": "./assets/images/splash-icon.png",
-            "imageWidth": 76
+            "image": "./assets/images/icon.png",
+            "imageWidth": 160
           }
         }
       ],
@@ -53,7 +55,8 @@
         "expo-image-picker",
         {
           "photosPermission": "Roll for Rating uses your photos so you can attach match videos.",
-          "cameraPermission": "Roll for Rating uses your camera so you can record match videos."
+          "cameraPermission": "Roll for Rating uses your camera so you can record match videos.",
+          "microphonePermission": "Roll for Rating uses your microphone to record audio with your match videos."
         }
       ],
       [
