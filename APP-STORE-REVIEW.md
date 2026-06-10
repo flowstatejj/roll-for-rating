@@ -9,9 +9,9 @@ Paste these into App Store Connect. (Internal doc — not shipped in the app.)
 - **Subtitle (30 chars):** Earn a real BJJ rating
 - **Bundle ID:** com.flowstatejj.rollforrating
 - **Primary category:** Sports · **Secondary:** Health & Fitness
-- **Support URL:** https://roll.flowstatejj.com
-- **Marketing URL:** https://roll.flowstatejj.com
-- **Privacy Policy URL:** https://roll.flowstatejj.com/privacy.html
+- **Support URL:** https://rfr-site.onrender.com  (→ switch to https://roll.flowstatejj.com once DNS is set)
+- **Marketing URL:** https://rfr-site.onrender.com
+- **Privacy Policy URL:** https://rfr-site.onrender.com/privacy.html  (live now; works for review)
 
 ## Promotional text (≤170)
 A real, earned rating for Brazilian Jiu-Jitsu. Roll at open mat, have a teammate referee, and watch your ROR climb — plus leagues, tournaments, and gym rankings.
