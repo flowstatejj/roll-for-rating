@@ -57,9 +57,15 @@ export default function ProfileScreen() {
 
   function changePhoto() {
     if (!userId) return;
+    // Minors never upload photos — they choose a non-photographic warrior avatar.
+    if (profile?.is_minor) {
+      router.push('/avatar-builder');
+      return;
+    }
     Alert.alert(t('pf.photoTitle'), t('pf.photoBody'), [
       { text: t('pf.takePhoto'), onPress: () => doPhoto(true) },
       { text: t('pf.choosePhoto'), onPress: () => doPhoto(false) },
+      { text: t('av.useWarrior'), onPress: () => router.push('/avatar-builder') },
       { text: t('common.cancel'), style: 'cancel' },
     ]);
   }
@@ -242,12 +248,12 @@ export default function ProfileScreen() {
       {/* Header */}
       <Card style={styles.header}>
         <Pressable onPress={changePhoto}>
-          <Avatar name={profile.display_name} size={72} uri={avatarUrl} />
+          <Avatar name={profile.display_name} size={72} uri={avatarUrl} warrior={profile.avatar_warrior} color={profile.avatar_color} />
           <View style={[styles.cameraBadge, { backgroundColor: theme.accent, borderColor: theme.tile }]}>
             {uploadingPhoto ? (
               <ActivityIndicator size="small" color={theme.accentText} />
             ) : (
-              <Ionicons name="camera" size={13} color={theme.accentText} />
+              <Ionicons name={profile.is_minor ? 'color-palette' : 'camera'} size={13} color={theme.accentText} />
             )}
           </View>
         </Pressable>
@@ -273,13 +279,13 @@ export default function ProfileScreen() {
         </View>
       )}
 
-      {/* Profile photo required to compete */}
-      {!profile.avatar_path && (
+      {/* Avatar required to compete (photo for adults, warrior for minors) */}
+      {!profile.avatar_path && !profile.avatar_warrior && (
         <Pressable onPress={changePhoto}>
           <Card style={[styles.openRow, { borderColor: theme.accent, borderWidth: 1 }]}>
-            <Ionicons name="camera" size={20} color={theme.accent} />
+            <Ionicons name={profile.is_minor ? 'color-palette' : 'camera'} size={20} color={theme.accent} />
             <ThemedText type="small" style={{ flex: 1 }}>
-              {t('pf.photoRequired')}
+              {profile.is_minor ? t('av.chooseRequired') : t('pf.photoRequired')}
             </ThemedText>
             <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />
           </Card>

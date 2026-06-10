@@ -65,6 +65,15 @@ export async function hasHumanFace(uri: string): Promise<boolean> {
   }
 }
 
+/** Save a non-photographic warrior avatar (the only avatar minors can use). */
+export async function setWarriorAvatar(profileId: string, warrior: string, color: string): Promise<void> {
+  const { error } = await supabase
+    .from('profiles')
+    .update({ avatar_warrior: warrior, avatar_color: color, avatar_path: null })
+    .eq('id', profileId);
+  if (error) throw error;
+}
+
 /** Upload a local image URI as `profileId`'s avatar and save the path on the profile. */
 export async function uploadAvatar(profileId: string, uri: string): Promise<string> {
   const ext = (uri.split('?')[0].split('.').pop() || 'jpg').toLowerCase();
@@ -79,7 +88,10 @@ export async function uploadAvatar(profileId: string, uri: string): Promise<stri
     .upload(path, decode(base64), { contentType, upsert: true });
   if (upErr) throw upErr;
 
-  const { error: updErr } = await supabase.from('profiles').update({ avatar_path: path }).eq('id', profileId);
+  const { error: updErr } = await supabase
+    .from('profiles')
+    .update({ avatar_path: path, avatar_warrior: null, avatar_color: null })
+    .eq('id', profileId);
   if (updErr) throw updErr;
   return path;
 }

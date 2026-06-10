@@ -136,7 +136,7 @@ export default function UserProfileScreen() {
 
       {/* Header */}
       <Card style={styles.header}>
-        <Avatar name={profile.display_name} size={72} uri={avatarUrl} />
+        <Avatar name={profile.display_name} size={72} uri={avatarUrl} warrior={profile.avatar_warrior} color={profile.avatar_color} />
         <View style={{ flex: 1, gap: 4 }}>
           <ThemedText style={{ fontSize: 22, fontWeight: '800' }} numberOfLines={1}>
             {profile.display_name}

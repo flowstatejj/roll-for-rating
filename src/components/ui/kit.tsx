@@ -17,6 +17,8 @@ import { Image } from 'expo-image';
 
 import { TatamiBackground } from '@/components/tatami-background';
 import { ThemedText } from '@/components/themed-text';
+import { WarriorAvatar } from '@/components/warrior-avatar';
+import { isWarrior } from '@/lib/warriors';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useTranslation } from '@/lib/i18n';
@@ -174,8 +176,23 @@ export function BeltChip({ belt, size = 'md' }: { belt: BeltRank; size?: 'sm' | 
 // ---------------------------------------------------------------------------
 // Avatar (initials)
 // ---------------------------------------------------------------------------
-export function Avatar({ name, size = 40, uri }: { name: string; size?: number; uri?: string | null }) {
+export function Avatar({
+  name,
+  size = 40,
+  uri,
+  warrior,
+  color,
+}: {
+  name: string;
+  size?: number;
+  uri?: string | null;
+  warrior?: string | null;
+  color?: string | null;
+}) {
   const theme = useTheme();
+  if (isWarrior(warrior)) {
+    return <WarriorAvatar warrior={warrior} color={color} size={size} />;
+  }
   if (uri) {
     return (
       <Image

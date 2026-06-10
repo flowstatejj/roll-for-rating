@@ -25,6 +25,9 @@ export interface Profile {
   belt_rank: BeltRank;
   /** path in the private 'avatars' bucket; view via a signed URL (lib/avatars). */
   avatar_path: string | null;
+  /** historical-warrior emblem (non-photo identity; the only option for minors). */
+  avatar_warrior: string | null;
+  avatar_color: string | null;
   rating: number;
   wins: number;
   losses: number;
