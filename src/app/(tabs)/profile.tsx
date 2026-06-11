@@ -6,7 +6,7 @@ import { ActivityIndicator, Alert, Pressable, StyleSheet, Switch, View } from 'r
 import { MatchRow } from '@/components/match-row';
 import { SocialLinks } from '@/components/social-links';
 import { ThemedText } from '@/components/themed-text';
-import { Avatar, BeltChip, Button, Card, EmptyState, Loading, Screen, TextField } from '@/components/ui/kit';
+import { Avatar, BeltChip, Button, Card, EmptyState, FoundingChip, Loading, Screen, TextField } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { computeAchievements } from '@/lib/achievements';
@@ -248,7 +248,7 @@ export default function ProfileScreen() {
       {/* Header */}
       <Card style={styles.header}>
         <Pressable onPress={changePhoto}>
-          <Avatar name={profile.display_name} size={72} uri={avatarUrl} warrior={profile.avatar_warrior} color={profile.avatar_color} />
+          <Avatar name={profile.display_name} size={72} uri={avatarUrl} warrior={profile.avatar_warrior} color={profile.avatar_color} founding={profile.is_founding_member} />
           <View style={[styles.cameraBadge, { backgroundColor: theme.accent, borderColor: theme.tile }]}>
             {uploadingPhoto ? (
               <ActivityIndicator size="small" color={theme.accentText} />
@@ -262,6 +262,7 @@ export default function ProfileScreen() {
             {profile.display_name}
           </ThemedText>
           <ThemedText themeColor="textSecondary">@{profile.username}</ThemedText>
+          {profile.is_founding_member && <FoundingChip />}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
             <BeltChip belt={profile.belt_rank} size="sm" />
             <ThemedText type="small" themeColor="textSecondary">
@@ -515,6 +516,15 @@ export default function ProfileScreen() {
             onPress={() => router.push('/invites')}
           />
         </>
+      )}
+
+      {profile.is_admin && (
+        <Button
+          label={t('profile.admin')}
+          variant="secondary"
+          icon="shield-checkmark-outline"
+          onPress={() => router.push('/admin')}
+        />
       )}
 
       <Button

@@ -107,6 +107,7 @@ function RootNavigator() {
       <Stack.Screen name="tournament/bout/[id]" options={{ headerShown: true, title: t('tn.record') }} />
       <Stack.Screen name="gym-rankings" options={{ headerShown: true, title: t('nav.gymRankings') }} />
       <Stack.Screen name="settings" options={{ headerShown: true, title: t('settings.title') }} />
+      <Stack.Screen name="admin" options={{ headerShown: true, title: t('admin.title') }} />
       <Stack.Screen name="juniors" options={{ headerShown: true, title: t('profile.myJuniors') }} />
       <Stack.Screen name="invites" options={{ headerShown: true, title: t('profile.juniorChallenges') }} />
     </Stack>

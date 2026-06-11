@@ -132,7 +132,13 @@ export default function LeaderboardScreen() {
                   <View style={[styles.row, isMe && { backgroundColor: theme.accent + '22', borderRadius: 8 }]}>
                     <RankBadge rank={i + 1} />
                     <Pressable onPress={() => router.push(`/user/${p.id}`)} style={styles.tap}>
-                      <Avatar name={p.display_name} size={40} />
+                      <Avatar
+                        name={p.display_name}
+                        size={40}
+                        warrior={p.avatar_warrior}
+                        color={p.avatar_color}
+                        founding={p.is_founding_member}
+                      />
                       <View style={{ flex: 1, gap: 2 }}>
                         <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>
                           {p.display_name}

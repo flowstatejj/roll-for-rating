@@ -5,7 +5,7 @@ import { Alert, StyleSheet, View } from 'react-native';
 
 import { SocialLinks } from '@/components/social-links';
 import { ThemedText } from '@/components/themed-text';
-import { Avatar, BeltChip, Button, Card, EmptyState, Loading, Screen } from '@/components/ui/kit';
+import { Avatar, BeltChip, Button, Card, EmptyState, FoundingChip, Loading, Screen } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
@@ -136,12 +136,13 @@ export default function UserProfileScreen() {
 
       {/* Header */}
       <Card style={styles.header}>
-        <Avatar name={profile.display_name} size={72} uri={avatarUrl} warrior={profile.avatar_warrior} color={profile.avatar_color} />
+        <Avatar name={profile.display_name} size={72} uri={avatarUrl} warrior={profile.avatar_warrior} color={profile.avatar_color} founding={profile.is_founding_member} />
         <View style={{ flex: 1, gap: 4 }}>
           <ThemedText style={{ fontSize: 22, fontWeight: '800' }} numberOfLines={1}>
             {profile.display_name}
           </ThemedText>
           <ThemedText themeColor="textSecondary">@{profile.username}</ThemedText>
+          {profile.is_founding_member && <FoundingChip />}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
             <BeltChip belt={profile.belt_rank} size="sm" />
             <ThemedText type="small" themeColor="textSecondary">
