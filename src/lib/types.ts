@@ -38,6 +38,10 @@ export interface Profile {
   activity_streak: number;
   last_active_date: string | null;
   is_minor: boolean;
+  /** Admin: can manage the app (flag founding members, etc.). */
+  is_admin: boolean;
+  /** Founding member: gold badge everywhere + free access (comp entitlement). */
+  is_founding_member: boolean;
   birthdate: string | null;
   age_tier: AgeTier;
   consent_status: ConsentStatus;

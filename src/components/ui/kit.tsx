@@ -176,50 +176,120 @@ export function BeltChip({ belt, size = 'md' }: { belt: BeltRank; size?: 'sm' | 
 // ---------------------------------------------------------------------------
 // Avatar (initials)
 // ---------------------------------------------------------------------------
+/** Founding-member gold (matches the rank-1 medal on the leaderboard). */
+export const FOUNDER_GOLD = '#E5B53A';
+
 export function Avatar({
   name,
   size = 40,
   uri,
   warrior,
   color,
+  founding,
 }: {
   name: string;
   size?: number;
   uri?: string | null;
   warrior?: string | null;
   color?: string | null;
+  /** Founding member — draws a gold ring + star badge around the avatar. */
+  founding?: boolean;
 }) {
   const theme = useTheme();
-  if (isWarrior(warrior)) {
-    return <WarriorAvatar warrior={warrior} color={color} size={size} />;
-  }
-  if (uri) {
+
+  const inner = (s: number) => {
+    if (isWarrior(warrior)) {
+      return <WarriorAvatar warrior={warrior} color={color} size={s} />;
+    }
+    if (uri) {
+      return (
+        <Image
+          source={{ uri }}
+          style={{ width: s, height: s, borderRadius: s / 2, backgroundColor: theme.backgroundSelected }}
+          contentFit="cover"
+        />
+      );
+    }
+    const initials = name
+      .split(' ')
+      .map((w) => w[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join('')
+      .toUpperCase();
     return (
-      <Image
-        source={{ uri }}
-        style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: theme.backgroundSelected }}
-        contentFit="cover"
-      />
+      <View
+        style={{
+          width: s,
+          height: s,
+          borderRadius: s / 2,
+          backgroundColor: theme.backgroundSelected,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+        <ThemedText style={{ fontWeight: '700', fontSize: s * 0.4 }}>{initials || '?'}</ThemedText>
+      </View>
     );
-  }
-  const initials = name
-    .split(' ')
-    .map((w) => w[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
+  };
+
+  if (!founding) return inner(size);
+
+  // Gold ring + corner star — the "founding member" badge shown everywhere.
+  const ring = Math.max(2, Math.round(size * 0.06));
+  const badge = Math.max(13, Math.round(size * 0.34));
+  return (
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+      <View
+        style={{
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          borderWidth: ring,
+          borderColor: FOUNDER_GOLD,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+        {inner(size - ring * 2 - 2)}
+      </View>
+      <View
+        style={{
+          position: 'absolute',
+          bottom: -1,
+          right: -1,
+          width: badge,
+          height: badge,
+          borderRadius: badge / 2,
+          backgroundColor: FOUNDER_GOLD,
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderWidth: 1.5,
+          borderColor: '#1a1a1a',
+        }}>
+        <Ionicons name="star" size={badge * 0.6} color="#1a1a1a" />
+      </View>
+    </View>
+  );
+}
+
+/** Small "Founding Member" pill for profile headers. */
+export function FoundingChip() {
+  const { t } = useTranslation();
   return (
     <View
       style={{
-        width: size,
-        height: size,
-        borderRadius: size / 2,
-        backgroundColor: theme.backgroundSelected,
+        flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
+        gap: 4,
+        backgroundColor: FOUNDER_GOLD + '22',
+        borderColor: FOUNDER_GOLD,
+        borderWidth: 1,
+        borderRadius: 999,
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        alignSelf: 'flex-start',
       }}>
-      <ThemedText style={{ fontWeight: '700', fontSize: size * 0.4 }}>{initials || '?'}</ThemedText>
+      <Ionicons name="star" size={11} color={FOUNDER_GOLD} />
+      <ThemedText style={{ color: FOUNDER_GOLD, fontWeight: '800', fontSize: 11 }}>{t('fm.badge')}</ThemedText>
     </View>
   );
 }
