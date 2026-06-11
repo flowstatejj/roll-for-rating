@@ -67,7 +67,9 @@
             "deploymentTarget": "16.4"
           }
         }
-      ]
+      ],
+      "expo-iap",
+      "@sentry/react-native"
     ],
     "experiments": {
       "typedRoutes": true,

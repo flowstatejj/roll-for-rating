@@ -524,6 +524,13 @@ export default function ProfileScreen() {
         onPress={() => router.push('/settings')}
       />
 
+      <Button
+        label={t('profile.help')}
+        variant="secondary"
+        icon="help-buoy-outline"
+        onPress={() => router.push('/support')}
+      />
+
       <Button label={t('profile.signOut')} variant="ghost" icon="log-out-outline" onPress={signOut} />
       <Button
         label={deleting ? 'Deleting…' : t('profile.deleteAccount')}

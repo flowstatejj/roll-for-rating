@@ -8,6 +8,12 @@ import { Colors } from '@/constants/theme';
 import { Loading } from '@/components/ui/kit';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { I18nProvider, useTranslation } from '@/lib/i18n';
+import { initSentry, wrapWithSentry } from '@/lib/sentry';
+import { SubscriptionProvider, useSubscription } from '@/lib/subscription';
+
+// Initialise crash/performance monitoring as early as possible (no-op until a
+// EXPO_PUBLIC_SENTRY_DSN is configured).
+initSentry();
 
 // chess.com-style dark navigation chrome.
 const NavTheme = {
@@ -24,6 +30,7 @@ const NavTheme = {
 
 function RootNavigator() {
   const { session, initializing, onboarded } = useAuth();
+  const { active, ready: subReady } = useSubscription();
   const { t } = useTranslation();
   const segments = useSegments();
   const router = useRouter();
@@ -32,24 +39,46 @@ function RootNavigator() {
     if (initializing) return;
     const inAuthGroup = segments[0] === '(auth)';
     const inOnboarding = segments[0] === 'onboarding';
+    const onPaywall = segments[0] === 'paywall';
+
     if (!session && !inAuthGroup) {
       router.replace('/(auth)/sign-in');
-    } else if (session && inAuthGroup) {
-      router.replace(onboarded === false ? '/onboarding' : '/(tabs)');
-    } else if (session && onboarded === false && !inOnboarding) {
-      router.replace('/onboarding');
-    } else if (session && onboarded && inOnboarding) {
-      router.replace('/(tabs)');
+      return;
     }
-  }, [session, initializing, onboarded, segments, router]);
+    if (session && inAuthGroup) {
+      router.replace(onboarded === false ? '/onboarding' : '/(tabs)');
+      return;
+    }
+    if (session && onboarded === false && !inOnboarding) {
+      router.replace('/onboarding');
+      return;
+    }
+    if (session && onboarded && inOnboarding) {
+      router.replace('/(tabs)');
+      return;
+    }
+    // Hard paywall: signed in + onboarded + entitlement state known.
+    if (session && onboarded && subReady) {
+      if (!active && !onPaywall) {
+        router.replace('/paywall');
+      } else if (active && onPaywall) {
+        router.replace('/(tabs)');
+      }
+    }
+  }, [session, initializing, onboarded, active, subReady, segments, router]);
 
+  // Hold the splash until we know auth AND (for signed-in users) entitlement,
+  // so we don't flash the tabs before redirecting to the paywall.
   if (initializing) return <Loading />;
+  if (session && onboarded && !subReady) return <Loading />;
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="onboarding" />
+      <Stack.Screen name="paywall" options={{ headerShown: false, gestureEnabled: false }} />
+      <Stack.Screen name="support" options={{ headerShown: true, title: t('nav.support') }} />
       <Stack.Screen
         name="match/new"
         options={{ presentation: 'modal', headerShown: true, title: t('home.newChallenge') }}
@@ -84,15 +113,17 @@ function RootNavigator() {
   );
 }
 
-export default function RootLayout() {
+function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: Colors.dark.background }}>
       <SafeAreaProvider>
         <ThemeProvider value={NavTheme}>
           <I18nProvider>
             <AuthProvider>
-              <RootNavigator />
-              <StatusBar style="light" />
+              <SubscriptionProvider>
+                <RootNavigator />
+                <StatusBar style="light" />
+              </SubscriptionProvider>
             </AuthProvider>
           </I18nProvider>
         </ThemeProvider>
@@ -100,3 +131,5 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
+
+export default wrapWithSentry(RootLayout);

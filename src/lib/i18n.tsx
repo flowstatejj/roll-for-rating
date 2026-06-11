@@ -349,6 +349,34 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'tier.novice': 'Novice', 'tier.contender': 'Contender', 'tier.challenger': 'Challenger',
     'tier.elite': 'Elite', 'tier.apex': 'Apex', 'tier.to': 'to',
+
+    // Paywall (subscription)
+    'pw.title': 'Unlock Roll for Rating',
+    'pw.subtitle': 'Your real BJJ rating — plus leagues, tournaments, and the whole gym.',
+    'pw.f1': 'Earn a real, refereed BJJ rating (ROR)',
+    'pw.f2': 'Run & join leagues and tournaments',
+    'pw.f3': 'Climb gym, local & global leaderboards',
+    'pw.f4': 'Train BJJ puzzles, quests & submission hunts',
+    'pw.trial': '7-day free trial, then {price}/month',
+    'pw.priceFallback': '$4.99',
+    'pw.cta': 'Start free trial',
+    'pw.restore': 'Restore purchases',
+    'pw.restoredNone': "We couldn't find a subscription to restore.",
+    'pw.error': 'Something went wrong. Please try again.',
+    'pw.legal': 'Payment is charged to your Apple ID at confirmation. Your subscription renews automatically for {price}/month unless auto-renew is turned off at least 24 hours before the period ends. Manage or cancel anytime in your App Store account settings.',
+    'pw.terms': 'Terms of Use', 'pw.privacy': 'Privacy Policy', 'pw.signOut': 'Sign out',
+
+    // Help & support
+    'sp.title': 'Help & Support',
+    'sp.intro': 'Questions, bugs, or feedback? Send us a message and we’ll reply by email.',
+    'sp.category': 'Topic',
+    'sp.cat.general': 'General', 'sp.cat.bug': 'Bug', 'sp.cat.account': 'Account', 'sp.cat.billing': 'Billing', 'sp.cat.safety': 'Safety', 'sp.cat.feature': 'Feature idea',
+    'sp.subject': 'Subject', 'sp.subjectPh': 'Short summary (optional)',
+    'sp.message': 'Message', 'sp.messagePh': 'Tell us what’s going on…',
+    'sp.send': 'Send message',
+    'sp.sentTitle': 'Message sent', 'sp.sentBody': 'Thanks — we’ll reply to your account email.',
+    'sp.error': "Couldn't send your message", 'sp.empty': 'Please write a message first.',
+    'nav.support': 'Help & Support', 'profile.help': 'Help & Support',
   },
   es: {
     'tab.home': 'Inicio', 'tab.puzzles': 'Ejercicios', 'tab.matches': 'Combates',
@@ -686,6 +714,34 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'tier.novice': 'Novato', 'tier.contender': 'Aspirante', 'tier.challenger': 'Retador',
     'tier.elite': 'Élite', 'tier.apex': 'Cumbre', 'tier.to': 'a',
+
+    // Paywall (subscription)
+    'pw.title': 'Desbloquea Roll for Rating',
+    'pw.subtitle': 'Tu rating real de BJJ — más ligas, torneos y todo el gimnasio.',
+    'pw.f1': 'Gana un rating de BJJ real y arbitrado (ROR)',
+    'pw.f2': 'Crea y únete a ligas y torneos',
+    'pw.f3': 'Escala en rankings de gimnasio, locales y globales',
+    'pw.f4': 'Entrena ejercicios de BJJ, misiones y caza de sumisiones',
+    'pw.trial': 'Prueba gratis de 7 días, luego {price}/mes',
+    'pw.priceFallback': '$4.99',
+    'pw.cta': 'Iniciar prueba gratis',
+    'pw.restore': 'Restaurar compras',
+    'pw.restoredNone': 'No encontramos una suscripción para restaurar.',
+    'pw.error': 'Algo salió mal. Inténtalo de nuevo.',
+    'pw.legal': 'El pago se cargará a tu Apple ID al confirmar. La suscripción se renueva automáticamente por {price}/mes a menos que desactives la renovación al menos 24 horas antes de que termine el período. Gestiona o cancela cuando quieras en los ajustes de tu cuenta de App Store.',
+    'pw.terms': 'Términos de uso', 'pw.privacy': 'Política de privacidad', 'pw.signOut': 'Cerrar sesión',
+
+    // Help & support
+    'sp.title': 'Ayuda y soporte',
+    'sp.intro': '¿Preguntas, errores o sugerencias? Envíanos un mensaje y te responderemos por correo.',
+    'sp.category': 'Tema',
+    'sp.cat.general': 'General', 'sp.cat.bug': 'Error', 'sp.cat.account': 'Cuenta', 'sp.cat.billing': 'Facturación', 'sp.cat.safety': 'Seguridad', 'sp.cat.feature': 'Idea',
+    'sp.subject': 'Asunto', 'sp.subjectPh': 'Resumen breve (opcional)',
+    'sp.message': 'Mensaje', 'sp.messagePh': 'Cuéntanos qué ocurre…',
+    'sp.send': 'Enviar mensaje',
+    'sp.sentTitle': 'Mensaje enviado', 'sp.sentBody': 'Gracias — responderemos al correo de tu cuenta.',
+    'sp.error': 'No se pudo enviar tu mensaje', 'sp.empty': 'Escribe un mensaje primero.',
+    'nav.support': 'Ayuda y soporte', 'profile.help': 'Ayuda y soporte',
   },
   pt: {
     'tab.home': 'Início', 'tab.puzzles': 'Exercícios', 'tab.matches': 'Lutas',
@@ -1023,6 +1079,34 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'tier.novice': 'Iniciante', 'tier.contender': 'Concorrente', 'tier.challenger': 'Desafiante',
     'tier.elite': 'Elite', 'tier.apex': 'Ápice', 'tier.to': 'para',
+
+    // Paywall (subscription)
+    'pw.title': 'Desbloqueie o Roll for Rating',
+    'pw.subtitle': 'Seu rating real de BJJ — além de ligas, torneios e toda a academia.',
+    'pw.f1': 'Conquiste um rating de BJJ real e arbitrado (ROR)',
+    'pw.f2': 'Crie e participe de ligas e torneios',
+    'pw.f3': 'Suba nos rankings da academia, locais e globais',
+    'pw.f4': 'Treine exercícios de BJJ, missões e caça às finalizações',
+    'pw.trial': '7 dias grátis, depois {price}/mês',
+    'pw.priceFallback': '$4.99',
+    'pw.cta': 'Iniciar teste grátis',
+    'pw.restore': 'Restaurar compras',
+    'pw.restoredNone': 'Não encontramos uma assinatura para restaurar.',
+    'pw.error': 'Algo deu errado. Tente novamente.',
+    'pw.legal': 'O pagamento é cobrado no seu Apple ID na confirmação. A assinatura é renovada automaticamente por {price}/mês, a menos que você desative a renovação pelo menos 24 horas antes do fim do período. Gerencie ou cancele quando quiser nos ajustes da sua conta da App Store.',
+    'pw.terms': 'Termos de uso', 'pw.privacy': 'Política de privacidade', 'pw.signOut': 'Sair',
+
+    // Help & support
+    'sp.title': 'Ajuda e suporte',
+    'sp.intro': 'Dúvidas, erros ou sugestões? Envie uma mensagem e responderemos por e-mail.',
+    'sp.category': 'Assunto',
+    'sp.cat.general': 'Geral', 'sp.cat.bug': 'Erro', 'sp.cat.account': 'Conta', 'sp.cat.billing': 'Cobrança', 'sp.cat.safety': 'Segurança', 'sp.cat.feature': 'Ideia',
+    'sp.subject': 'Título', 'sp.subjectPh': 'Resumo breve (opcional)',
+    'sp.message': 'Mensagem', 'sp.messagePh': 'Conte o que está acontecendo…',
+    'sp.send': 'Enviar mensagem',
+    'sp.sentTitle': 'Mensagem enviada', 'sp.sentBody': 'Obrigado — responderemos ao e-mail da sua conta.',
+    'sp.error': 'Não foi possível enviar sua mensagem', 'sp.empty': 'Escreva uma mensagem primeiro.',
+    'nav.support': 'Ajuda e suporte', 'profile.help': 'Ajuda e suporte',
   },
   fr: {
     'tab.home': 'Accueil', 'tab.puzzles': 'Exercices', 'tab.matches': 'Combats',
@@ -1360,6 +1444,34 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'tier.novice': 'Novice', 'tier.contender': 'Prétendant', 'tier.challenger': 'Challenger',
     'tier.elite': 'Élite', 'tier.apex': 'Apex', 'tier.to': 'pour',
+
+    // Paywall (subscription)
+    'pw.title': 'Débloquez Roll for Rating',
+    'pw.subtitle': 'Votre vrai rating de JJB — plus ligues, tournois et toute la salle.',
+    'pw.f1': 'Gagnez un vrai rating de JJB arbitré (ROR)',
+    'pw.f2': 'Créez et rejoignez des ligues et tournois',
+    'pw.f3': 'Grimpez dans les classements de salle, locaux et mondiaux',
+    'pw.f4': 'Entraînez des énigmes JJB, des quêtes et la chasse aux soumissions',
+    'pw.trial': 'Essai gratuit de 7 jours, puis {price}/mois',
+    'pw.priceFallback': '$4.99',
+    'pw.cta': 'Démarrer l’essai gratuit',
+    'pw.restore': 'Restaurer les achats',
+    'pw.restoredNone': 'Aucun abonnement à restaurer.',
+    'pw.error': 'Une erreur est survenue. Réessaie.',
+    'pw.legal': 'Le paiement est débité de votre identifiant Apple à la confirmation. L’abonnement se renouvelle automatiquement à {price}/mois sauf si le renouvellement est désactivé au moins 24 heures avant la fin de la période. Gérez ou annulez à tout moment dans les réglages de votre compte App Store.',
+    'pw.terms': 'Conditions d’utilisation', 'pw.privacy': 'Politique de confidentialité', 'pw.signOut': 'Se déconnecter',
+
+    // Help & support
+    'sp.title': 'Aide et assistance',
+    'sp.intro': 'Des questions, des bugs ou des idées ? Envoyez-nous un message et nous répondrons par e-mail.',
+    'sp.category': 'Sujet',
+    'sp.cat.general': 'Général', 'sp.cat.bug': 'Bug', 'sp.cat.account': 'Compte', 'sp.cat.billing': 'Facturation', 'sp.cat.safety': 'Sécurité', 'sp.cat.feature': 'Idée',
+    'sp.subject': 'Objet', 'sp.subjectPh': 'Résumé court (facultatif)',
+    'sp.message': 'Message', 'sp.messagePh': 'Dites-nous ce qui se passe…',
+    'sp.send': 'Envoyer le message',
+    'sp.sentTitle': 'Message envoyé', 'sp.sentBody': 'Merci — nous répondrons à l’e-mail de votre compte.',
+    'sp.error': 'Impossible d’envoyer votre message', 'sp.empty': 'Écrivez d’abord un message.',
+    'nav.support': 'Aide et assistance', 'profile.help': 'Aide et assistance',
   },
 };
 
