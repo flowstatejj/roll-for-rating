@@ -19,6 +19,9 @@
   ],
   "exclude": [
     "node_modules",
-    "supabase/functions"
+    "supabase/functions",
+    "web-console",
+    "dist",
+    "dist-web"
   ]
 }
