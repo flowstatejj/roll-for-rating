@@ -3,7 +3,7 @@ import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
 
-const TERMS_URL = 'https://roll.flowstatejj.com/terms.html';
+const TERMS_URL = 'https://rfr-site.onrender.com/terms.html';
 
 import { ThemedText } from '@/components/themed-text';
 import { Button, Screen, TextField } from '@/components/ui/kit';
