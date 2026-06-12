@@ -69,6 +69,14 @@ export default function SignInScreen() {
           <Button label={t('auth.signIn')} onPress={onSubmit} loading={loading} />
 
           <View style={styles.footer}>
+            <Link href="/(auth)/forgot-password">
+              <ThemedText style={{ color: theme.accent, fontWeight: '700' }}>
+                {t('auth.forgotPassword')}
+              </ThemedText>
+            </Link>
+          </View>
+
+          <View style={styles.footer}>
             <ThemedText themeColor="textSecondary">{t('auth.newHere')}</ThemedText>
             <Link href="/(auth)/sign-up">
               <ThemedText style={{ color: theme.accent, fontWeight: '700' }}>
