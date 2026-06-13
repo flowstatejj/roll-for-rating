@@ -15,6 +15,7 @@ import { fetchProfileById } from '@/lib/profiles';
 import { amIBlocking, blockUser, reportUser, unblockUser } from '@/lib/safety';
 import { tierFor } from '@/lib/tiers';
 import { fetchChampions, heldTitles, type Champion } from '@/lib/titles';
+import { ageFrom, weightClassFor } from '@/lib/weight';
 import type { Profile } from '@/lib/types';
 
 export default function UserProfileScreen() {
@@ -129,6 +130,13 @@ export default function UserProfileScreen() {
   const titles = heldTitles(champions);
   const memberSince = new Date(profile.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
   const canChallenge = !isMe && !profile.is_minor && !blocked;
+  const age = ageFrom(profile.birthdate);
+  const wClass = weightClassFor(profile.weight_lbs);
+  const vitals = [
+    age != null ? t('pf.ageYrs').replace('{n}', String(age)) : null,
+    profile.weight_lbs != null ? `${profile.weight_lbs} lbs` : null,
+    wClass ? t(`wc.${wClass}`) : null,
+  ].filter(Boolean).join(' · ');
 
   return (
     <Screen>
@@ -149,6 +157,11 @@ export default function UserProfileScreen() {
               {t('up.since')} {memberSince}
             </ThemedText>
           </View>
+          {vitals ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              {vitals}
+            </ThemedText>
+          ) : null}
         </View>
       </Card>
 
