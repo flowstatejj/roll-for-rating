@@ -29,6 +29,8 @@ export interface Profile {
   avatar_warrior: string | null;
   avatar_color: string | null;
   rating: number;
+  /** Self-reported weight in pounds — powers the weight-class leaderboards. */
+  weight_lbs: number | null;
   wins: number;
   losses: number;
   draws: number;

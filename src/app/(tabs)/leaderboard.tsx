@@ -14,6 +14,7 @@ import { createMatchRequest } from '@/lib/invites';
 import { fetchJuniors } from '@/lib/juniors';
 import { fetchKidsLeaderboard, fetchLeaderboard, fetchMyGeo, type KidsLeaderRow, type LeaderRow } from '@/lib/matches';
 import type { Profile } from '@/lib/types';
+import { inWeightClass, WEIGHT_FILTERS, type WeightClassKey } from '@/lib/weight';
 
 type Tab = 'overall' | 'kids';
 
@@ -26,6 +27,7 @@ export default function LeaderboardScreen() {
 
   const [tab, setTab] = useState<Tab>('overall');
   const [level, setLevel] = useState<GeoLevel>('world');
+  const [weightFilter, setWeightFilter] = useState<WeightClassKey>('absolute');
   const [rows, setRows] = useState<LeaderRow[]>([]);
   const [kids, setKids] = useState<KidsLeaderRow[]>([]);
   const [juniors, setJuniors] = useState<Profile[]>([]);
@@ -69,8 +71,12 @@ export default function LeaderboardScreen() {
   }, [load, canSeeKids, level]);
 
   const overallFiltered = useMemo(
-    () => rows.filter((r) => geoMatches(myGeo, r.gym ?? null, level)).slice(0, 100),
-    [rows, myGeo, level],
+    () =>
+      rows
+        .filter((r) => geoMatches(myGeo, r.gym ?? null, level))
+        .filter((r) => inWeightClass(r.weight_lbs, weightFilter))
+        .slice(0, 100),
+    [rows, myGeo, level, weightFilter],
   );
 
   function challenge(row: KidsLeaderRow) {
@@ -117,6 +123,22 @@ export default function LeaderboardScreen() {
         <ThemedText type="small" themeColor="textSecondary">
           {t('lb.noGeo')}
         </ThemedText>
+      )}
+
+      {/* Weight class (overall board only) */}
+      {(tab === 'overall' || !canSeeKids) && (
+        <>
+          <View style={styles.levels}>
+            {WEIGHT_FILTERS.map((k) => (
+              <Chip key={k} label={t(`wc.${k}`)} active={weightFilter === k} onPress={() => setWeightFilter(k)} />
+            ))}
+          </View>
+          {weightFilter !== 'absolute' && (
+            <ThemedText type="small" themeColor="textSecondary">
+              {t('lb.weightNote')}
+            </ThemedText>
+          )}
+        </>
       )}
 
       {tab === 'overall' || !canSeeKids ? (

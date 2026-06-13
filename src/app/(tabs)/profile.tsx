@@ -23,6 +23,7 @@ import { cleanHandle, SOCIALS, SOCIAL_KEYS, type SocialKey } from '@/lib/socials
 import { supabase } from '@/lib/supabase';
 import { tierFor } from '@/lib/tiers';
 import { fetchChampions, heldTitles, type Champion } from '@/lib/titles';
+import { ageFrom, weightClassFor } from '@/lib/weight';
 import { BELT_COLORS, BELT_LABELS, type BeltRank, type MatchWithPeople } from '@/lib/types';
 
 const BELTS: BeltRank[] = ['white', 'blue', 'purple', 'brown', 'black'];
@@ -38,6 +39,7 @@ export default function ProfileScreen() {
   const [name, setName] = useState('');
   const [belt, setBelt] = useState<BeltRank>('white');
   const [city, setCity] = useState('');
+  const [weight, setWeight] = useState('');
   const [socials, setSocials] = useState<Record<SocialKey, string>>({
     instagram: '', tiktok: '', youtube: '', facebook: '',
   });
@@ -192,6 +194,7 @@ export default function ProfileScreen() {
     setName(profile!.display_name);
     setBelt(profile!.belt_rank);
     setCity(profile!.city ?? '');
+    setWeight(profile!.weight_lbs != null ? String(profile!.weight_lbs) : '');
     setSocials({
       instagram: profile!.instagram ?? '',
       tiktok: profile!.tiktok ?? '',
@@ -206,12 +209,18 @@ export default function ProfileScreen() {
       Alert.alert('Name required', 'Enter a display name.');
       return;
     }
+    const w = weight.trim() ? Number(weight.trim()) : null;
+    if (w !== null && (!Number.isFinite(w) || w < 40 || w > 500)) {
+      Alert.alert(t('pf.weightBadTitle'), t('pf.weightBad'));
+      return;
+    }
     setSaving(true);
     try {
       const update: Record<string, unknown> = {
         display_name: name.trim(),
         belt_rank: belt,
         city: city.trim() || null,
+        weight_lbs: w,
       };
       // Social links are adults-only (a minor's other socials shouldn't be
       // discoverable here).
@@ -242,6 +251,13 @@ export default function ProfileScreen() {
   const earnedCount = achievements.filter((a) => a.earned).length;
   const tier = tierFor(profile.rating);
   const titles = heldTitles(champions);
+  const age = ageFrom(profile.birthdate);
+  const wClass = weightClassFor(profile.weight_lbs);
+  const vitals = [
+    age != null ? t('pf.ageYrs').replace('{n}', String(age)) : null,
+    profile.weight_lbs != null ? `${profile.weight_lbs} lbs` : null,
+    wClass ? t(`wc.${wClass}`) : null,
+  ].filter(Boolean).join(' · ');
 
   return (
     <Screen>
@@ -269,6 +285,11 @@ export default function ProfileScreen() {
               Since {memberSince}
             </ThemedText>
           </View>
+          {vitals ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              {vitals}
+            </ThemedText>
+          ) : null}
         </View>
       </Card>
 
@@ -435,6 +456,16 @@ export default function ProfileScreen() {
         <Card style={{ gap: Spacing.three }}>
           <TextField label="Display name" value={name} onChangeText={setName} />
           <TextField label="City / area" value={city} onChangeText={setCity} placeholder="Your city (for the Roll Finder)" />
+          <TextField
+            label={t('pf.weight')}
+            value={weight}
+            onChangeText={setWeight}
+            keyboardType="decimal-pad"
+            placeholder={t('pf.weightPh')}
+          />
+          <ThemedText type="small" themeColor="textSecondary">
+            {t('pf.weightHint')}
+          </ThemedText>
           <View style={{ gap: Spacing.one }}>
             <ThemedText type="smallBold" themeColor="textSecondary">
               Belt rank
