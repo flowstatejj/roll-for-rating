@@ -1,37 +1,37 @@
 -- ============================================================================
--- Roll for Rating — Notification i18n upgrade
--- Adds a structured `data` jsonb payload to every notification so the app can
--- render the title/body in the member's CURRENT language (English title/body
--- are kept as a fallback for older clients + push payloads).
+-- BUGFIX — waived/filmed matches (no referee) could not be created.
 --
--- Run in the Supabase SQL Editor AFTER notifications.sql. Safe to re-run.
+-- notify_match_created() inserted a "you're the referee" notification with
+-- new.referee_id. On a waived match referee_id is NULL, which violated
+-- notifications.user_id NOT NULL and aborted the whole match insert — so the
+-- entire "film it, no referee" flow was broken at creation.
+--
+-- Fix: always notify the opponent; notify the referee only when one exists.
+-- Run in the Supabase SQL editor. Safe to re-run.
 -- ============================================================================
 
-alter table public.notifications add column if not exists data jsonb;
-
--- ---------------------------------------------------------------------------
--- New challenge -> notify opponent + referee
--- ---------------------------------------------------------------------------
 create or replace function public.notify_match_created()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare cname text;
 begin
   select display_name into cname from public.profiles where id = new.challenger_id;
+
   insert into public.notifications (user_id, type, title, body, data, match_id) values
     (new.opponent_id, 'challenge', 'New challenge', cname || ' challenged you',
       jsonb_build_object('k', 'challenge.new', 'name', cname), new.id);
-  -- Waived/filmed matches have no referee — don't notify a NULL user_id.
+
+  -- Only when there's actually a referee (waived/filmed matches have none).
   if new.referee_id is not null then
     insert into public.notifications (user_id, type, title, body, data, match_id) values
       (new.referee_id, 'referee', 'You are refereeing', cname || ' set up a match — you''re the ref',
         jsonb_build_object('k', 'referee.new', 'name', cname), new.id);
   end if;
+
   return new;
 end; $$;
 
--- ---------------------------------------------------------------------------
--- Status changes -> accepted / declined / cancelled / completed
--- ---------------------------------------------------------------------------
+-- Same NULL-referee bug when a waived match is ACCEPTED (status -> pending_referee):
+-- the "Ready to record" notification targeted new.referee_id. Guard it.
 create or replace function public.notify_match_status()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare cname text; oname text; rkind text;
@@ -44,7 +44,7 @@ begin
     insert into public.notifications (user_id, type, title, body, data, match_id) values
       (new.challenger_id, 'accepted', 'Challenge accepted', oname || ' accepted your challenge',
         jsonb_build_object('k', 'challenge.accepted', 'name', oname), new.id);
-    -- Waived/filmed matches have no referee.
+    -- Filmed/waived matches have no referee.
     if new.referee_id is not null then
       insert into public.notifications (user_id, type, title, body, data, match_id) values
         (new.referee_id, 'referee', 'Ready to record', cname || ' vs ' || oname || ' is ready to score',
@@ -61,7 +61,6 @@ begin
       (new.opponent_id, 'cancelled', 'Match cancelled', 'Your match vs ' || cname || ' was cancelled',
         jsonb_build_object('k', 'match.cancelled', 'name', cname), new.id);
   elsif new.status = 'completed' then
-    -- challenger row
     rkind := case when new.result = 'draw' then 'result.draw'
                   when new.winner_id = new.challenger_id then 'result.win'
                   else 'result.loss' end;
@@ -72,7 +71,6 @@ begin
         || ' — rating ' || new.challenger_rating_before || ' → ' || new.challenger_rating_after,
         jsonb_build_object('k', rkind, 'name', oname,
           'rb', new.challenger_rating_before, 'ra', new.challenger_rating_after), new.id);
-    -- opponent row
     rkind := case when new.result = 'draw' then 'result.draw'
                   when new.winner_id = new.opponent_id then 'result.win'
                   else 'result.loss' end;
@@ -86,57 +84,3 @@ begin
   end if;
   return new;
 end; $$;
-
--- ---------------------------------------------------------------------------
--- Gym friend request -> notify the target gym's owner
--- ---------------------------------------------------------------------------
-create or replace function public.notify_gym_request()
-returns trigger language plpgsql security definer set search_path = public as $$
-declare target_owner uuid; rname text;
-begin
-  select owner_id into target_owner from public.gyms
-   where id = (case when new.gym_low = new.requested_by_gym then new.gym_high else new.gym_low end);
-  select name into rname from public.gyms where id = new.requested_by_gym;
-  if target_owner is not null then
-    insert into public.notifications (user_id, type, title, body, data)
-    values (target_owner, 'gym_request', 'Gym friend request', coalesce(rname, 'A gym') || ' wants to connect',
-      jsonb_build_object('k', 'gym.request', 'gym', coalesce(rname, 'A gym')));
-  end if;
-  return new;
-end; $$;
-
--- ---------------------------------------------------------------------------
--- Reaction on a public match -> notify the competitors
--- ---------------------------------------------------------------------------
-create or replace function public.notify_reaction()
-returns trigger language plpgsql security definer set search_path = public as $$
-declare cid uuid; oid uuid; rname text;
-begin
-  select challenger_id, opponent_id into cid, oid from public.matches where id = new.match_id;
-  select display_name into rname from public.profiles where id = new.user_id;
-  insert into public.notifications (user_id, type, title, body, data, match_id)
-  select uid, 'reaction', 'New reaction', coalesce(rname, 'Someone') || ' reacted ' || new.reaction || ' to your match',
-    jsonb_build_object('k', 'reaction.new', 'name', coalesce(rname, 'Someone'), 'emoji', new.reaction), new.match_id
-  from (values (cid), (oid)) as t(uid)
-  where uid is not null and uid <> new.user_id;
-  return new;
-end; $$;
-
--- ---------------------------------------------------------------------------
--- New match message -> notify the other participants
--- ---------------------------------------------------------------------------
-create or replace function public.notify_message()
-returns trigger language plpgsql security definer set search_path = public as $$
-declare cid uuid; oid uuid; rid uuid; sname text;
-begin
-  select challenger_id, opponent_id, referee_id into cid, oid, rid from public.matches where id = new.match_id;
-  select display_name into sname from public.profiles where id = new.sender_id;
-  insert into public.notifications (user_id, type, title, body, data, match_id)
-  select uid, 'message', 'New message', coalesce(sname, 'Member') || ': ' || left(new.body, 60),
-    jsonb_build_object('k', 'message.new', 'name', coalesce(sname, 'Member'), 'snippet', left(new.body, 60)), new.match_id
-  from (values (cid), (oid), (rid)) as t(uid)
-  where uid is not null and uid <> new.sender_id;
-  return new;
-end; $$;
-
--- (Triggers themselves are unchanged — they already point at these functions.)
