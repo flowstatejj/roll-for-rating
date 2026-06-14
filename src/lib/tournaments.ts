@@ -100,6 +100,43 @@ export async function joinTournament(tid: string, userId: string) {
   if (error) throw error;
 }
 
+// ---------------------------------------------------------------------------
+// Invites — the host invites specific people (who accept to become entrants)
+// ---------------------------------------------------------------------------
+export interface TournamentInvite {
+  tournament_id: string;
+  name: string;
+  format: string;
+  invited_by_name: string;
+  created_at: string;
+}
+
+/** Host invites a user to their tournament. */
+export async function inviteToTournament(tid: string, userId: string): Promise<void> {
+  const { error } = await supabase.rpc('invite_to_tournament', { p_tid: tid, p_user: userId });
+  if (error) throw error;
+}
+
+/** Invited user accepts (registers) or declines. */
+export async function respondTournamentInvite(tid: string, accept: boolean): Promise<void> {
+  const { error } = await supabase.rpc('respond_tournament_invite', { p_tid: tid, p_accept: accept });
+  if (error) throw error;
+}
+
+/** Pending tournament invites for the signed-in user. */
+export async function fetchMyTournamentInvites(): Promise<TournamentInvite[]> {
+  const { data, error } = await supabase.rpc('my_tournament_invites');
+  if (error) throw error;
+  return (data ?? []) as TournamentInvite[];
+}
+
+/** Whether the signed-in user has a pending invite to this tournament. */
+export async function hasTournamentInvite(tid: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc('has_tournament_invite', { p_tid: tid });
+  if (error) return false;
+  return !!data;
+}
+
 export async function leaveTournament(tid: string, userId: string) {
   const { error } = await supabase.from('tournament_entrants').delete().eq('tournament_id', tid).eq('user_id', userId);
   if (error) throw error;

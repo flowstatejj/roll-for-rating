@@ -115,6 +115,42 @@ export async function leaveLeague(userId: string, leagueId: string): Promise<voi
   if (error) throw error;
 }
 
+// ---------------------------------------------------------------------------
+// Invites — the organizer invites specific people (who accept to join)
+// ---------------------------------------------------------------------------
+export interface LeagueInvite {
+  league_id: string;
+  name: string;
+  invited_by_name: string;
+  created_at: string;
+}
+
+/** Organizer invites a user to their league. */
+export async function inviteToLeague(leagueId: string, userId: string): Promise<void> {
+  const { error } = await supabase.rpc('invite_to_league', { p_lid: leagueId, p_user: userId });
+  if (error) throw error;
+}
+
+/** Invited user accepts (joins) or declines. */
+export async function respondLeagueInvite(leagueId: string, accept: boolean): Promise<void> {
+  const { error } = await supabase.rpc('respond_league_invite', { p_lid: leagueId, p_accept: accept });
+  if (error) throw error;
+}
+
+/** Pending league invites for the signed-in user. */
+export async function fetchMyLeagueInvites(): Promise<LeagueInvite[]> {
+  const { data, error } = await supabase.rpc('my_league_invites');
+  if (error) throw error;
+  return (data ?? []) as LeagueInvite[];
+}
+
+/** Whether the signed-in user has a pending invite to this league. */
+export async function hasLeagueInvite(leagueId: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc('has_league_invite', { p_lid: leagueId });
+  if (error) return false;
+  return !!data;
+}
+
 export async function fetchFixtures(leagueId: string, week: number): Promise<LeagueFixture[]> {
   const { data, error } = await supabase
     .from('league_fixtures')

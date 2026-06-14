@@ -10,6 +10,7 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
 import { avatarSignedUrl } from '@/lib/avatars';
+import { fetchFriendshipStatus, removeFriend, respondFriendRequest, sendFriendRequest, type FriendStatus } from '@/lib/friends';
 import { useTranslation } from '@/lib/i18n';
 import { fetchProfileById } from '@/lib/profiles';
 import { amIBlocking, blockUser, reportUser, unblockUser } from '@/lib/safety';
@@ -32,6 +33,8 @@ export default function UserProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [blocked, setBlocked] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [friend, setFriend] = useState<FriendStatus>('none');
+  const [fbusy, setFbusy] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -46,9 +49,29 @@ export default function UserProfileScreen() {
         }
       })
       .finally(() => alive && setLoading(false));
-    if (id !== userId) amIBlocking(id).then((b) => alive && setBlocked(b)).catch(() => {});
+    if (id !== userId) {
+      amIBlocking(id).then((b) => alive && setBlocked(b)).catch(() => {});
+      fetchFriendshipStatus(id).then((s) => alive && setFriend(s)).catch(() => {});
+    }
     return () => { alive = false; };
   }, [id, userId]);
+
+  async function friendAct(fn: () => Promise<unknown>) {
+    setFbusy(true);
+    try {
+      await fn();
+      setFriend(await fetchFriendshipStatus(id));
+    } catch (e: any) {
+      Alert.alert(t('md.error'), e.message ?? t('md.tryAgain'));
+    } finally { setFbusy(false); }
+  }
+
+  function confirmUnfriend() {
+    Alert.alert(t('frn.removeTitle'), t('frn.removeBody').replace('{name}', profile?.display_name ?? ''), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('frn.remove'), style: 'destructive', onPress: () => friendAct(() => removeFriend(id)) },
+    ]);
+  }
 
   async function toggleBlock() {
     setBusy(true);
@@ -207,6 +230,26 @@ export default function UserProfileScreen() {
 
       {canChallenge && (
         <Button label={t('find.challenge')} icon="flame" onPress={() => router.push(`/match/new?opponent=${profile.id}`)} />
+      )}
+
+      {/* Friendship */}
+      {!isMe && !blocked && (
+        friend === 'friends' ? (
+          <Button label={t('frn.friendsLabel')} icon="checkmark-circle" variant="secondary" loading={fbusy} onPress={confirmUnfriend} />
+        ) : friend === 'pending_out' ? (
+          <Button label={t('frn.requestedLabel')} icon="time-outline" variant="ghost" loading={fbusy} onPress={() => friendAct(() => removeFriend(id))} />
+        ) : friend === 'pending_in' ? (
+          <View style={{ flexDirection: 'row', gap: Spacing.two }}>
+            <View style={{ flex: 1 }}>
+              <Button label={t('frn.accept')} icon="checkmark-circle" loading={fbusy} onPress={() => friendAct(() => respondFriendRequest(id, true))} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Button label={t('frn.decline')} variant="ghost" loading={fbusy} onPress={() => friendAct(() => respondFriendRequest(id, false))} />
+            </View>
+          </View>
+        ) : (
+          <Button label={t('frn.add')} icon="person-add" variant="secondary" loading={fbusy} onPress={() => friendAct(() => sendFriendRequest(id))} />
+        )
       )}
 
       {/* Trust & safety: block / report (not on your own profile) */}

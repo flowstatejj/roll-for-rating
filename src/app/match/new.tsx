@@ -24,8 +24,10 @@ export default function NewMatchScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const userId = session!.user.id;
-  // You can stake at most 10% of your own ROR on a single match.
-  const maxBet = Math.max(0, Math.round((profile?.rating ?? 0) * 0.1));
+  // You can stake at most 10% of your own ROR on a single match. Use floor to
+  // match the DB cap (floor(0.10 * rating)) exactly — otherwise the "Max" chip
+  // could offer a value the server then rejects.
+  const maxBet = Math.max(0, Math.floor((profile?.rating ?? 0) * 0.1));
 
   const { opponent: opponentParam, league: leagueParam, week: weekParam } = useLocalSearchParams<{ opponent?: string; league?: string; week?: string }>();
   const inLeague = !!leagueParam;

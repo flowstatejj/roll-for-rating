@@ -9,7 +9,7 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
-import { createLeague, fetchMyLeagues, fetchOpenLeagues, joinLeagueByCode, WEEKDAYS } from '@/lib/leagues';
+import { createLeague, fetchMyLeagues, fetchMyLeagueInvites, fetchOpenLeagues, joinLeagueByCode, type LeagueInvite, respondLeagueInvite, WEEKDAYS } from '@/lib/leagues';
 import type { League, LeagueAudience, LeagueVisibility } from '@/lib/types';
 
 type Tab = 'mine' | 'browse';
@@ -34,6 +34,7 @@ export default function LeaguesScreen() {
   const [tab, setTab] = useState<Tab>('mine');
   const [mine, setMine] = useState<League[]>([]);
   const [browse, setBrowse] = useState<League[]>([]);
+  const [invites, setInvites] = useState<LeagueInvite[]>([]);
   const [code, setCode] = useState('');
   const [creating, setCreating] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -57,15 +58,29 @@ export default function LeaguesScreen() {
 
   const load = useCallback(async () => {
     try {
-      const [m, b] = await Promise.all([fetchMyLeagues(userId), fetchOpenLeagues()]);
+      const [m, b, inv] = await Promise.all([fetchMyLeagues(userId), fetchOpenLeagues(), fetchMyLeagueInvites()]);
       setMine(m);
       setBrowse(b);
+      setInvites(inv);
     } catch (e) {
       console.warn('leagues load failed', e);
     }
   }, [userId]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  async function respondInvite(leagueId: string, accept: boolean) {
+    setBusy(true);
+    try {
+      await respondLeagueInvite(leagueId, accept);
+      await load();
+      if (accept) router.push(`/league/${leagueId}`);
+    } catch (e: any) {
+      Alert.alert(t('md.error'), e.message ?? t('md.tryAgain'));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function submitCreate() {
     if (!name.trim()) {
@@ -123,6 +138,29 @@ export default function LeaguesScreen() {
   return (
     <Screen>
       <Stack.Screen options={{ title: t('nav.leagues') }} />
+
+      {/* Invitations from organizers */}
+      {invites.length > 0 && (
+        <Card style={{ gap: Spacing.two, borderColor: theme.accent, borderWidth: 1 }}>
+          <ThemedText style={{ fontWeight: '800' }}>{t('le.invitedSection')}</ThemedText>
+          {invites.map((inv) => (
+            <View key={inv.league_id} style={{ gap: Spacing.two }}>
+              <View>
+                <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>{inv.name}</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">{t('le.invitedBy').replace('{name}', inv.invited_by_name)}</ThemedText>
+              </View>
+              <View style={{ flexDirection: 'row', gap: Spacing.two }}>
+                <View style={{ flex: 1 }}>
+                  <Button label={t('le.acceptInvite')} icon="checkmark-circle" loading={busy} onPress={() => respondInvite(inv.league_id, true)} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Button label={t('le.declineInvite')} variant="ghost" loading={busy} onPress={() => respondInvite(inv.league_id, false)} />
+                </View>
+              </View>
+            </View>
+          ))}
+        </Card>
+      )}
 
       <View style={styles.segment}>
         <Seg label={t('le.mine')} active={tab === 'mine'} onPress={() => setTab('mine')} />

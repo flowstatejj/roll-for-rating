@@ -368,6 +368,9 @@ export interface NotificationData {
   emoji?: string; // reaction emoji
   snippet?: string; // message preview
   gym?: string; // gym name (gym.request)
+  tid?: string; // tournament id (tournament.invite)
+  lid?: string; // league id (league.invite)
+  fid?: string; // friend id (friend.request / friend.accepted)
 }
 
 export interface AppNotification {
