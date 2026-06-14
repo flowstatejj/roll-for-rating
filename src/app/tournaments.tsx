@@ -9,7 +9,7 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
-import { createTournament, fetchTournaments } from '@/lib/tournaments';
+import { createTournament, fetchMyTournamentInvites, fetchTournaments, respondTournamentInvite, type TournamentInvite } from '@/lib/tournaments';
 import type { Tournament, TournamentFormat, TournamentTeamBuild, TournamentTeamRule } from '@/lib/types';
 
 // Parse a signed integer from a text box (blank / "-" / junk -> 0).
@@ -27,6 +27,7 @@ export default function TournamentsScreen() {
   const userId = session!.user.id;
 
   const [items, setItems] = useState<Tournament[]>([]);
+  const [invites, setInvites] = useState<TournamentInvite[]>([]);
   const [creating, setCreating] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -47,12 +48,27 @@ export default function TournamentsScreen() {
 
   const load = useCallback(async () => {
     try {
-      setItems(await fetchTournaments());
+      const [list, inv] = await Promise.all([fetchTournaments(), fetchMyTournamentInvites().catch(() => [])]);
+      setItems(list);
+      setInvites(inv);
     } catch (e) {
       console.warn('tournaments load failed', e);
     }
   }, []);
   useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  async function respondInvite(tid: string, accept: boolean) {
+    setBusy(true);
+    try {
+      await respondTournamentInvite(tid, accept);
+      await load();
+      if (accept) router.push(`/tournament/${tid}`);
+    } catch (e: any) {
+      Alert.alert(t('md.error'), e.message ?? t('md.tryAgain'));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   function pickSize(sz: number) {
     setTeamSize(sz);
@@ -166,6 +182,31 @@ export default function TournamentsScreen() {
         </Card>
       ) : (
         <Button label={t('tn.create')} icon="add-circle" variant="secondary" onPress={() => setCreating(true)} />
+      )}
+
+      {invites.length > 0 && (
+        <View style={{ gap: Spacing.two }}>
+          <ThemedText style={{ fontWeight: '800', fontSize: 16 }}>{t('tn.invitedSection')}</ThemedText>
+          {invites.map((iv) => (
+            <Card key={iv.tournament_id} style={{ gap: Spacing.two, borderColor: theme.accent, borderWidth: 1 }}>
+              <Pressable onPress={() => router.push(`/tournament/${iv.tournament_id}`)}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+                  <Ionicons name="mail-open" size={20} color={theme.accent} />
+                  <View style={{ flex: 1 }}>
+                    <ThemedText style={{ fontWeight: '800' }} numberOfLines={1}>{iv.name}</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+                      {t('tn.invitedBy').replace('{name}', iv.invited_by_name)} · {t(`tn.fmt.${iv.format}`)}
+                    </ThemedText>
+                  </View>
+                </View>
+              </Pressable>
+              <View style={{ flexDirection: 'row', gap: Spacing.two }}>
+                <View style={{ flex: 1 }}><Button label={t('tn.acceptInvite')} loading={busy} onPress={() => respondInvite(iv.tournament_id, true)} /></View>
+                <View style={{ flex: 1 }}><Button label={t('tn.declineInvite')} variant="ghost" loading={busy} onPress={() => respondInvite(iv.tournament_id, false)} /></View>
+              </View>
+            </Card>
+          ))}
+        </View>
       )}
 
       {items.length === 0 ? (

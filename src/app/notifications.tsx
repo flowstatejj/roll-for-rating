@@ -23,6 +23,10 @@ function iconFor(type: string): keyof typeof Ionicons.glyphMap {
     case 'reaction': return 'heart';
     case 'message': return 'chatbubble';
     case 'gym_request': return 'people';
+    case 'tournament_invite': return 'trophy';
+    case 'league_invite': return 'people-circle';
+    case 'friend_request': return 'person-add';
+    case 'friend_accepted': return 'people';
     default: return 'notifications';
   }
 }
@@ -64,6 +68,10 @@ export default function NotificationsScreen() {
 
   function open(n: AppNotification) {
     if (n.match_id) router.push(`/match/${n.match_id}`);
+    else if (n.type === 'tournament_invite' && n.data?.tid) router.push(`/tournament/${n.data.tid}`);
+    else if (n.type === 'league_invite' && n.data?.lid) router.push(`/league/${n.data.lid}`);
+    else if (n.type === 'friend_accepted' && n.data?.fid) router.push(`/user/${n.data.fid}`);
+    else if (n.type === 'friend_request') router.push('/friends');
     else if (n.type === 'gym_request') router.push('/(tabs)/community');
   }
 
@@ -100,7 +108,10 @@ export default function NotificationsScreen() {
                     </ThemedText>
                   ) : null}
                 </View>
-                {(n.match_id || n.type === 'gym_request') && (
+                {(n.match_id || n.type === 'gym_request' || n.type === 'friend_request'
+                  || (n.type === 'tournament_invite' && n.data?.tid)
+                  || (n.type === 'league_invite' && n.data?.lid)
+                  || (n.type === 'friend_accepted' && n.data?.fid)) && (
                   <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />
                 )}
               </Card>

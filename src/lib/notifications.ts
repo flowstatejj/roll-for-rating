@@ -15,6 +15,10 @@ const KIND_KEYS: Record<string, { title: string; body: string }> = {
   'gym.request': { title: 'notif.tGym', body: 'notif.bGym' },
   'reaction.new': { title: 'notif.tReaction', body: 'notif.bReaction' },
   'message.new': { title: 'notif.tMessage', body: 'notif.bMessage' },
+  'tournament.invite': { title: 'notif.tTnInvite', body: 'notif.bTnInvite' },
+  'league.invite': { title: 'notif.tLgInvite', body: 'notif.bLgInvite' },
+  'friend.request': { title: 'notif.tFriendReq', body: 'notif.bFriendReq' },
+  'friend.accepted': { title: 'notif.tFriendAcc', body: 'notif.bFriendAcc' },
 };
 
 /**

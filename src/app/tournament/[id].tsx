@@ -8,6 +8,7 @@ import { Avatar, BeltChip, Button, Card, EmptyState, Loading, Screen, TextField 
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { fetchMyFriends, type FriendProfile } from '@/lib/friends';
 import { useTranslation } from '@/lib/i18n';
 import { searchProfiles } from '@/lib/matches';
 import { supabase } from '@/lib/supabase';
@@ -23,7 +24,10 @@ import {
   fetchTournament,
   generatePlayoff,
   generateTournament,
+  hasTournamentInvite,
+  inviteToTournament,
   registerForTournament,
+  respondTournamentInvite,
   setMatReferee,
 } from '@/lib/tournaments';
 import type {
@@ -35,7 +39,7 @@ import type {
   TournamentTeam,
 } from '@/lib/types';
 
-type Picker = { mode: 'ref'; matId: string } | { mode: 'member'; teamId: string } | null;
+type Picker = { mode: 'ref'; matId: string } | { mode: 'member'; teamId: string } | { mode: 'invite' } | null;
 
 export default function TournamentDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -51,12 +55,14 @@ export default function TournamentDetailScreen() {
   const [mats, setMats] = useState<TournamentMat[]>([]);
   const [bouts, setBouts] = useState<TournamentBout[]>([]);
   const [standings, setStandings] = useState<TournamentStandingPro[]>([]);
+  const [invited, setInvited] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
 
   const [picker, setPicker] = useState<Picker>(null);
   const [pq, setPq] = useState('');
   const [presults, setPresults] = useState<Profile[]>([]);
+  const [friends, setFriends] = useState<FriendProfile[]>([]);
   const [newTeam, setNewTeam] = useState('');
 
   const load = useCallback(async () => {
@@ -68,6 +74,7 @@ export default function TournamentDetailScreen() {
         .select('profile:profiles(id, username, display_name, belt_rank, rating, is_minor)')
         .eq('tournament_id', id);
       setEntrants(((ent ?? []).map((e: any) => e.profile).filter(Boolean)) as Profile[]);
+      hasTournamentInvite(id).then(setInvited).catch(() => {});
       const [tm, mt, bt] = await Promise.all([fetchTeams(id), fetchMats(id), fetchBouts(id)]);
       setTeams(tm);
       setMats(mt);
@@ -88,11 +95,14 @@ export default function TournamentDetailScreen() {
 
   useEffect(() => {
     if (!picker) return;
+    // For invites with an empty box we show friends; otherwise search everyone.
+    if (picker.mode === 'invite' && friends.length === 0) fetchMyFriends().then(setFriends).catch(() => {});
+    const showFriends = picker.mode === 'invite' && !pq.trim();
     const h = setTimeout(async () => {
-      try { setPresults(await searchProfiles(pq, [])); } catch { /* ignore */ }
+      try { setPresults(showFriends ? [] : await searchProfiles(pq, [])); } catch { /* ignore */ }
     }, 250);
     return () => clearTimeout(h);
-  }, [pq, picker]);
+  }, [pq, picker, friends.length]);
 
   if (loading) return <Loading />;
   if (!tr) {
@@ -119,6 +129,12 @@ export default function TournamentDetailScreen() {
   async function pick(p: Profile) {
     if (!picker) return;
     const cur = picker;
+    if (cur.mode === 'invite') {
+      // Keep the picker open so the host can invite several people in a row.
+      setPq('');
+      await act(() => inviteToTournament(id, p.id));
+      return;
+    }
     setPicker(null); setPq(''); setPresults([]);
     if (cur.mode === 'ref') await act(() => setMatReferee(cur.matId, p.id));
     else await act(() => addTeamMember(cur.teamId, p.id));
@@ -162,26 +178,58 @@ export default function TournamentDetailScreen() {
         </Pressable>
       </Card>
 
-      {/* Register */}
-      {!isEntrant && tr.status !== 'complete' && (
+      {/* Invitation to accept (you've been invited by the host) */}
+      {invited && !isEntrant && tr.status !== 'complete' && (
+        <Card style={{ gap: Spacing.two, borderColor: theme.accent, borderWidth: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+            <Ionicons name="mail-open" size={20} color={theme.accent} />
+            <ThemedText style={{ fontWeight: '800', flex: 1 }}>{t('tn.invitedTitle')}</ThemedText>
+          </View>
+          <ThemedText type="small" themeColor="textSecondary">{t('tn.invitedBody')}</ThemedText>
+          <Button label={t('tn.acceptInvite')} icon="checkmark-circle" loading={busy} onPress={() => act(() => respondTournamentInvite(id, true))} />
+          <Button label={t('tn.declineInvite')} variant="ghost" loading={busy} onPress={() => act(() => respondTournamentInvite(id, false))} />
+        </Card>
+      )}
+
+      {/* Register (self-join) */}
+      {!isEntrant && !invited && tr.status !== 'complete' && (
         <Button label={isTeam ? t('tn.registerTeam') : t('tn.register')} icon="add-circle" loading={busy} onPress={() => act(() => registerForTournament(id))} />
       )}
       {isEntrant && <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center' }}>{t('tn.registered')}</ThemedText>}
 
+      {/* Host: invite specific people */}
+      {isHost && tr.status !== 'complete' && (
+        <Button label={t('tn.invitePlayers')} icon="person-add" variant="secondary" onPress={() => { setPicker({ mode: 'invite' }); setPq(''); setPresults([]); }} />
+      )}
+
       {/* Picker panel */}
       {picker && (
         <Card style={{ gap: Spacing.two, borderColor: theme.accent, borderWidth: 1 }}>
-          <ThemedText style={{ fontWeight: '800' }}>{picker.mode === 'ref' ? t('tn.pickRef') : t('tn.pickMember')}</ThemedText>
+          <ThemedText style={{ fontWeight: '800' }}>{picker.mode === 'ref' ? t('tn.pickRef') : picker.mode === 'invite' ? t('tn.pickInvite') : t('tn.pickMember')}</ThemedText>
           <TextField value={pq} onChangeText={setPq} placeholder={t('mn.searchPlaceholder')} autoCapitalize="none" />
-          {presults.slice(0, 8).map((p) => (
-            <Pressable key={p.id} onPress={() => pick(p)}>
-              <View style={styles.prow}>
-                <Avatar name={p.display_name} size={32} />
-                <ThemedText style={{ flex: 1, fontWeight: '700' }} numberOfLines={1}>{p.display_name}</ThemedText>
-                <BeltChip belt={p.belt_rank} size="sm" />
-              </View>
-            </Pressable>
-          ))}
+          {(() => {
+            const showFriends = picker.mode === 'invite' && !pq.trim();
+            const rows: { id: string; display_name: string; belt_rank: string; warrior?: string | null; color?: string | null }[] =
+              showFriends
+                ? friends.map((f) => ({ id: f.id, display_name: f.display_name, belt_rank: f.belt_rank, warrior: f.avatar_warrior, color: f.avatar_color }))
+                : presults.map((p) => ({ id: p.id, display_name: p.display_name, belt_rank: p.belt_rank, warrior: p.avatar_warrior, color: p.avatar_color }));
+            return (
+              <>
+                {showFriends && (
+                  <ThemedText type="small" themeColor="textSecondary">{rows.length ? t('frn.inviteFriendsHint') : t('frn.noFriendsHint')}</ThemedText>
+                )}
+                {rows.slice(0, 8).map((p) => (
+                  <Pressable key={p.id} onPress={() => pick({ id: p.id } as Profile)}>
+                    <View style={styles.prow}>
+                      <Avatar name={p.display_name} size={32} warrior={p.warrior ?? undefined} color={p.color ?? undefined} />
+                      <ThemedText style={{ flex: 1, fontWeight: '700' }} numberOfLines={1}>{p.display_name}</ThemedText>
+                      <BeltChip belt={p.belt_rank as any} size="sm" />
+                    </View>
+                  </Pressable>
+                ))}
+              </>
+            );
+          })()}
           <Button label={t('common.cancel')} variant="ghost" onPress={() => { setPicker(null); setPq(''); }} />
         </Card>
       )}

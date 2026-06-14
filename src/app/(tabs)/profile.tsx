@@ -433,6 +433,7 @@ export default function ProfileScreen() {
         ))}
       </View>
 
+      <Button label={t('profile.friends')} variant="secondary" icon="people" onPress={() => router.push('/friends')} />
       <Button label="Rivalries" variant="secondary" icon="git-compare" onPress={() => router.push('/rivalries')} />
       <Button label="Champions" variant="secondary" icon="trophy" onPress={() => router.push('/champions')} />
 
