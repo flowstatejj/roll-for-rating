@@ -29,8 +29,10 @@ export async function fetchGymPowerRanking(): Promise<GymPower[]> {
 // ---------------------------------------------------------------------------
 // Tournaments
 // ---------------------------------------------------------------------------
-export async function fetchTournaments(): Promise<Tournament[]> {
-  const { data, error } = await supabase.from('tournaments').select('*').order('starts_at', { ascending: false });
+export async function fetchTournaments(opts: { city?: string } = {}): Promise<Tournament[]> {
+  let q = supabase.from('tournaments').select('*').order('starts_at', { ascending: false });
+  if (opts.city?.trim()) q = q.ilike('city', `%${opts.city.trim()}%`);
+  const { data, error } = await q;
   if (error) throw error;
   return (data ?? []) as Tournament[];
 }
@@ -57,6 +59,7 @@ export async function createTournament(args: {
   subBreakBonus: number;
   mats: number;
   visibility: 'open' | 'private';
+  city?: string;
 }): Promise<string> {
   const now = new Date();
   const ends = new Date(now.getTime() + 1000 * 60 * 60 * 24 * 30); // 30-day default window
@@ -80,6 +83,7 @@ export async function createTournament(args: {
       sub_break_bonus: args.subBreakBonus,
       mats: args.mats,
       visibility: args.visibility,
+      city: args.city?.trim() || null,
     })
     .select('id')
     .single();

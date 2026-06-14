@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -30,10 +30,13 @@ export default function TournamentsScreen() {
   const [invites, setInvites] = useState<TournamentInvite[]>([]);
   const [creating, setCreating] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [cityQ, setCityQ] = useState('');
+  const cityRef = useRef('');
 
   // form
   const [name, setName] = useState('');
   const [desc, setDesc] = useState('');
+  const [city, setCity] = useState('');
   const [format, setFormat] = useState<TournamentFormat>('single_elim');
   const [teamSize, setTeamSize] = useState(1);
   const [teamRule, setTeamRule] = useState<TournamentTeamRule>('none');
@@ -48,7 +51,7 @@ export default function TournamentsScreen() {
 
   const load = useCallback(async () => {
     try {
-      const [list, inv] = await Promise.all([fetchTournaments(), fetchMyTournamentInvites().catch(() => [])]);
+      const [list, inv] = await Promise.all([fetchTournaments({ city: cityRef.current }), fetchMyTournamentInvites().catch(() => [])]);
       setItems(list);
       setInvites(inv);
     } catch (e) {
@@ -56,6 +59,13 @@ export default function TournamentsScreen() {
     }
   }, []);
   useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  // Debounced re-fetch as the location filter changes.
+  useEffect(() => {
+    cityRef.current = cityQ;
+    const h = setTimeout(load, 300);
+    return () => clearTimeout(h);
+  }, [cityQ, load]);
 
   async function respondInvite(tid: string, accept: boolean) {
     setBusy(true);
@@ -99,9 +109,10 @@ export default function TournamentsScreen() {
         subBreakBonus: intval(breakBonus),
         mats: Math.max(1, Math.min(20, parseInt(mats, 10) || 1)),
         visibility: 'open',
+        city,
       });
       setCreating(false);
-      setName(''); setDesc('');
+      setName(''); setDesc(''); setCity('');
       router.push(`/tournament/${id}`);
     } catch (e: any) {
       Alert.alert(t('tn.createFail'), e.message ?? t('md.tryAgain'));
@@ -119,6 +130,7 @@ export default function TournamentsScreen() {
           <ThemedText style={{ fontWeight: '800', fontSize: 18 }}>{t('tn.create')}</ThemedText>
           <TextField label={t('tn.name')} value={name} onChangeText={setName} placeholder={t('tn.namePh')} />
           <TextField label={t('tn.desc')} value={desc} onChangeText={setDesc} placeholder={t('tn.descPh')} multiline />
+          <TextField label={t('tn.city')} value={city} onChangeText={setCity} placeholder={t('tn.cityPh')} autoCapitalize="words" />
 
           <Field label={t('tn.format')}>
             <View style={styles.chips}>
@@ -209,8 +221,10 @@ export default function TournamentsScreen() {
         </View>
       )}
 
+      <TextField value={cityQ} onChangeText={setCityQ} placeholder={t('tn.searchCity')} autoCapitalize="words" />
+
       {items.length === 0 ? (
-        <EmptyState icon="trophy-outline" title={t('tn.emptyTitle')} subtitle={t('tn.emptySub')} />
+        <EmptyState icon="trophy-outline" title={cityQ.trim() ? t('tn.noneCityTitle') : t('tn.emptyTitle')} subtitle={cityQ.trim() ? t('tn.noneCitySub') : t('tn.emptySub')} />
       ) : (
         <View style={{ gap: Spacing.two }}>
           {items.map((tr) => (
@@ -227,6 +241,12 @@ export default function TournamentsScreen() {
                     <Tag text={tr.ranked ? t('tn.rankedChip') : t('tn.casualChip')} tint={tr.ranked ? theme.accent : theme.textSecondary} />
                     <Tag text={t(`tn.status.${tr.status}`)} tint={tr.status === 'running' ? theme.success : theme.textSecondary} />
                   </View>
+                  {tr.city ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <Ionicons name="location-outline" size={13} color={theme.textSecondary} />
+                      <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>{tr.city}</ThemedText>
+                    </View>
+                  ) : null}
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
               </Card>
