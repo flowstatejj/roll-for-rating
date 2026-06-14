@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -38,6 +38,8 @@ export default function LeaguesScreen() {
   const [code, setCode] = useState('');
   const [creating, setCreating] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [cityQ, setCityQ] = useState('');
+  const cityRef = useRef('');
 
   // create form
   const [name, setName] = useState('');
@@ -58,7 +60,7 @@ export default function LeaguesScreen() {
 
   const load = useCallback(async () => {
     try {
-      const [m, b, inv] = await Promise.all([fetchMyLeagues(userId), fetchOpenLeagues(), fetchMyLeagueInvites()]);
+      const [m, b, inv] = await Promise.all([fetchMyLeagues(userId), fetchOpenLeagues({ city: cityRef.current }), fetchMyLeagueInvites()]);
       setMine(m);
       setBrowse(b);
       setInvites(inv);
@@ -68,6 +70,13 @@ export default function LeaguesScreen() {
   }, [userId]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  // Debounced re-fetch of the browse list as the location filter changes.
+  useEffect(() => {
+    cityRef.current = cityQ;
+    const h = setTimeout(load, 300);
+    return () => clearTimeout(h);
+  }, [cityQ, load]);
 
   async function respondInvite(leagueId: string, accept: boolean) {
     setBusy(true);
@@ -245,12 +254,17 @@ export default function LeaguesScreen() {
         <Button label={t('le.create')} icon="add-circle" variant="secondary" onPress={() => setCreating(true)} />
       )}
 
+      {/* Location search (browse only) */}
+      {tab === 'browse' && (
+        <TextField value={cityQ} onChangeText={setCityQ} placeholder={t('le.searchCity')} autoCapitalize="words" />
+      )}
+
       {/* List */}
       {list.length === 0 ? (
         <EmptyState
           icon="people-circle-outline"
-          title={tab === 'mine' ? t('le.noneMineTitle') : t('le.noneBrowseTitle')}
-          subtitle={tab === 'mine' ? t('le.noneMineSub') : t('le.noneBrowseSub')}
+          title={tab === 'mine' ? t('le.noneMineTitle') : (cityQ.trim() ? t('le.noneCityTitle') : t('le.noneBrowseTitle'))}
+          subtitle={tab === 'mine' ? t('le.noneMineSub') : (cityQ.trim() ? t('le.noneCitySub') : t('le.noneBrowseSub'))}
         />
       ) : (
         <View style={{ gap: Spacing.two }}>
@@ -266,7 +280,7 @@ export default function LeaguesScreen() {
                     <Tag text={l.ranked ? t('le.rankedChip') : t('le.casualChip')} tint={l.ranked ? theme.accent : theme.textSecondary} />
                     {l.audience !== 'all' && <Tag text={t(`le.aud.${l.audience}`)} tint={theme.textSecondary} />}
                     <ThemedText type="small" themeColor="textSecondary">
-                      {t(`wd.${l.meet_day}`)}{l.meet_time ? ` · ${l.meet_time}` : ''}
+                      {t(`wd.${l.meet_day}`)}{l.meet_time ? ` · ${l.meet_time}` : ''}{l.city ? ` · ${l.city}` : ''}
                     </ThemedText>
                   </View>
                 </View>

@@ -179,6 +179,7 @@ export interface Tournament {
   status: 'setup' | 'running' | 'complete';
   visibility: 'open' | 'private';
   join_code: string | null;
+  city: string | null;
 }
 
 export interface TournamentStanding {
