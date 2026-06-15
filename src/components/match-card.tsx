@@ -19,6 +19,8 @@ function statusMeta(status: MatchStatus, theme: ReturnType<typeof useTheme>, t: 
       return { label: t('md.statusPendingConfirm'), color: '#D9822B' };
     case 'completed':
       return { label: t('md.statusCompleted'), color: theme.success };
+    case 'disputed':
+      return { label: t('md.statusDisputed'), color: theme.danger };
     case 'declined':
       return { label: t('md.statusDeclined'), color: theme.textSecondary };
     case 'cancelled':

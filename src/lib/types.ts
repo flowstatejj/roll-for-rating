@@ -13,6 +13,7 @@ export type MatchStatus =
   | 'pending_referee'
   | 'pending_confirmation'
   | 'completed'
+  | 'disputed'
   | 'declined'
   | 'cancelled';
 

@@ -253,6 +253,86 @@ export async function confirmResult(matchId: string, accept: boolean) {
   if (error) throw error;
 }
 
+// ---------------------------------------------------------------------------
+// Non-referee result reporting + disputes
+// ---------------------------------------------------------------------------
+export interface MatchReport {
+  match_id: string;
+  reporter_id: string;
+  winner_id: string | null;
+  result: ResultType;
+  submission_type: string | null;
+  method: string | null;
+}
+
+/** A competitor reports their version of a waived match (both must agree to settle). */
+export async function reportResult(args: {
+  matchId: string;
+  winnerId: string | null;
+  result: ResultType;
+  submissionType?: string | null;
+  method?: string | null;
+  notes?: string | null;
+}) {
+  const { error } = await supabase.rpc('report_match_result', {
+    p_match_id: args.matchId,
+    p_winner_id: args.winnerId,
+    p_result: args.result,
+    p_submission_type: args.submissionType ?? null,
+    p_method: args.method ?? null,
+    p_notes: args.notes ?? null,
+  });
+  if (error) throw error;
+}
+
+/** Both competitors' reports for a match (visible to the competitors + admins). */
+export async function fetchMatchReports(matchId: string): Promise<MatchReport[]> {
+  const { data, error } = await supabase.from('match_reports').select('*').eq('match_id', matchId);
+  if (error) throw error;
+  return (data ?? []) as MatchReport[];
+}
+
+export interface DisputeReport {
+  reporter_id: string;
+  winner_id: string | null;
+  result: ResultType;
+  submission_type: string | null;
+  method: string | null;
+}
+export interface MatchDispute {
+  match_id: string;
+  created_at: string;
+  challenger: { id: string; name: string };
+  opponent: { id: string; name: string };
+  video_count: number;
+  reports: DisputeReport[] | null;
+}
+
+/** Admin: disputed matches awaiting an official result. */
+export async function fetchDisputes(): Promise<MatchDispute[]> {
+  const { data, error } = await supabase.rpc('admin_disputes');
+  if (error) throw error;
+  return (data ?? []) as MatchDispute[];
+}
+
+/** Admin: set the official result on a disputed match (applies ratings). */
+export async function resolveDispute(args: {
+  matchId: string;
+  winnerId: string | null;
+  result: ResultType;
+  submissionType?: string | null;
+  method?: string | null;
+}) {
+  const { error } = await supabase.rpc('admin_resolve_dispute', {
+    p_match_id: args.matchId,
+    p_winner_id: args.winnerId,
+    p_result: args.result,
+    p_submission_type: args.submissionType ?? null,
+    p_method: args.method ?? null,
+  });
+  if (error) throw error;
+}
+
 export interface LeaderRow extends Profile {
   gym?: { city: string | null; state: string | null; country: string | null; continent: string | null } | null;
   // Resolved location used for geo-level filtering (profile first, gym fallback).

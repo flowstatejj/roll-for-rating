@@ -15,15 +15,17 @@ import { projectSwing } from '@/lib/elo';
 import { fetchJuniors } from '@/lib/juniors';
 import {
   cancelMatch,
-  confirmResult,
   fetchMatch,
   fetchMatchReactions,
+  fetchMatchReports,
   fetchMatchViewCount,
   recordMatchView,
   recordResult,
+  reportResult,
   respondToMatch,
   setMatchReaction,
   setSubmissionType,
+  type MatchReport,
 } from '@/lib/matches';
 import { REACTIONS, type MatchWithPeople, type ReactionSummary, type ResultType } from '@/lib/types';
 
@@ -36,6 +38,7 @@ export default function MatchDetailScreen() {
   const userId = session!.user.id;
 
   const [match, setMatch] = useState<MatchWithPeople | null>(null);
+  const [reports, setReports] = useState<MatchReport[]>([]);
   const [busy, setBusy] = useState(false);
   // The viewer's own id plus any managed juniors — so a guardian can act on a
   // junior's behalf (accept/decline/cancel).
@@ -56,13 +59,25 @@ export default function MatchDetailScreen() {
   const load = useCallback(async () => {
     if (!id) return;
     try {
-      setMatch(await fetchMatch(id));
+      const m = await fetchMatch(id);
+      setMatch(m);
+      if (m.referee_waived) fetchMatchReports(id).then(setReports).catch(() => {});
     } catch (e) {
       console.warn('Failed to load match', e);
     }
   }, [id]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Prefill the report form with my existing report (waived matches), once.
+  useEffect(() => {
+    if (winner !== null || !match) return;
+    const mine = reports.find((r) => myIds.has(r.reporter_id));
+    if (!mine) return;
+    setWinner(mine.winner_id === null ? 'draw' : mine.winner_id === match.challenger_id ? 'challenger' : 'opponent');
+    setSubType(mine.submission_type ?? null);
+    if (mine.method) setMethod(mine.method);
+  }, [reports, match, myIds, winner]);
 
   // Public match: record a view + load views/reactions.
   const [viewCount, setViewCount] = useState(0);
@@ -111,9 +126,13 @@ export default function MatchDetailScreen() {
   const amReferee = match.referee_id === userId;
   const amCompetitor = myIds.has(match.challenger_id) || amOpponent;
   const isWaived = match.referee_waived;
-  const amProposer = match.result_proposed_by != null && myIds.has(match.result_proposed_by);
-  // On a waived match either competitor logs the result; on a reffed match the referee does.
-  const canRecord = match.status === 'pending_referee' && (isWaived ? amCompetitor : amReferee);
+  // Reffed: the referee records. Waived: each competitor reports independently;
+  // matching reports settle, conflicting reports become a dispute for an admin.
+  const openForReport = match.status === 'pending_referee' || match.status === 'pending_confirmation';
+  const canRefRecord = match.status === 'pending_referee' && !isWaived && amReferee;
+  const canReport = isWaived && amCompetitor && openForReport;
+  const myReport = reports.find((r) => myIds.has(r.reporter_id)) ?? null;
+  const otherReported = reports.some((r) => !myIds.has(r.reporter_id));
   const otherName = myIds.has(match.challenger_id) ? match.opponent.display_name : match.challenger.display_name;
 
   async function act(fn: () => Promise<void>, successMsg?: string) {
@@ -153,28 +172,72 @@ export default function MatchDetailScreen() {
       winner === 'draw' ? null : winner === 'challenger' ? match!.challenger_id : match!.opponent_id;
     // Submission-only for now: a win is always by submission.
     const finalResult: ResultType = winner === 'draw' ? 'draw' : 'submission';
-    act(async () => {
-      await recordResult({
+    if (isWaived) {
+      // Each competitor reports; the server settles on agreement or disputes.
+      act(() => reportResult({
         matchId: match!.id,
         winnerId,
         result: finalResult,
+        submissionType: winner !== 'draw' ? subType : null,
         method: method.trim() || null,
         notes: notes.trim() || null,
-        subCategory: finalResult === 'submission' ? subCat : null,
-      });
-      if (winner !== 'draw' && subType) {
-        try {
-          await setSubmissionType(match!.id, subType);
-        } catch {
-          /* non-fatal */
+      }), t('md.reportSubmitted'));
+    } else {
+      act(async () => {
+        await recordResult({
+          matchId: match!.id,
+          winnerId,
+          result: finalResult,
+          method: method.trim() || null,
+          notes: notes.trim() || null,
+          subCategory: finalResult === 'submission' ? subCat : null,
+        });
+        if (winner !== 'draw' && subType) {
+          try {
+            await setSubmissionType(match!.id, subType);
+          } catch {
+            /* non-fatal */
+          }
         }
-      }
-    }, isWaived ? t('md.loggedAwaitConfirm') : t('md.resultRecorded'));
+      }, t('md.resultRecorded'));
+    }
   }
 
-  function confirmWaived(accept: boolean) {
-    act(() => confirmResult(match!.id, accept), accept ? t('md.confirmedToast') : t('md.disputedToast'));
-  }
+  // Winner + submission + notes — shared by the referee form and the report form.
+  const resultFields = (showLeagueKind: boolean) => (
+    <>
+      <View style={{ gap: Spacing.one }}>
+        <ThemedText type="smallBold" themeColor="textSecondary">{t('md.whoWon')}</ThemedText>
+        <View style={{ gap: Spacing.two }}>
+          <Choice label={`${match!.challenger.display_name} (${t('md.challenger')})`} selected={winner === 'challenger'} onPress={() => setWinner('challenger')} />
+          <Choice label={`${match!.opponent.display_name} (${t('md.opponent')})`} selected={winner === 'opponent'} onPress={() => setWinner('opponent')} />
+          <Choice label={t('md.drawChoice')} selected={winner === 'draw'} onPress={() => setWinner('draw')} />
+        </View>
+      </View>
+      {winner === 'draw' && (
+        <View style={[styles.drawNote, { borderColor: theme.danger }]}>
+          <Ionicons name="warning-outline" size={16} color={theme.danger} />
+          <ThemedText type="small" style={{ color: theme.danger, flex: 1 }}>{t('md.drawWarn')}</ThemedText>
+        </View>
+      )}
+      {winner && winner !== 'draw' && (
+        <View style={{ gap: Spacing.one }}>
+          <ThemedText type="smallBold" themeColor="textSecondary">{t('md.finishLabel')}</ThemedText>
+          <SubmissionPicker value={subType} onChange={setSubType} />
+        </View>
+      )}
+      {showLeagueKind && winner && winner !== 'draw' && match!.league_id && (
+        <View style={{ gap: Spacing.one }}>
+          <ThemedText type="smallBold" themeColor="textSecondary">{t('md.subKind')}</ThemedText>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two }}>
+            <Choice compact label={t('md.kill')} selected={subCat === 'kill'} onPress={() => setSubCat(subCat === 'kill' ? null : 'kill')} />
+            <Choice compact label={t('md.break')} selected={subCat === 'break'} onPress={() => setSubCat(subCat === 'break' ? null : 'break')} />
+          </View>
+        </View>
+      )}
+      <TextField label={t('md.notes')} value={notes} onChangeText={setNotes} placeholder={t('md.notesPlaceholder')} multiline />
+    </>
+  );
 
   return (
     <Screen>
@@ -378,63 +441,48 @@ export default function MatchDetailScreen() {
         </Card>
       )}
 
-      {/* Record result — referee, or either competitor on a waived match */}
-      {canRecord && (
+      {/* Referee records the result */}
+      {canRefRecord && (
         <Card style={{ gap: Spacing.three }}>
-          <ThemedText type="subtitle" style={{ fontSize: 18 }}>
-            {isWaived ? t('md.logResult') : t('md.recordResult')}
-          </ThemedText>
+          <ThemedText type="subtitle" style={{ fontSize: 18 }}>{t('md.recordResult')}</ThemedText>
+          {resultFields(true)}
+          <Button label={t('md.submitResult')} icon="trophy" onPress={submitResult} loading={busy} />
+        </Card>
+      )}
 
-          {isWaived && (
-            <View style={[styles.drawNote, { borderColor: theme.accent }]}>
-              <Ionicons name="videocam-outline" size={16} color={theme.accent} />
-              <ThemedText type="small" style={{ color: theme.text, flex: 1 }}>
-                {t('md.waivedRecordNote').replace('{name}', otherName)}
-              </ThemedText>
-            </View>
-          )}
-
-          <View style={{ gap: Spacing.one }}>
-            <ThemedText type="smallBold" themeColor="textSecondary">{t('md.whoWon')}</ThemedText>
-            <View style={{ gap: Spacing.two }}>
-              <Choice label={`${match.challenger.display_name} (${t('md.challenger')})`} selected={winner === 'challenger'} onPress={() => setWinner('challenger')} />
-              <Choice label={`${match.opponent.display_name} (${t('md.opponent')})`} selected={winner === 'opponent'} onPress={() => setWinner('opponent')} />
-              <Choice label={t('md.drawChoice')} selected={winner === 'draw'} onPress={() => setWinner('draw')} />
-            </View>
+      {/* Waived match: each competitor reports their own result */}
+      {canReport && (
+        <Card style={{ gap: Spacing.three }}>
+          <ThemedText type="subtitle" style={{ fontSize: 18 }}>{myReport ? t('md.yourReport') : t('md.reportResult')}</ThemedText>
+          <View style={[styles.drawNote, { borderColor: theme.accent }]}>
+            <Ionicons name="videocam-outline" size={16} color={theme.accent} />
+            <ThemedText type="small" style={{ color: theme.text, flex: 1 }}>{t('md.reportNote').replace('{name}', otherName)}</ThemedText>
           </View>
-
-          {winner === 'draw' && (
-            <View style={[styles.drawNote, { borderColor: theme.danger }]}>
-              <Ionicons name="warning-outline" size={16} color={theme.danger} />
-              <ThemedText type="small" style={{ color: theme.danger, flex: 1 }}>
-                {t('md.drawWarn')}
-              </ThemedText>
-            </View>
+          {resultFields(false)}
+          <Button label={myReport ? t('md.updateReport') : t('md.submitReport')} icon="trophy" onPress={submitResult} loading={busy} />
+          {myReport && !otherReported && (
+            <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center' }}>
+              {t('md.reportAwaiting').replace('{name}', otherName)}
+            </ThemedText>
           )}
+        </Card>
+      )}
 
-          {winner && winner !== 'draw' && (
-            <View style={{ gap: Spacing.one }}>
-              <ThemedText type="smallBold" themeColor="textSecondary">
-                {t('md.finishLabel')}
-              </ThemedText>
-              <SubmissionPicker value={subType} onChange={setSubType} />
-            </View>
-          )}
+      {/* Waived match: spectators wait for the competitors */}
+      {isWaived && openForReport && !amCompetitor && (
+        <Card style={{ alignItems: 'center' }}>
+          <ThemedText themeColor="textSecondary">{t('md.awaitingReports')}</ThemedText>
+        </Card>
+      )}
 
-          {/* League scoring can reward a choke (kill) over a joint lock (break). */}
-          {winner && winner !== 'draw' && match.league_id && (
-            <View style={{ gap: Spacing.one }}>
-              <ThemedText type="smallBold" themeColor="textSecondary">{t('md.subKind')}</ThemedText>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two }}>
-                <Choice compact label={t('md.kill')} selected={subCat === 'kill'} onPress={() => setSubCat(subCat === 'kill' ? null : 'kill')} />
-                <Choice compact label={t('md.break')} selected={subCat === 'break'} onPress={() => setSubCat(subCat === 'break' ? null : 'break')} />
-              </View>
-            </View>
-          )}
-
-          <TextField label={t('md.notes')} value={notes} onChangeText={setNotes} placeholder={t('md.notesPlaceholder')} multiline />
-
-          <Button label={isWaived ? t('md.logResultBtn') : t('md.submitResult')} icon="trophy" onPress={submitResult} loading={busy} />
+      {/* Disputed: the reports conflicted — an admin reviews the video */}
+      {match.status === 'disputed' && (
+        <Card style={{ gap: Spacing.two, borderColor: theme.danger, borderWidth: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+            <Ionicons name="alert-circle" size={20} color={theme.danger} />
+            <ThemedText style={{ fontWeight: '800', flex: 1 }}>{t('md.disputedTitle')}</ThemedText>
+          </View>
+          <ThemedText type="small" themeColor="textSecondary">{t('md.disputedBody')}</ThemedText>
         </Card>
       )}
 
@@ -444,39 +492,6 @@ export default function MatchDetailScreen() {
           <ThemedText themeColor="textSecondary">
             {t('md.waitingRef').replace('{name}', match.referee?.display_name ?? '')}
           </ThemedText>
-        </Card>
-      )}
-
-      {/* Waived match: result logged, waiting on mutual confirmation */}
-      {match.status === 'pending_confirmation' && (
-        <Card style={{ gap: Spacing.three }}>
-          <ThemedText type="subtitle" style={{ fontSize: 18 }}>
-            {t('md.confirmTitle')}
-          </ThemedText>
-          <ThemedText>
-            {match.result === 'draw'
-              ? t('md.draw')
-              : `${match.winner_id === match.challenger_id ? match.challenger.display_name : match.opponent.display_name} ${t('md.won')}`}
-            {match.method ? ` · ${match.method}` : ''}
-          </ThemedText>
-          {amCompetitor && amProposer && (
-            <>
-              <ThemedText type="small" themeColor="textSecondary">
-                {t('md.awaitingConfirm').replace('{name}', otherName)}
-              </ThemedText>
-              <Button label={t('md.withdraw')} variant="ghost" onPress={() => confirmWaived(false)} loading={busy} />
-            </>
-          )}
-          {amCompetitor && !amProposer && (
-            <>
-              <ThemedText type="small" themeColor="textSecondary">{t('md.confirmPrompt')}</ThemedText>
-              <Button label={t('md.confirmResult')} icon="checkmark-circle" onPress={() => confirmWaived(true)} loading={busy} />
-              <Button label={t('md.dispute')} variant="danger" icon="alert-circle" onPress={() => confirmWaived(false)} loading={busy} />
-            </>
-          )}
-          {!amCompetitor && (
-            <ThemedText type="small" themeColor="textSecondary">{t('md.awaitingConfirmGeneric')}</ThemedText>
-          )}
         </Card>
       )}
 

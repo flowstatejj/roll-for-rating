@@ -19,6 +19,7 @@ const KIND_KEYS: Record<string, { title: string; body: string }> = {
   'league.invite': { title: 'notif.tLgInvite', body: 'notif.bLgInvite' },
   'friend.request': { title: 'notif.tFriendReq', body: 'notif.bFriendReq' },
   'friend.accepted': { title: 'notif.tFriendAcc', body: 'notif.bFriendAcc' },
+  'match.disputed': { title: 'notif.tDisputed', body: 'notif.bDisputed' },
 };
 
 /**
