@@ -65,6 +65,22 @@ export function continentForCountry(country: string | null | undefined): string 
   return COUNTRY_CONTINENT[key] ?? null;
 }
 
+/**
+ * Build a member's geography, preferring their own profile fields and falling
+ * back to their gym's. Continent is always derived from the resolved country
+ * (so it works even when no continent was ever stored).
+ */
+export function resolveGeo(
+  profile: { city: string | null; state: string | null; country: string | null } | null | undefined,
+  gym: Geo | null | undefined,
+): Geo {
+  const city = profile?.city || gym?.city || null;
+  const state = profile?.state || gym?.state || null;
+  const country = profile?.country || gym?.country || null;
+  const continent = continentForCountry(country) || gym?.continent || null;
+  return { city, state, country, continent };
+}
+
 /** Does `target` share `viewer`'s location at the given level? World = always. */
 export function geoMatches(viewer: Geo | null, target: Geo | null, level: GeoLevel): boolean {
   if (level === 'world') return true;

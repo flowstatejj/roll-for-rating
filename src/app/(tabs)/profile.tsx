@@ -39,6 +39,8 @@ export default function ProfileScreen() {
   const [name, setName] = useState('');
   const [belt, setBelt] = useState<BeltRank>('white');
   const [city, setCity] = useState('');
+  const [stateRegion, setStateRegion] = useState('');
+  const [country, setCountry] = useState('');
   const [weight, setWeight] = useState('');
   const [socials, setSocials] = useState<Record<SocialKey, string>>({
     instagram: '', tiktok: '', youtube: '', facebook: '',
@@ -194,6 +196,8 @@ export default function ProfileScreen() {
     setName(profile!.display_name);
     setBelt(profile!.belt_rank);
     setCity(profile!.city ?? '');
+    setStateRegion(profile!.state ?? '');
+    setCountry(profile!.country ?? '');
     setWeight(profile!.weight_lbs != null ? String(profile!.weight_lbs) : '');
     setSocials({
       instagram: profile!.instagram ?? '',
@@ -220,6 +224,8 @@ export default function ProfileScreen() {
         display_name: name.trim(),
         belt_rank: belt,
         city: city.trim() || null,
+        state: stateRegion.trim() || null,
+        country: country.trim() || null,
         weight_lbs: w,
       };
       // Social links are adults-only (a minor's other socials shouldn't be
@@ -457,6 +463,11 @@ export default function ProfileScreen() {
         <Card style={{ gap: Spacing.three }}>
           <TextField label="Display name" value={name} onChangeText={setName} />
           <TextField label="City / area" value={city} onChangeText={setCity} placeholder="Your city (for the Roll Finder)" />
+          <View style={{ flexDirection: 'row', gap: Spacing.two }}>
+            <View style={{ flex: 1 }}><TextField label={t('pf.state')} value={stateRegion} onChangeText={setStateRegion} placeholder={t('pf.statePh')} autoCapitalize="words" /></View>
+            <View style={{ flex: 1 }}><TextField label={t('pf.country')} value={country} onChangeText={setCountry} placeholder={t('pf.countryPh')} autoCapitalize="words" /></View>
+          </View>
+          <ThemedText type="small" themeColor="textSecondary">{t('pf.geoHint')}</ThemedText>
           <TextField
             label={t('pf.weight')}
             value={weight}

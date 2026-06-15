@@ -43,6 +43,16 @@ export default function MatchChatScreen() {
   const [savingPlan, setSavingPlan] = useState(false);
 
   const scrollRef = useRef<ScrollView>(null);
+  // Measure the exact header height (this view's top in the window) so the
+  // composer lifts to precisely the keyboard top — a fixed guess left a sliver
+  // of overlap on some devices.
+  const rootRef = useRef<View>(null);
+  const [headerH, setHeaderH] = useState(insets.top + 44);
+  const measureHeader = useCallback(() => {
+    rootRef.current?.measureInWindow((_x, y) => {
+      if (typeof y === 'number' && y >= 0 && Math.abs(y - headerH) > 1) setHeaderH(y);
+    });
+  }, [headerH]);
 
   const loadMessages = useCallback(async () => {
     if (!id) return;
@@ -121,14 +131,14 @@ export default function MatchChatScreen() {
   const hasPlan = !!(match.meet_when || match.meet_where);
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.background }}>
+    <View ref={rootRef} onLayout={measureHeader} style={{ flex: 1, backgroundColor: theme.background }}>
       <Stack.Screen options={{ title: 'Match chat' }} />
       <TatamiBackground />
       <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 44 : 0}>
+          keyboardVerticalOffset={Platform.OS === 'ios' ? headerH : 0}>
           {/* When & where */}
           <View style={{ padding: Spacing.three, paddingBottom: 0 }}>
             <Card style={{ gap: Spacing.two }}>

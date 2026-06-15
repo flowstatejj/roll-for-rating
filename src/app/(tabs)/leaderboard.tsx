@@ -73,7 +73,7 @@ export default function LeaderboardScreen() {
   const overallFiltered = useMemo(
     () =>
       rows
-        .filter((r) => geoMatches(myGeo, r.gym ?? null, level))
+        .filter((r) => geoMatches(myGeo, r.geo, level))
         .filter((r) => inWeightClass(r.weight_lbs, weightFilter))
         .slice(0, 100),
     [rows, myGeo, level, weightFilter],

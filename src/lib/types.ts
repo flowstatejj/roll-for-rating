@@ -37,6 +37,8 @@ export interface Profile {
   gym_id: string | null;
   open_for_challenge: boolean;
   city: string | null;
+  state: string | null;
+  country: string | null;
   activity_streak: number;
   last_active_date: string | null;
   is_minor: boolean;

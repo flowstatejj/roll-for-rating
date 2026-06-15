@@ -1,3 +1,4 @@
+import { resolveGeo, type Geo } from './geo';
 import { fetchBlockedIds } from './safety';
 import { supabase } from './supabase';
 import type { BeltRank, MatchWithPeople, Profile, ResultType } from './types';
@@ -260,10 +261,12 @@ export async function confirmResult(matchId: string, accept: boolean) {
 
 export interface LeaderRow extends Profile {
   gym?: { city: string | null; state: string | null; country: string | null; continent: string | null } | null;
+  // Resolved location used for geo-level filtering (profile first, gym fallback).
+  geo: Geo;
 }
 
 /**
- * Top players by rating with their gym's location attached (for geographic
+ * Top players by rating with their resolved location attached (for geographic
  * level filtering). Excludes under-14 juniors (they have their own board).
  */
 export async function fetchLeaderboard(limit = 200): Promise<LeaderRow[]> {
@@ -275,18 +278,22 @@ export async function fetchLeaderboard(limit = 200): Promise<LeaderRow[]> {
     .order('rating', { ascending: false })
     .limit(limit);
   if (error) throw error;
-  return (data ?? []) as unknown as LeaderRow[];
+  return (data ?? []).map((r: any) => ({
+    ...r,
+    geo: resolveGeo({ city: r.city, state: r.state, country: r.country }, r.gym ?? null),
+  })) as unknown as LeaderRow[];
 }
 
-/** The signed-in member's geography (from their gym), for level filtering. */
-export async function fetchMyGeo(userId: string): Promise<import('./geo').Geo | null> {
+/** The signed-in member's geography (profile first, gym fallback), for level filtering. */
+export async function fetchMyGeo(userId: string): Promise<Geo | null> {
   const { data } = await supabase
     .from('profiles')
-    .select('gym:gyms!profiles_gym_id_fkey(city,state,country,continent)')
+    .select('city, state, country, gym:gyms!profiles_gym_id_fkey(city,state,country,continent)')
     .eq('id', userId)
     .single();
-  const g = (data as any)?.gym;
-  return g ? { city: g.city, state: g.state, country: g.country, continent: g.continent } : null;
+  if (!data) return null;
+  const r = data as any;
+  return resolveGeo({ city: r.city, state: r.state, country: r.country }, r.gym ?? null);
 }
 
 export interface KidsLeaderRow {
