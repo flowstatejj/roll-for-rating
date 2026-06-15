@@ -274,7 +274,7 @@ export async function fetchLeaderboard(limit = 200): Promise<LeaderRow[]> {
   if (error) throw error;
   return (data ?? []).map((r: any) => ({
     ...r,
-    geo: resolveGeo({ city: r.city, state: r.state, country: r.country }, r.gym ?? null),
+    geo: resolveGeo({ city: r.city, state: r.state, country: r.country, continent: r.continent }, r.gym ?? null),
   })) as unknown as LeaderRow[];
 }
 
@@ -282,12 +282,12 @@ export async function fetchLeaderboard(limit = 200): Promise<LeaderRow[]> {
 export async function fetchMyGeo(userId: string): Promise<Geo | null> {
   const { data } = await supabase
     .from('profiles')
-    .select('city, state, country, gym:gyms!profiles_gym_id_fkey(city,state,country,continent)')
+    .select('city, state, country, continent, gym:gyms!profiles_gym_id_fkey(city,state,country,continent)')
     .eq('id', userId)
     .single();
   if (!data) return null;
   const r = data as any;
-  return resolveGeo({ city: r.city, state: r.state, country: r.country }, r.gym ?? null);
+  return resolveGeo({ city: r.city, state: r.state, country: r.country, continent: r.continent }, r.gym ?? null);
 }
 
 export interface KidsLeaderRow {

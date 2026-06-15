@@ -39,6 +39,7 @@ export interface Profile {
   city: string | null;
   state: string | null;
   country: string | null;
+  continent: string | null;
   activity_streak: number;
   last_active_date: string | null;
   is_minor: boolean;

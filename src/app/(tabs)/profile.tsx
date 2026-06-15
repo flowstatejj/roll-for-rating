@@ -16,6 +16,8 @@ import { deleteAccount } from '@/lib/account';
 import { requestParentConsent } from '@/lib/consent';
 import { useTranslation } from '@/lib/i18n';
 import { winStreak } from '@/lib/elo';
+import { CountryPicker } from '@/components/country-picker';
+import { continentForCountryName } from '@/lib/countries';
 import { fetchMyMatches } from '@/lib/matches';
 import { setOpenForChallenge } from '@/lib/social';
 import { cleanHandle, SOCIALS, SOCIAL_KEYS, type SocialKey } from '@/lib/socials';
@@ -223,6 +225,7 @@ export default function ProfileScreen() {
         city: city.trim() || null,
         state: stateRegion.trim() || null,
         country: country.trim() || null,
+        continent: country.trim() ? continentForCountryName(country) : null,
         weight_lbs: w,
       };
       // Social links are adults-only (a minor's other socials shouldn't be
@@ -460,10 +463,8 @@ export default function ProfileScreen() {
         <Card style={{ gap: Spacing.three }}>
           <TextField label="Display name" value={name} onChangeText={setName} />
           <TextField label="City / area" value={city} onChangeText={setCity} placeholder="Your city (for the Roll Finder)" />
-          <View style={{ flexDirection: 'row', gap: Spacing.two }}>
-            <View style={{ flex: 1 }}><TextField label={t('pf.state')} value={stateRegion} onChangeText={setStateRegion} placeholder={t('pf.statePh')} autoCapitalize="words" /></View>
-            <View style={{ flex: 1 }}><TextField label={t('pf.country')} value={country} onChangeText={setCountry} placeholder={t('pf.countryPh')} autoCapitalize="words" /></View>
-          </View>
+          <TextField label={t('pf.state')} value={stateRegion} onChangeText={setStateRegion} placeholder={t('pf.statePh')} autoCapitalize="words" />
+          <CountryPicker value={country} onChange={setCountry} />
           <ThemedText type="small" themeColor="textSecondary">{t('pf.geoHint')}</ThemedText>
           <TextField
             label={t('pf.weight')}
