@@ -10,7 +10,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
 import { claimSubmissionRewards, fetchSubmissionCollection } from '@/lib/matches';
-import { SUBMISSIONS } from '@/lib/types';
+import { SUBMISSION_ROR, SUBMISSIONS } from '@/lib/types';
 
 export default function SubmissionHuntScreen() {
   const { session, refreshProfile } = useAuth();
@@ -41,6 +41,8 @@ export default function SubmissionHuntScreen() {
   const huntable = SUBMISSIONS.filter((s) => wonSet.has(s));
   const collected = huntable.length;
   const unclaimed = huntable.filter((s) => !rewardedSet.has(s));
+  const rorFor = (s: string) => SUBMISSION_ROR[s] ?? 15;
+  const unclaimedRor = unclaimed.reduce((sum, s) => sum + rorFor(s), 0);
 
   async function claim() {
     setClaiming(true);
@@ -81,7 +83,7 @@ export default function SubmissionHuntScreen() {
       </Card>
 
       {unclaimed.length > 0 && (
-        <Button label={`${t('sh.claim')} +${unclaimed.length * 15} ROR`} icon="cash" loading={claiming} onPress={claim} />
+        <Button label={`${t('sh.claim')} +${unclaimedRor} ROR`} icon="cash" loading={claiming} onPress={claim} />
       )}
 
       <View style={styles.grid}>
@@ -95,7 +97,7 @@ export default function SubmissionHuntScreen() {
               </ThemedText>
               {got && !rewardedSet.has(s) && (
                 <ThemedText type="small" style={{ color: theme.success, fontWeight: '800' }}>
-                  +15 {t('sh.ready')}
+                  +{rorFor(s)} {t('sh.ready')}
                 </ThemedText>
               )}
             </Card>

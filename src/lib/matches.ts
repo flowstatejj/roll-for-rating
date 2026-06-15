@@ -206,22 +206,16 @@ export async function setSubmissionType(matchId: string, type: string) {
   if (error) throw error;
 }
 
-/** Submission types the user has won with, and which have been rewarded. */
-export async function fetchSubmissionCollection(userId: string): Promise<{ won: string[]; rewarded: string[] }> {
-  const [{ data: wins, error: wErr }, { data: rewards, error: rErr }] = await Promise.all([
-    supabase
-      .from('matches')
-      .select('submission_type')
-      .eq('status', 'completed')
-      .eq('winner_id', userId)
-      .not('submission_type', 'is', null),
-    supabase.from('submission_rewards').select('submission_type').eq('user_id', userId),
-  ]);
-  if (wErr) throw wErr;
-  if (rErr) throw rErr;
-  const won = [...new Set((wins ?? []).map((w: { submission_type: string }) => w.submission_type))];
-  const rewarded = (rewards ?? []).map((r: { submission_type: string }) => r.submission_type);
-  return { won, rewarded };
+/**
+ * Eligible submission wins (loser within 25% of the winner's rating — no farming
+ * weak newbies) and which have already been rewarded. Gating lives server-side
+ * in my_submission_collection so it matches claim_submission_rewards exactly.
+ */
+export async function fetchSubmissionCollection(_userId: string): Promise<{ won: string[]; rewarded: string[] }> {
+  const { data, error } = await supabase.rpc('my_submission_collection');
+  if (error) throw error;
+  const d = (data ?? {}) as { won: string[] | null; rewarded: string[] | null };
+  return { won: d.won ?? [], rewarded: d.rewarded ?? [] };
 }
 
 export async function claimSubmissionRewards(): Promise<{ gained: number; claimed: string[]; new_rating: number }> {

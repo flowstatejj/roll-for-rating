@@ -332,18 +332,83 @@ export interface MatchMessage {
 }
 
 // Huntable submission types for the Submission Hunt.
-export const SUBMISSIONS = [
-  'Rear naked choke',
-  'Armbar',
-  'Triangle',
-  'Kimura',
-  'Guillotine',
-  'Americana',
-  'Omoplata',
-  'Heel hook',
-  'Ezekiel',
-  'Bow and arrow',
-] as const;
+export type SubmissionCategory = 'choke' | 'arm' | 'leg' | 'spine';
+export interface SubmissionDef { name: string; ror: number; category: SubmissionCategory }
+
+// The Submission Hunt set. `ror` is the bonus Elo awarded the first time you win
+// with each (claimed on the Submission Hunt screen). `name` is the canonical
+// submission_type stored on a match by the referee's dropdown pick — keep names
+// stable so existing collections and the server reward table stay aligned.
+export const SUBMISSION_LIST: SubmissionDef[] = [
+  // Chokes & strangles
+  { name: 'Rear naked choke', ror: 12, category: 'choke' },
+  { name: 'Guillotine', ror: 12, category: 'choke' },
+  { name: 'Arm-in guillotine', ror: 16, category: 'choke' },
+  { name: 'Mounted triangle', ror: 18, category: 'choke' },
+  { name: 'Side triangle', ror: 20, category: 'choke' },
+  { name: 'Reverse triangle', ror: 22, category: 'choke' },
+  { name: 'Inverted triangle', ror: 22, category: 'choke' },
+  { name: 'Ezekiel', ror: 18, category: 'choke' },
+  { name: 'Bow and arrow', ror: 18, category: 'choke' },
+  { name: 'Cross collar', ror: 14, category: 'choke' },
+  { name: 'Clock choke', ror: 18, category: 'choke' },
+  { name: 'Loop choke', ror: 20, category: 'choke' },
+  { name: 'Baseball bat choke', ror: 24, category: 'choke' },
+  { name: 'Paper cutter', ror: 20, category: 'choke' },
+  { name: 'Arm triangle', ror: 15, category: 'choke' },
+  { name: "D'Arce/Brabo", ror: 20, category: 'choke' },
+  { name: 'Anaconda', ror: 20, category: 'choke' },
+  { name: 'North-south', ror: 20, category: 'choke' },
+  { name: 'Peruvian necktie', ror: 28, category: 'choke' },
+  { name: 'Japanese necktie', ror: 28, category: 'choke' },
+  { name: 'Von Flue', ror: 30, category: 'choke' },
+  { name: 'Bulldog', ror: 24, category: 'choke' },
+  { name: 'Gogoplata', ror: 35, category: 'choke' },
+  { name: 'Buggy choke', ror: 30, category: 'choke' },
+  { name: 'Murder choke', ror: 26, category: 'choke' },
+  { name: 'Smother', ror: 26, category: 'choke' },
+  { name: "Mother's milk", ror: 30, category: 'choke' },
+  { name: 'Short choke', ror: 22, category: 'choke' },
+  // Arm locks
+  { name: 'Armbar', ror: 12, category: 'arm' },
+  { name: 'Kimura', ror: 14, category: 'arm' },
+  { name: 'Americana', ror: 14, category: 'arm' },
+  { name: 'Omoplata', ror: 20, category: 'arm' },
+  { name: 'Monoplata', ror: 25, category: 'arm' },
+  { name: 'Bicep slicer', ror: 22, category: 'arm' },
+  { name: 'Wrist lock', ror: 18, category: 'arm' },
+  { name: 'Thunder lock', ror: 30, category: 'arm' },
+  { name: 'Violin armbar', ror: 26, category: 'arm' },
+  { name: 'Shotgun armbar', ror: 26, category: 'arm' },
+  { name: 'Choi bar', ror: 30, category: 'arm' },
+  { name: 'Straight arm lock', ror: 14, category: 'arm' },
+  { name: 'Reverse omoplata', ror: 28, category: 'arm' },
+  // Leg locks
+  { name: 'Straight ankle lock', ror: 15, category: 'leg' },
+  { name: 'Kneebar', ror: 22, category: 'leg' },
+  { name: 'Toe hold', ror: 22, category: 'leg' },
+  { name: 'Heel hook', ror: 28, category: 'leg' },
+  { name: 'Calf slicer', ror: 22, category: 'leg' },
+  { name: 'Aoki lock', ror: 30, category: 'leg' },
+  { name: 'Z-lock', ror: 30, category: 'leg' },
+  { name: 'Banana split/electric chair', ror: 28, category: 'leg' },
+  { name: 'Woj lock', ror: 30, category: 'leg' },
+  { name: 'Texas cloverleaf', ror: 26, category: 'leg' },
+  { name: 'Mikey lock', ror: 28, category: 'leg' },
+  // Spine & neck
+  { name: 'Twister', ror: 32, category: 'spine' },
+];
+
+export const SUBMISSIONS: string[] = SUBMISSION_LIST.map((s) => s.name);
+export const SUBMISSION_ROR: Record<string, number> = Object.fromEntries(
+  SUBMISSION_LIST.map((s) => [s.name, s.ror]),
+);
+export const SUBMISSION_CATEGORIES: { key: SubmissionCategory; label: string }[] = [
+  { key: 'choke', label: 'Chokes & strangles' },
+  { key: 'arm', label: 'Arm locks' },
+  { key: 'leg', label: 'Leg locks' },
+  { key: 'spine', label: 'Spine & neck' },
+];
 
 // Emoji reactions members can leave on a public match (no comments).
 export const REACTIONS = ['🔥', '👏', '💪', '🥋', '😮'] as const;
