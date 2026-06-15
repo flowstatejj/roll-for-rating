@@ -25,13 +25,6 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="puzzles"
-        options={{
-          title: t('tab.puzzles'),
-          tabBarIcon: ({ color, size }) => <Ionicons name="extension-puzzle" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
         name="matches"
         options={{
           title: t('tab.matches'),

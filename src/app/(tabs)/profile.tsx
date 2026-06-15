@@ -17,7 +17,6 @@ import { requestParentConsent } from '@/lib/consent';
 import { useTranslation } from '@/lib/i18n';
 import { winStreak } from '@/lib/elo';
 import { fetchMyMatches } from '@/lib/matches';
-import { fetchPuzzleStats } from '@/lib/puzzles';
 import { setOpenForChallenge } from '@/lib/social';
 import { cleanHandle, SOCIALS, SOCIAL_KEYS, type SocialKey } from '@/lib/socials';
 import { supabase } from '@/lib/supabase';
@@ -50,7 +49,6 @@ export default function ProfileScreen() {
   const [sendingConsent, setSendingConsent] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [matches, setMatches] = useState<MatchWithPeople[]>([]);
-  const [solved, setSolved] = useState(0);
   const [champions, setChampions] = useState<Champion[]>([]);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -169,9 +167,8 @@ export default function ProfileScreen() {
   const loadMatches = useCallback(async () => {
     if (!userId) return;
     try {
-      const [ms, ps] = await Promise.all([fetchMyMatches(userId), fetchPuzzleStats(userId)]);
+      const ms = await fetchMyMatches(userId);
       setMatches(ms);
-      setSolved(ps.solved);
     } catch (e) {
       console.warn('Failed to load profile data', e);
     }
@@ -253,7 +250,7 @@ export default function ProfileScreen() {
   });
   const recent = matches.slice(0, 5);
   const streak = winStreak(matches, profile.id);
-  const achievements = computeAchievements(profile, matches, solved, streak);
+  const achievements = computeAchievements(profile, matches, streak);
   const earnedCount = achievements.filter((a) => a.earned).length;
   const tier = tierFor(profile.rating);
   const titles = heldTitles(champions);

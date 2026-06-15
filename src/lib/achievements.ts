@@ -17,10 +17,9 @@ interface Derived {
   publicAppearances: number;
   giantSlayer: boolean;
   streak: number;
-  solved: number;
 }
 
-function derive(profile: Profile, matches: MatchWithPeople[], solved: number, streak: number): Derived {
+function derive(profile: Profile, matches: MatchWithPeople[], streak: number): Derived {
   let submissionWins = 0;
   let wageredWins = 0;
   let publicAppearances = 0;
@@ -49,17 +48,15 @@ function derive(profile: Profile, matches: MatchWithPeople[], solved: number, st
     publicAppearances,
     giantSlayer,
     streak,
-    solved,
   };
 }
 
 export function computeAchievements(
   profile: Profile,
   matches: MatchWithPeople[],
-  solved: number,
   streak: number,
 ): Achievement[] {
-  const d = derive(profile, matches, solved, streak);
+  const d = derive(profile, matches, streak);
   const defs: (Omit<Achievement, 'earned'> & { test: (d: Derived) => boolean })[] = [
     { id: 'first_blood', name: 'First Blood', description: 'Win your first match', icon: 'water', test: (x) => x.wins >= 1 },
     { id: 'on_a_roll', name: 'On a Roll', description: 'Hit a 3-win streak', icon: 'flame', test: (x) => x.streak >= 3 },
@@ -69,7 +66,6 @@ export function computeAchievements(
     { id: 'on_camera', name: 'On Camera', description: 'Compete in a public match', icon: 'videocam', test: (x) => x.publicAppearances >= 1 },
     { id: 'veteran', name: 'Veteran', description: 'Compete in 25 matches', icon: 'shield', test: (x) => x.total >= 25 },
     { id: 'iron_man', name: 'Iron Man', description: 'Compete in 50 matches', icon: 'barbell', test: (x) => x.total >= 50 },
-    { id: 'scholar', name: 'Scholar', description: 'Solve 10 puzzles', icon: 'school', test: (x) => x.solved >= 10 },
   ];
   return defs.map(({ test, ...rest }) => ({ ...rest, earned: test(d) }));
 }
