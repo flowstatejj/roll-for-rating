@@ -66,6 +66,7 @@ export interface Quest {
   target: number;
   reward: number;
   claimed: boolean;
+  period?: 'week' | 'once'; // 'week' = repeats weekly; 'once' = one-time challenge
 }
 
 export interface Season {

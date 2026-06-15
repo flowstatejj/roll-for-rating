@@ -9,7 +9,7 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
-import { claimQuest, fetchQuests, pingActivity } from '@/lib/quests';
+import { claimQuest, fetchQuests } from '@/lib/quests';
 import type { Quest } from '@/lib/types';
 
 export default function QuestsScreen() {
@@ -22,7 +22,6 @@ export default function QuestsScreen() {
 
   const load = useCallback(async () => {
     try {
-      await pingActivity().catch(() => {});
       await refreshProfile();
       setQuests(await fetchQuests());
     } catch (e) {
@@ -54,62 +53,59 @@ export default function QuestsScreen() {
 
   if (loading || !profile) return <Loading />;
 
+  const weekly = quests.filter((q) => q.period !== 'once');
+  const challenges = quests.filter((q) => q.period === 'once');
+
+  const renderQuest = (q: Quest) => {
+    const done = q.progress >= q.target;
+    const pct = Math.min(1, q.progress / q.target);
+    return (
+      <Card key={q.key} style={{ gap: Spacing.two }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+          <ThemedText style={{ fontWeight: '800', flex: 1 }}>{q.title}</ThemedText>
+          <View style={[styles.reward, { backgroundColor: theme.accent + '22' }]}>
+            <Ionicons name="cash" size={13} color={theme.accent} />
+            <ThemedText type="small" style={{ color: theme.accent, fontWeight: '800' }}>
+              +{q.reward}
+            </ThemedText>
+          </View>
+        </View>
+        <View style={[styles.track, { backgroundColor: theme.backgroundSelected }]}>
+          <View style={[styles.fill, { width: `${Math.round(pct * 100)}%`, backgroundColor: done ? theme.success : theme.accent }]} />
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <ThemedText type="small" themeColor="textSecondary" style={{ flex: 1 }}>
+            {Math.min(q.progress, q.target)} / {q.target}
+          </ThemedText>
+          {q.claimed ? (
+            <ThemedText type="small" style={{ color: theme.success, fontWeight: '800' }}>
+              {t('q.claimed')} ✓
+            </ThemedText>
+          ) : done ? (
+            <Button label={t('sh.claim')} loading={claimingKey === q.key} onPress={() => claim(q)} variant="primary" />
+          ) : null}
+        </View>
+      </Card>
+    );
+  };
+
   return (
     <Screen>
       <Stack.Screen options={{ title: t('nav.quests') }} />
 
-      {/* Daily streak */}
-      <Card style={styles.streak}>
-        <Ionicons name="flame" size={28} color="#ff7a1a" />
-        <View style={{ flex: 1 }}>
-          <ThemedText style={{ fontSize: 22, fontWeight: '800' }}>
-            {profile.activity_streak} {profile.activity_streak === 1 ? t('q.day') : t('q.days')}
-          </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            {t('q.streakSub')}
-          </ThemedText>
-        </View>
-      </Card>
-
       <ThemedText style={styles.section}>{t('q.weekQuests')}</ThemedText>
-      <View style={{ gap: Spacing.two }}>
-        {quests.map((q) => {
-          const done = q.progress >= q.target;
-          const pct = Math.min(1, q.progress / q.target);
-          return (
-            <Card key={q.key} style={{ gap: Spacing.two }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
-                <ThemedText style={{ fontWeight: '800', flex: 1 }}>{q.title}</ThemedText>
-                <View style={[styles.reward, { backgroundColor: theme.accent + '22' }]}>
-                  <Ionicons name="cash" size={13} color={theme.accent} />
-                  <ThemedText type="small" style={{ color: theme.accent, fontWeight: '800' }}>
-                    +{q.reward}
-                  </ThemedText>
-                </View>
-              </View>
-              <View style={[styles.track, { backgroundColor: theme.backgroundSelected }]}>
-                <View style={[styles.fill, { width: `${Math.round(pct * 100)}%`, backgroundColor: done ? theme.success : theme.accent }]} />
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <ThemedText type="small" themeColor="textSecondary" style={{ flex: 1 }}>
-                  {Math.min(q.progress, q.target)} / {q.target}
-                </ThemedText>
-                {q.claimed ? (
-                  <ThemedText type="small" style={{ color: theme.success, fontWeight: '800' }}>
-                    {t('q.claimed')} ✓
-                  </ThemedText>
-                ) : done ? (
-                  <Button label={t('sh.claim')} loading={claimingKey === q.key} onPress={() => claim(q)} variant="primary" />
-                ) : null}
-              </View>
-            </Card>
-          );
-        })}
-      </View>
-
+      <View style={{ gap: Spacing.two }}>{weekly.map(renderQuest)}</View>
       <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center' }}>
         {t('q.reset')}
       </ThemedText>
+
+      {challenges.length > 0 && (
+        <>
+          <ThemedText style={styles.section}>{t('q.challenges')}</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">{t('q.challengesSub')}</ThemedText>
+          <View style={{ gap: Spacing.two }}>{challenges.map(renderQuest)}</View>
+        </>
+      )}
     </Screen>
   );
 }

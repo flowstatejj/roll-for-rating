@@ -286,6 +286,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'q.day': 'day', 'q.days': 'days', 'q.streakSub': 'Daily streak — open the app each day to keep it alive',
     'q.weekQuests': "This week's quests", 'q.claimed': 'Claimed', 'q.reset': 'Quests reset every week.',
+    'q.challenges': 'Challenges', 'q.challengesSub': 'One-time milestones — claim once, keep forever.',
     'q.completeTitle': 'Quest complete!', 'q.completeBody': '+{n} ROR — new ROR {r}', 'q.notYet': 'Not yet',
 
     'se.left': 'left', 'se.perWin': '+10 points per win', 'se.you': 'You', 'se.pts': 'pts',
@@ -357,7 +358,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'pw.f1': 'Earn a real, refereed BJJ rating (ROR)',
     'pw.f2': 'Run & join leagues and tournaments',
     'pw.f3': 'Climb gym, local & global leaderboards',
-    'pw.f4': 'Train BJJ puzzles, quests & submission hunts',
+    'pw.f4': 'Quests, streaks & the submission hunt',
     'pw.trial': '7-day free trial, then {price}/month',
     'pw.priceFallback': '$4.99',
     'pw.cta': 'Start free trial',
@@ -743,6 +744,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'q.day': 'día', 'q.days': 'días', 'q.streakSub': 'Racha diaria: abre la app cada día para mantenerla.',
     'q.weekQuests': 'Misiones de esta semana', 'q.claimed': 'Reclamado', 'q.reset': 'Las misiones se reinician cada semana.',
+    'q.challenges': 'Desafíos', 'q.challengesSub': 'Logros únicos: se reclaman una vez y son para siempre.',
     'q.completeTitle': '¡Misión completada!', 'q.completeBody': '+{n} ROR — nuevo ROR {r}', 'q.notYet': 'Aún no',
 
     'se.left': 'restantes', 'se.perWin': '+10 puntos por victoria', 'se.you': 'Tú', 'se.pts': 'pts',
@@ -814,7 +816,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'pw.f1': 'Gana un rating de BJJ real y arbitrado (ROR)',
     'pw.f2': 'Crea y únete a ligas y torneos',
     'pw.f3': 'Escala en rankings de gimnasio, locales y globales',
-    'pw.f4': 'Entrena ejercicios de BJJ, misiones y caza de sumisiones',
+    'pw.f4': 'Misiones, rachas y la caza de sumisiones',
     'pw.trial': 'Prueba gratis de 7 días, luego {price}/mes',
     'pw.priceFallback': '$4.99',
     'pw.cta': 'Iniciar prueba gratis',
@@ -1200,6 +1202,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'q.day': 'dia', 'q.days': 'dias', 'q.streakSub': 'Sequência diária: abra o app todo dia para mantê-la.',
     'q.weekQuests': 'Missões desta semana', 'q.claimed': 'Resgatado', 'q.reset': 'As missões reiniciam toda semana.',
+    'q.challenges': 'Desafios', 'q.challengesSub': 'Conquistas únicas — resgate uma vez e fica para sempre.',
     'q.completeTitle': 'Missão concluída!', 'q.completeBody': '+{n} ROR — novo ROR {r}', 'q.notYet': 'Ainda não',
 
     'se.left': 'restantes', 'se.perWin': '+10 pontos por vitória', 'se.you': 'Você', 'se.pts': 'pts',
@@ -1271,7 +1274,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'pw.f1': 'Conquiste um rating de BJJ real e arbitrado (ROR)',
     'pw.f2': 'Crie e participe de ligas e torneios',
     'pw.f3': 'Suba nos rankings da academia, locais e globais',
-    'pw.f4': 'Treine exercícios de BJJ, missões e caça às finalizações',
+    'pw.f4': 'Missões, sequências e a caça às finalizações',
     'pw.trial': '7 dias grátis, depois {price}/mês',
     'pw.priceFallback': '$4.99',
     'pw.cta': 'Iniciar teste grátis',
@@ -1657,6 +1660,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     'q.day': 'jour', 'q.days': 'jours', 'q.streakSub': 'Série quotidienne — ouvre l’app chaque jour pour la garder.',
     'q.weekQuests': 'Quêtes de la semaine', 'q.claimed': 'Réclamé', 'q.reset': 'Les quêtes se réinitialisent chaque semaine.',
+    'q.challenges': 'Défis', 'q.challengesSub': 'Jalons uniques — réclame une fois, gardé pour toujours.',
     'q.completeTitle': 'Quête terminée !', 'q.completeBody': '+{n} ROR — nouveau ROR {r}', 'q.notYet': 'Pas encore',
 
     'se.left': 'restants', 'se.perWin': '+10 points par victoire', 'se.you': 'Toi', 'se.pts': 'pts',
@@ -1728,7 +1732,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'pw.f1': 'Gagnez un vrai rating de JJB arbitré (ROR)',
     'pw.f2': 'Créez et rejoignez des ligues et tournois',
     'pw.f3': 'Grimpez dans les classements de salle, locaux et mondiaux',
-    'pw.f4': 'Entraînez des énigmes JJB, des quêtes et la chasse aux soumissions',
+    'pw.f4': 'Quêtes, séries et la chasse aux soumissions',
     'pw.trial': 'Essai gratuit de 7 jours, puis {price}/mois',
     'pw.priceFallback': '$4.99',
     'pw.cta': 'Démarrer l’essai gratuit',
