@@ -153,14 +153,10 @@ export function MatchVideos({
               <ActivityIndicator color={theme.accent} />
               <ThemedText themeColor="textSecondary">{t('mv.uploading')}</ThemedText>
             </Card>
-          ) : (
-            <>
-              <Button label={t('mv.upload')} icon="cloud-upload" variant="secondary" onPress={() => addVideo(false)} />
-              {Platform.OS !== 'web' && (
-                <Button label={t('mv.record')} icon="videocam" variant="secondary" onPress={() => addVideo(true)} />
-              )}
-            </>
-          )}
+          ) : Platform.OS !== 'web' ? (
+            // Record films live and auto-posts to the match — no separate upload step.
+            <Button label={t('mv.record')} icon="videocam" variant="secondary" onPress={() => addVideo(true)} />
+          ) : null}
         </View>
       )}
     </View>
