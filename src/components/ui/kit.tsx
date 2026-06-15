@@ -12,7 +12,7 @@ import {
   type TextInputProps,
   type ViewProps,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 
 import { TatamiBackground } from '@/components/tatami-background';
@@ -307,23 +307,32 @@ export function Screen({
   refreshControl?: React.ReactElement<any>;
 }) {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   return (
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
       <TatamiBackground />
       <SafeAreaView style={[styles.screen, { backgroundColor: 'transparent' }]} edges={['top']}>
-        <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          {scroll ? (
-            <ScrollView
-              contentContainerStyle={styles.scrollContent}
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="interactive"
-              refreshControl={refreshControl}>
-              {children}
-            </ScrollView>
-          ) : (
-            children
-          )}
-        </KeyboardAvoidingView>
+        {scroll ? (
+          // automaticallyAdjustKeyboardInsets makes iOS inset the scroll view for
+          // the keyboard and scroll the focused field into view — no header-offset
+          // math needed. (Android resizes via adjustResize.)
+          <ScrollView
+            style={styles.screen}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
+            automaticallyAdjustKeyboardInsets
+            refreshControl={refreshControl}>
+            {children}
+          </ScrollView>
+        ) : (
+          <KeyboardAvoidingView
+            style={styles.screen}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 44 : 0}>
+            {children}
+          </KeyboardAvoidingView>
+        )}
       </SafeAreaView>
     </View>
   );

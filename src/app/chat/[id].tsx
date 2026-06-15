@@ -11,7 +11,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TatamiBackground } from '@/components/tatami-background';
 import { ThemedText } from '@/components/themed-text';
@@ -27,6 +27,7 @@ export default function MatchChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useAuth();
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const userId = session!.user.id;
 
   const [match, setMatch] = useState<MatchWithPeople | null>(null);
@@ -124,7 +125,10 @@ export default function MatchChatScreen() {
       <Stack.Screen options={{ title: 'Match chat' }} />
       <TatamiBackground />
       <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 44 : 0}>
           {/* When & where */}
           <View style={{ padding: Spacing.three, paddingBottom: 0 }}>
             <Card style={{ gap: Spacing.two }}>
