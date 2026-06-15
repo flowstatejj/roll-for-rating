@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
@@ -10,16 +10,20 @@ import { useTheme } from '@/hooks/use-theme';
 import { listFounders, makeFoundingByEmail, setFoundingById, type Founder } from '@/lib/admin';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
+import { fetchDisputes, resolveDispute, type DisputeReport, type MatchDispute } from '@/lib/matches';
 import type { BeltRank } from '@/lib/types';
 
 export default function AdminScreen() {
   const theme = useTheme();
+  const router = useRouter();
   const { t } = useTranslation();
   const { profile } = useAuth();
 
   const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);
   const [founders, setFounders] = useState<Founder[]>([]);
+  const [disputes, setDisputes] = useState<MatchDispute[]>([]);
+  const [resolvingId, setResolvingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -27,11 +31,39 @@ export default function AdminScreen() {
     } catch (e) {
       console.warn('Failed to load founders', e);
     }
+    try {
+      setDisputes(await fetchDisputes());
+    } catch (e) {
+      console.warn('Failed to load disputes', e);
+    }
   }, []);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  async function resolve(d: MatchDispute, r: DisputeReport) {
+    setResolvingId(d.match_id);
+    try {
+      await resolveDispute({
+        matchId: d.match_id,
+        winnerId: r.winner_id,
+        result: r.result,
+        submissionType: r.submission_type,
+        method: r.method,
+      });
+      await load();
+    } catch (e: any) {
+      Alert.alert(t('admin.error'), e.message ?? t('md.tryAgain'));
+    } finally {
+      setResolvingId(null);
+    }
+  }
+
+  function nameFor(d: MatchDispute, id: string | null): string {
+    if (id === null) return t('md.draw');
+    return id === d.challenger.id ? d.challenger.name : d.opponent.name;
+  }
 
   async function add() {
     if (!email.trim()) {
@@ -86,6 +118,40 @@ export default function AdminScreen() {
   return (
     <Screen>
       <Stack.Screen options={{ title: t('admin.title') }} />
+
+      {/* Disputed match results awaiting an official call */}
+      {disputes.length > 0 && (
+        <>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two, marginBottom: Spacing.one }}>
+            <Ionicons name="alert-circle" size={20} color={theme.danger} />
+            <ThemedText style={{ fontWeight: '800', fontSize: 18 }}>{t('admin.disputesTitle')} · {disputes.length}</ThemedText>
+          </View>
+          {disputes.map((d) => (
+            <Card key={d.match_id} style={{ gap: Spacing.two, borderColor: theme.danger, borderWidth: 1 }}>
+              <ThemedText style={{ fontWeight: '800' }}>{d.challenger.name} {t('md.vs')} {d.opponent.name}</ThemedText>
+              {(d.reports ?? []).map((r) => {
+                const reporter = r.reporter_id === d.challenger.id ? d.challenger.name : d.opponent.name;
+                return (
+                  <ThemedText key={r.reporter_id} type="small" themeColor="textSecondary">
+                    {t('admin.reportedBy').replace('{reporter}', reporter).replace('{winner}', nameFor(d, r.winner_id))}
+                    {r.submission_type ? ` · ${r.submission_type}` : ''}
+                  </ThemedText>
+                );
+              })}
+              <Button label={t('admin.viewVideo')} variant="secondary" icon="play-circle" onPress={() => router.push(`/match/${d.match_id}`)} />
+              <ThemedText type="smallBold" themeColor="textSecondary">{t('admin.setOfficial')}</ThemedText>
+              {(d.reports ?? []).map((r) => (
+                <Button
+                  key={`res-${r.reporter_id}`}
+                  label={`${nameFor(d, r.winner_id)}${r.submission_type ? ` (${r.submission_type})` : ''}`}
+                  loading={resolvingId === d.match_id}
+                  onPress={() => resolve(d, r)}
+                />
+              ))}
+            </Card>
+          ))}
+        </>
+      )}
 
       <Card style={{ gap: Spacing.three }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
