@@ -231,7 +231,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'find.areaCity': 'Area / city', 'find.anyCity': 'Any city', 'find.anyBelt': 'Any belt',
     'find.joinFirst': 'Join a gym first', 'find.joinFirstSub': 'Your network comes from your gym and friendly gyms.',
     'find.nobody': 'Nobody here yet', 'find.nobodyNetwork': 'Invite teammates or friend other gyms.',
-    'find.nobodyArea': 'Try a wider area, or toggle yourself open so others find you.', 'find.challenge': 'Challenge',
+    'find.nobodyArea': 'Try a wider area, or toggle yourself open so others find you.', 'find.challenge': 'Challenge', 'find.avatarNudge': 'Add a profile avatar so you can challenge people.',
 
     'om.post': 'Post an open mat', 'om.title': 'Title', 'om.city': 'City', 'om.address': 'Address (optional)',
     'om.when': 'When', 'om.postBtn': 'Post open mat', 'om.search': 'Search', 'om.searchPlaceholder': 'Title or address',
@@ -684,7 +684,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'find.areaCity': 'Zona / ciudad', 'find.anyCity': 'Cualquier ciudad', 'find.anyBelt': 'Cualquier cinturón',
     'find.joinFirst': 'Únete a un gimnasio primero', 'find.joinFirstSub': 'Tu red proviene de tu gimnasio y los gimnasios amigos.',
     'find.nobody': 'Aún no hay nadie aquí', 'find.nobodyNetwork': 'Invita a compañeros o haz amigos a otros gimnasios.',
-    'find.nobodyArea': 'Prueba una zona más amplia, o márcate como disponible para que te encuentren.', 'find.challenge': 'Retar',
+    'find.nobodyArea': 'Prueba una zona más amplia, o márcate como disponible para que te encuentren.', 'find.challenge': 'Retar', 'find.avatarNudge': 'Agrega un avatar de perfil para poder retar a otros.',
 
     'om.post': 'Publicar un open mat', 'om.title': 'Título', 'om.city': 'Ciudad', 'om.address': 'Dirección (opcional)',
     'om.when': 'Cuándo', 'om.postBtn': 'Publicar open mat', 'om.search': 'Buscar', 'om.searchPlaceholder': 'Título o dirección',
@@ -1137,7 +1137,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'find.areaCity': 'Região / cidade', 'find.anyCity': 'Qualquer cidade', 'find.anyBelt': 'Qualquer faixa',
     'find.joinFirst': 'Entre em uma academia primeiro', 'find.joinFirstSub': 'Sua rede vem da sua academia e das academias amigas.',
     'find.nobody': 'Ainda não há ninguém aqui', 'find.nobodyNetwork': 'Convide parceiros ou faça amizade com outras academias.',
-    'find.nobodyArea': 'Tente uma região mais ampla, ou marque-se como disponível para que te encontrem.', 'find.challenge': 'Desafiar',
+    'find.nobodyArea': 'Tente uma região mais ampla, ou marque-se como disponível para que te encontrem.', 'find.challenge': 'Desafiar', 'find.avatarNudge': 'Adicione um avatar de perfil para poder desafiar pessoas.',
 
     'om.post': 'Publicar um open mat', 'om.title': 'Título', 'om.city': 'Cidade', 'om.address': 'Endereço (opcional)',
     'om.when': 'Quando', 'om.postBtn': 'Publicar open mat', 'om.search': 'Buscar', 'om.searchPlaceholder': 'Título ou endereço',
@@ -1590,7 +1590,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'find.areaCity': 'Zone / ville', 'find.anyCity': 'N’importe quelle ville', 'find.anyBelt': 'Toutes ceintures',
     'find.joinFirst': 'Rejoins d’abord une salle', 'find.joinFirstSub': 'Ton réseau vient de ta salle et des salles amies.',
     'find.nobody': 'Personne ici pour l’instant', 'find.nobodyNetwork': 'Invite des partenaires ou lie-toi à d’autres salles.',
-    'find.nobodyArea': 'Essaie une zone plus large, ou rends-toi disponible pour qu’on te trouve.', 'find.challenge': 'Défier',
+    'find.nobodyArea': 'Essaie une zone plus large, ou rends-toi disponible pour qu’on te trouve.', 'find.challenge': 'Défier', 'find.avatarNudge': 'Ajoutez un avatar de profil pour pouvoir défier des gens.',
 
     'om.post': 'Publier un open mat', 'om.title': 'Titre', 'om.city': 'Ville', 'om.address': 'Adresse (optionnel)',
     'om.when': 'Quand', 'om.postBtn': 'Publier l’open mat', 'om.search': 'Chercher', 'om.searchPlaceholder': 'Titre ou adresse',
