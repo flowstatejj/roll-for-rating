@@ -50,6 +50,17 @@ export default function FindScreen() {
     <Screen>
       <Stack.Screen options={{ title: t('nav.findRoll') }} />
 
+      {/* You need an avatar before you can challenge anyone — nudge before they hit the wall. */}
+      {profile && !profile.avatar_path && !profile.avatar_warrior && (
+        <Pressable onPress={() => router.push('/(tabs)/profile')}>
+          <Card style={[styles.row, { borderColor: theme.accent, borderWidth: 1 }]}>
+            <Ionicons name="camera" size={20} color={theme.accent} />
+            <ThemedText type="small" style={{ flex: 1 }}>{t('find.avatarNudge')}</ThemedText>
+            <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />
+          </Card>
+        </Pressable>
+      )}
+
       {/* Mode toggle */}
       <View style={styles.segment}>
         <Seg label={t('find.network')} active={mode === 'network'} onPress={() => setMode('network')} />
