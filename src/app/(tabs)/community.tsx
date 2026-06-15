@@ -107,12 +107,6 @@ export default function CommunityScreen() {
         onPress={() => router.push('/open-mats')}
       />
       <ActionRow
-        icon="checkbox"
-        title={t('nav.quests')}
-        subtitle={t('comm.questsSub')}
-        onPress={() => router.push('/quests')}
-      />
-      <ActionRow
         icon="people-circle"
         title={t('nav.leagues')}
         subtitle={t('comm.leaguesSub')}
@@ -125,16 +119,16 @@ export default function CommunityScreen() {
         onPress={() => router.push('/tournaments')}
       />
       <ActionRow
-        icon="barbell"
-        title={t('nav.gymRankings')}
-        subtitle={t('comm.gymRankingsSub')}
-        onPress={() => router.push('/gym-rankings')}
-      />
-      <ActionRow
         icon="lock-open"
         title={t('nav.submissionHunt')}
         subtitle={t('comm.submissionHuntSub')}
         onPress={() => router.push('/submission-hunt')}
+      />
+      <ActionRow
+        icon="checkbox"
+        title={t('nav.quests')}
+        subtitle={t('comm.questsSub')}
+        onPress={() => router.push('/quests')}
       />
       <ActionRow
         icon="cash"

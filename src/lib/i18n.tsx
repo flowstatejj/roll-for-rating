@@ -41,7 +41,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'home.noMatchesSub': 'Start a challenge at the next open mat to get on the board.',
     'home.viewAll': 'View all matches', 'home.newChallenge': 'New Challenge',
 
-    'lb.title': 'Rankings', 'lb.overall': 'Overall', 'lb.under13': '13 & under',
+    'lb.title': 'Rankings', 'lb.overall': 'Overall', 'lb.gyms': 'Gyms', 'lb.under13': '13 & under',
     'lb.emptyTitle': 'No grapplers here yet', 'lb.emptySub': 'Try a wider level, or be the first to climb.',
     'lb.noGeo': 'Add your location in your profile (Edit profile) to rank at this level.',
     'lb.kidsNote': 'Under-14 athletes ranked by ROR. For their privacy, only a first name is shown.',
@@ -501,7 +501,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'home.noMatchesSub': 'Lanza un reto en el próximo open mat para entrar en la clasificación.',
     'home.viewAll': 'Ver todos los combates', 'home.newChallenge': 'Nuevo reto',
 
-    'lb.title': 'Clasificación', 'lb.overall': 'General', 'lb.under13': '13 y menores',
+    'lb.title': 'Clasificación', 'lb.overall': 'General', 'lb.gyms': 'Gimnasios', 'lb.under13': '13 y menores',
     'lb.emptyTitle': 'Aún no hay competidores aquí', 'lb.emptySub': 'Prueba un nivel más amplio o sé el primero en subir.',
     'lb.noGeo': 'Agrega tu ubicación en tu perfil (Editar perfil) para clasificar en este nivel.',
     'lb.kidsNote': 'Atletas menores de 14 años por ROR. Por su privacidad, solo se muestra el nombre.',
@@ -961,7 +961,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'home.noMatchesSub': 'Lance um desafio no próximo open mat para entrar no ranking.',
     'home.viewAll': 'Ver todas as lutas', 'home.newChallenge': 'Novo desafio',
 
-    'lb.title': 'Ranking', 'lb.overall': 'Geral', 'lb.under13': '13 e menores',
+    'lb.title': 'Ranking', 'lb.overall': 'Geral', 'lb.gyms': 'Academias', 'lb.under13': '13 e menores',
     'lb.emptyTitle': 'Ainda sem competidores aqui', 'lb.emptySub': 'Tente um nível mais amplo ou seja o primeiro a subir.',
     'lb.noGeo': 'Adicione sua localização no seu perfil (Editar perfil) para classificar neste nível.',
     'lb.kidsNote': 'Atletas menores de 14 anos por ROR. Para a privacidade deles, mostramos só o primeiro nome.',
@@ -1421,7 +1421,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'home.noMatchesSub': 'Lance un défi au prochain open mat pour entrer au classement.',
     'home.viewAll': 'Voir tous les combats', 'home.newChallenge': 'Nouveau défi',
 
-    'lb.title': 'Classement', 'lb.overall': 'Général', 'lb.under13': '13 ans et moins',
+    'lb.title': 'Classement', 'lb.overall': 'Général', 'lb.gyms': 'Salles', 'lb.under13': '13 ans et moins',
     'lb.emptyTitle': 'Aucun grappler ici pour l’instant', 'lb.emptySub': 'Essaie un niveau plus large, ou sois le premier à grimper.',
     'lb.noGeo': 'Ajoute ta localisation dans ton profil (Modifier le profil) pour figurer à ce niveau.',
     'lb.kidsNote': 'Athlètes de moins de 14 ans par ROR. Pour leur vie privée, seul le prénom est affiché.',

@@ -13,10 +13,11 @@ import { GEO_LEVELS, geoMatches, type Geo, type GeoLevel } from '@/lib/geo';
 import { createMatchRequest } from '@/lib/invites';
 import { fetchJuniors } from '@/lib/juniors';
 import { fetchKidsLeaderboard, fetchLeaderboard, fetchMyGeo, type KidsLeaderRow, type LeaderRow } from '@/lib/matches';
-import type { Profile } from '@/lib/types';
+import { fetchGymPowerRanking } from '@/lib/tournaments';
+import type { GymPower, Profile } from '@/lib/types';
 import { inWeightClass, WEIGHT_FILTERS, type WeightClassKey } from '@/lib/weight';
 
-type Tab = 'overall' | 'kids';
+type Tab = 'overall' | 'kids' | 'gyms';
 
 export default function LeaderboardScreen() {
   const { session, profile } = useAuth();
@@ -29,6 +30,7 @@ export default function LeaderboardScreen() {
   const [level, setLevel] = useState<GeoLevel>('world');
   const [weightFilter, setWeightFilter] = useState<WeightClassKey>('absolute');
   const [rows, setRows] = useState<LeaderRow[]>([]);
+  const [gyms, setGyms] = useState<GymPower[]>([]);
   const [kids, setKids] = useState<KidsLeaderRow[]>([]);
   const [juniors, setJuniors] = useState<Profile[]>([]);
   const [myGeo, setMyGeo] = useState<Geo | null>(null);
@@ -40,12 +42,14 @@ export default function LeaderboardScreen() {
 
   const load = useCallback(async () => {
     try {
-      const [overall, juniorList, geo] = await Promise.all([
+      const [overall, gymRanks, juniorList, geo] = await Promise.all([
         fetchLeaderboard(),
+        fetchGymPowerRanking().catch(() => []),
         userId ? fetchJuniors(userId).catch(() => []) : Promise.resolve([]),
         userId ? fetchMyGeo(userId).catch(() => null) : Promise.resolve(null),
       ]);
       setRows(overall);
+      setGyms(gymRanks);
       setJuniors(juniorList);
       setMyGeo(geo);
     } catch (e) {
@@ -106,27 +110,30 @@ export default function LeaderboardScreen() {
         {t('lb.title')}
       </ThemedText>
 
-      {canSeeKids && (
-        <View style={styles.segment}>
-          <Seg label={t('lb.overall')} active={tab === 'overall'} onPress={() => setTab('overall')} />
-          <Seg label={t('lb.under13')} active={tab === 'kids'} onPress={() => setTab('kids')} />
-        </View>
-      )}
-
-      {/* Geographic level */}
-      <View style={styles.levels}>
-        {GEO_LEVELS.map((l) => (
-          <Chip key={l.key} label={t(`geo.${l.key}`)} active={level === l.key} onPress={() => setLevel(l.key)} />
-        ))}
+      <View style={styles.segment}>
+        <Seg label={t('lb.overall')} active={tab === 'overall'} onPress={() => setTab('overall')} />
+        <Seg label={t('lb.gyms')} active={tab === 'gyms'} onPress={() => setTab('gyms')} />
+        {canSeeKids && <Seg label={t('lb.under13')} active={tab === 'kids'} onPress={() => setTab('kids')} />}
       </View>
-      {level !== 'world' && !myGeo?.[level] && (
-        <ThemedText type="small" themeColor="textSecondary">
-          {t('lb.noGeo')}
-        </ThemedText>
+
+      {/* Geographic level (people boards only) */}
+      {tab !== 'gyms' && (
+        <>
+          <View style={styles.levels}>
+            {GEO_LEVELS.map((l) => (
+              <Chip key={l.key} label={t(`geo.${l.key}`)} active={level === l.key} onPress={() => setLevel(l.key)} />
+            ))}
+          </View>
+          {level !== 'world' && !myGeo?.[level] && (
+            <ThemedText type="small" themeColor="textSecondary">
+              {t('lb.noGeo')}
+            </ThemedText>
+          )}
+        </>
       )}
 
       {/* Weight class (overall board only) */}
-      {(tab === 'overall' || !canSeeKids) && (
+      {tab === 'overall' && (
         <>
           <View style={styles.levels}>
             {WEIGHT_FILTERS.map((k) => (
@@ -141,7 +148,37 @@ export default function LeaderboardScreen() {
         </>
       )}
 
-      {tab === 'overall' || !canSeeKids ? (
+      {tab === 'gyms' ? (
+        gyms.length === 0 ? (
+          <EmptyState icon="barbell-outline" title={t('gr.emptyTitle')} subtitle={t('gr.emptySub')} />
+        ) : (
+          <Card style={styles.list}>
+            {gyms.map((g, i) => {
+              const mine = profile?.gym_id === g.gym_id;
+              return (
+                <View key={g.gym_id}>
+                  {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
+                  <Pressable onPress={() => router.push(`/gym/${g.gym_id}`)} style={[styles.row, mine && { backgroundColor: theme.accent + '22', borderRadius: 8 }]}>
+                    <RankBadge rank={i + 1} />
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>
+                        {g.name}{mine ? ` ${t('lb.yours')}` : ''}
+                      </ThemedText>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {g.member_count} {g.member_count === 1 ? t('gd.member') : t('gd.members')}{g.city ? ` · ${g.city}` : ''} · {g.total_wins} {t('gr.wins')}
+                      </ThemedText>
+                    </View>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <ThemedText style={{ fontWeight: '800', fontSize: 18 }}>{g.avg_rating}</ThemedText>
+                      <ThemedText type="small" themeColor="textSecondary">{t('gr.avg')}</ThemedText>
+                    </View>
+                  </Pressable>
+                </View>
+              );
+            })}
+          </Card>
+        )
+      ) : tab === 'overall' || !canSeeKids ? (
         overallFiltered.length === 0 ? (
           <EmptyState icon="podium-outline" title={t('lb.emptyTitle')} subtitle={t('lb.emptySub')} />
         ) : (
