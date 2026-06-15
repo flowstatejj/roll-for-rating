@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Animated, Pressable, StyleSheet, View } from 'react-native';
 
 import { MatchVideos } from '@/components/match-videos';
+import { SubmissionPicker } from '@/components/submission-picker';
 import { ThemedText } from '@/components/themed-text';
 import { Avatar, BeltChip, Button, Card, Loading, Screen, TextField } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
@@ -24,7 +25,7 @@ import {
   setMatchReaction,
   setSubmissionType,
 } from '@/lib/matches';
-import { REACTIONS, SUBMISSIONS, type MatchWithPeople, type ReactionSummary, type ResultType } from '@/lib/types';
+import { REACTIONS, type MatchWithPeople, type ReactionSummary, type ResultType } from '@/lib/types';
 
 export default function MatchDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -416,11 +417,7 @@ export default function MatchDetailScreen() {
               <ThemedText type="smallBold" themeColor="textSecondary">
                 {t('md.finishLabel')}
               </ThemedText>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two }}>
-                {SUBMISSIONS.map((s) => (
-                  <Choice key={s} compact label={s} selected={subType === s} onPress={() => setSubType(subType === s ? null : s)} />
-                ))}
-              </View>
+              <SubmissionPicker value={subType} onChange={setSubType} />
             </View>
           )}
 
