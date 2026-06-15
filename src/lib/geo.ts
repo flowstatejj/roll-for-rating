@@ -1,6 +1,7 @@
-// Geography helpers for leaderboard levels. A member's location comes from
-// their gym (city / state / country); continent is derived from country here so
-// the app can store it and the DB can filter on it cheaply.
+// Geography helpers for leaderboard levels. Location comes from a member's
+// profile (city / state / country) with gym fallback; continent is taken from
+// the stored value (country picker) or derived from the country.
+import { continentForCountryName } from './countries';
 
 export type GeoLevel = 'city' | 'state' | 'country' | 'continent' | 'world';
 
@@ -21,63 +22,24 @@ export interface Geo {
 
 const norm = (s: string | null | undefined) => (s ?? '').trim().toLowerCase();
 
-// Common country names + aliases → continent. Unknown countries map to null
-// (they'll only show at the World level). Case-insensitive lookup.
-const COUNTRY_CONTINENT: Record<string, string> = {
-  // North America
-  'united states': 'North America', 'usa': 'North America', 'us': 'North America',
-  'united states of america': 'North America', 'canada': 'North America', 'mexico': 'North America',
-  'guatemala': 'North America', 'costa rica': 'North America', 'panama': 'North America',
-  'cuba': 'North America', 'dominican republic': 'North America', 'jamaica': 'North America',
-  // South America
-  'brazil': 'South America', 'brasil': 'South America', 'argentina': 'South America',
-  'chile': 'South America', 'colombia': 'South America', 'peru': 'South America',
-  'uruguay': 'South America', 'paraguay': 'South America', 'venezuela': 'South America',
-  'ecuador': 'South America', 'bolivia': 'South America',
-  // Europe
-  'united kingdom': 'Europe', 'uk': 'Europe', 'england': 'Europe', 'scotland': 'Europe',
-  'wales': 'Europe', 'ireland': 'Europe', 'france': 'Europe', 'germany': 'Europe',
-  'spain': 'Europe', 'portugal': 'Europe', 'italy': 'Europe', 'netherlands': 'Europe',
-  'belgium': 'Europe', 'switzerland': 'Europe', 'austria': 'Europe', 'sweden': 'Europe',
-  'norway': 'Europe', 'denmark': 'Europe', 'finland': 'Europe', 'poland': 'Europe',
-  'czech republic': 'Europe', 'czechia': 'Europe', 'greece': 'Europe', 'russia': 'Europe',
-  'ukraine': 'Europe', 'romania': 'Europe', 'hungary': 'Europe', 'iceland': 'Europe',
-  'croatia': 'Europe', 'serbia': 'Europe', 'bulgaria': 'Europe',
-  // Asia
-  'japan': 'Asia', 'china': 'Asia', 'south korea': 'Asia', 'korea': 'Asia',
-  'india': 'Asia', 'thailand': 'Asia', 'vietnam': 'Asia', 'philippines': 'Asia',
-  'indonesia': 'Asia', 'malaysia': 'Asia', 'singapore': 'Asia', 'taiwan': 'Asia',
-  'hong kong': 'Asia', 'kazakhstan': 'Asia', 'pakistan': 'Asia', 'israel': 'Asia',
-  'turkey': 'Asia', 'saudi arabia': 'Asia', 'united arab emirates': 'Asia', 'uae': 'Asia',
-  'qatar': 'Asia', 'jordan': 'Asia', 'lebanon': 'Asia',
-  // Oceania
-  'australia': 'Oceania', 'new zealand': 'Oceania', 'fiji': 'Oceania',
-  // Africa
-  'south africa': 'Africa', 'egypt': 'Africa', 'morocco': 'Africa', 'nigeria': 'Africa',
-  'kenya': 'Africa', 'ghana': 'Africa', 'tunisia': 'Africa', 'algeria': 'Africa',
-  'angola': 'Africa',
-};
-
-/** Best-effort continent for a free-typed country name; null if unknown. */
+/** Best-effort continent for a country name (canonical or common alias); null if unknown. */
 export function continentForCountry(country: string | null | undefined): string | null {
-  const key = norm(country);
-  if (!key) return null;
-  return COUNTRY_CONTINENT[key] ?? null;
+  return continentForCountryName(country);
 }
 
 /**
  * Build a member's geography, preferring their own profile fields and falling
- * back to their gym's. Continent is always derived from the resolved country
- * (so it works even when no continent was ever stored).
+ * back to their gym's. Continent prefers the value stored on the profile (set
+ * by the country picker), then derives from the resolved country, then the gym.
  */
 export function resolveGeo(
-  profile: { city: string | null; state: string | null; country: string | null } | null | undefined,
+  profile: { city: string | null; state: string | null; country: string | null; continent?: string | null } | null | undefined,
   gym: Geo | null | undefined,
 ): Geo {
   const city = profile?.city || gym?.city || null;
   const state = profile?.state || gym?.state || null;
   const country = profile?.country || gym?.country || null;
-  const continent = continentForCountry(country) || gym?.continent || null;
+  const continent = profile?.continent || continentForCountry(country) || gym?.continent || null;
   return { city, state, country, continent };
 }
 
