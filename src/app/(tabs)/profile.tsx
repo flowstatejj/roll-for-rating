@@ -17,6 +17,7 @@ import { requestParentConsent } from '@/lib/consent';
 import { useTranslation } from '@/lib/i18n';
 import { winStreak } from '@/lib/elo';
 import { CountryPicker } from '@/components/country-picker';
+import { StatePicker } from '@/components/state-picker';
 import { continentForCountryName } from '@/lib/countries';
 import { fetchMyMatches } from '@/lib/matches';
 import { setOpenForChallenge } from '@/lib/social';
@@ -463,8 +464,8 @@ export default function ProfileScreen() {
         <Card style={{ gap: Spacing.three }}>
           <TextField label="Display name" value={name} onChangeText={setName} />
           <TextField label="City / area" value={city} onChangeText={setCity} placeholder="Your city (for the Roll Finder)" />
-          <TextField label={t('pf.state')} value={stateRegion} onChangeText={setStateRegion} placeholder={t('pf.statePh')} autoCapitalize="words" />
-          <CountryPicker value={country} onChange={setCountry} />
+          <CountryPicker value={country} onChange={(c) => { setCountry(c); setStateRegion(''); }} />
+          <StatePicker country={country} value={stateRegion} onChange={setStateRegion} />
           <ThemedText type="small" themeColor="textSecondary">{t('pf.geoHint')}</ThemedText>
           <TextField
             label={t('pf.weight')}
