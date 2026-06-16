@@ -19,15 +19,22 @@ export interface WagerLeader {
 // Public matches: feed, views, reactions
 // ---------------------------------------------------------------------------
 export async function fetchPublicMatches(): Promise<MatchWithPeople[]> {
-  const { data, error } = await supabase
-    .from('matches')
-    .select(MATCH_WITH_PEOPLE)
-    .eq('is_public', true)
-    .eq('status', 'completed')
-    .order('completed_at', { ascending: false })
-    .limit(50);
+  const [{ data, error }, blocked] = await Promise.all([
+    supabase
+      .from('matches')
+      .select(MATCH_WITH_PEOPLE)
+      .eq('is_public', true)
+      .eq('status', 'completed')
+      .order('completed_at', { ascending: false })
+      .limit(50),
+    fetchBlockedIds(),
+  ]);
   if (error) throw error;
-  return (data ?? []) as unknown as MatchWithPeople[];
+  // App Store 1.2: a block removes that user's content from your feed instantly.
+  const hide = new Set(blocked);
+  return (data ?? []).filter(
+    (m: any) => !hide.has(m.challenger_id) && !hide.has(m.opponent_id),
+  ) as unknown as MatchWithPeople[];
 }
 
 /** Record one unique view (no-op if this viewer already viewed). */

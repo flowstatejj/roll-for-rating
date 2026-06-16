@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { Alert } from 'react-native';
 
 import { supabase } from './supabase';
 import type { BeltRank, Profile } from './types';
@@ -67,6 +68,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) {
       console.warn('Failed to load profile:', error.message);
       setProfile(null);
+      return;
+    }
+    // App Store 1.2: a banned (ejected) member is signed out on load.
+    if (data?.banned) {
+      setProfile(null);
+      await supabase.auth.signOut();
+      Alert.alert(
+        'Account suspended',
+        'Your account has been suspended for violating our community guidelines.',
+      );
       return;
     }
     setProfile(data);
