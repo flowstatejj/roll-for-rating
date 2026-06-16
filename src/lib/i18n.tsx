@@ -44,11 +44,13 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'lb.title': 'Rankings', 'lb.overall': 'Overall', 'lb.gyms': 'Gyms', 'lb.under13': '13 & under',
     'lb.emptyTitle': 'No grapplers here yet', 'lb.emptySub': 'Try a wider level, or be the first to climb.',
     'lb.noGeo': 'Add your location in your profile (Edit profile) to rank at this level.',
+    'lb.noGym': 'Join a gym in your profile (Edit profile) to see your gym rankings.',
     'lb.kidsNote': 'Under-14 athletes ranked by ROR. For their privacy, only a first name is shown.',
     'lb.kidsEmptyTitle': 'No ranked juniors here',
     'lb.kidsEmptySub': "Try a wider level, or once they've competed they'll show up.",
     'lb.you': '(you)', 'lb.yours': '(yours)', 'lb.w': 'W', 'lb.l': 'L', 'lb.d': 'D',
 
+    'geo.gym': 'Gym',
     'geo.city': 'City', 'geo.state': 'State', 'geo.country': 'Country',
     'geo.continent': 'Continent', 'geo.world': 'World',
 
@@ -234,11 +236,11 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'gym.nameReqBody': 'Give your gym a name.', 'gym.createFail': 'Could not create gym',
 
     'find.network': 'My network', 'find.area': 'Open in area',
-    'find.networkNote': "Competitors from your gym and gyms it's friends with.",
+    'find.networkNote': "Competitors from your gym, gyms it's friends with, and your friends.",
     'find.areaNote': 'Anyone marked “open for a challenge.” Filter by area and belt.',
     'find.areaCity': 'Area / city', 'find.anyCity': 'Any city', 'find.anyBelt': 'Any belt',
     'find.joinFirst': 'Join a gym first', 'find.joinFirstSub': 'Your network comes from your gym and friendly gyms.',
-    'find.nobody': 'Nobody here yet', 'find.nobodyNetwork': 'Invite teammates or friend other gyms.',
+    'find.nobody': 'Nobody here yet', 'find.nobodyNetwork': 'Add friends, invite teammates, or friend other gyms.',
     'find.nobodyArea': 'Try a wider area, or toggle yourself open so others find you.', 'find.challenge': 'Challenge', 'find.avatarNudge': 'Add a profile avatar so you can challenge people.',
 
     'om.post': 'Post an open mat', 'om.title': 'Title', 'om.city': 'City', 'om.address': 'Address (optional)',
@@ -513,11 +515,13 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'lb.title': 'Clasificación', 'lb.overall': 'General', 'lb.gyms': 'Gimnasios', 'lb.under13': '13 y menores',
     'lb.emptyTitle': 'Aún no hay competidores aquí', 'lb.emptySub': 'Prueba un nivel más amplio o sé el primero en subir.',
     'lb.noGeo': 'Agrega tu ubicación en tu perfil (Editar perfil) para clasificar en este nivel.',
+    'lb.noGym': 'Únete a un gimnasio en tu perfil (Editar perfil) para ver la clasificación de tu gimnasio.',
     'lb.kidsNote': 'Atletas menores de 14 años por ROR. Por su privacidad, solo se muestra el nombre.',
     'lb.kidsEmptyTitle': 'Aún no hay menores clasificados aquí',
     'lb.kidsEmptySub': 'Prueba un nivel más amplio; aparecerán cuando hayan competido.',
     'lb.you': '(tú)', 'lb.yours': '(tuyo)', 'lb.w': 'V', 'lb.l': 'D', 'lb.d': 'E',
 
+    'geo.gym': 'Gimnasio',
     'geo.city': 'Ciudad', 'geo.state': 'Estado', 'geo.country': 'País',
     'geo.continent': 'Continente', 'geo.world': 'Mundo',
 
@@ -703,11 +707,11 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'gym.nameReqBody': 'Dale un nombre a tu gimnasio.', 'gym.createFail': 'No se pudo crear el gimnasio',
 
     'find.network': 'Mi red', 'find.area': 'Abiertos en la zona',
-    'find.networkNote': 'Competidores de tu gimnasio y de los gimnasios amigos.',
+    'find.networkNote': 'Competidores de tu gimnasio, de los gimnasios amigos y de tus amigos.',
     'find.areaNote': 'Cualquiera marcado como “disponible para un reto”. Filtra por zona y cinturón.',
     'find.areaCity': 'Zona / ciudad', 'find.anyCity': 'Cualquier ciudad', 'find.anyBelt': 'Cualquier cinturón',
     'find.joinFirst': 'Únete a un gimnasio primero', 'find.joinFirstSub': 'Tu red proviene de tu gimnasio y los gimnasios amigos.',
-    'find.nobody': 'Aún no hay nadie aquí', 'find.nobodyNetwork': 'Invita a compañeros o haz amigos a otros gimnasios.',
+    'find.nobody': 'Aún no hay nadie aquí', 'find.nobodyNetwork': 'Agrega amigos, invita a compañeros o haz amigos a otros gimnasios.',
     'find.nobodyArea': 'Prueba una zona más amplia, o márcate como disponible para que te encuentren.', 'find.challenge': 'Retar', 'find.avatarNudge': 'Agrega un avatar de perfil para poder retar a otros.',
 
     'om.post': 'Publicar un open mat', 'om.title': 'Título', 'om.city': 'Ciudad', 'om.address': 'Dirección (opcional)',
@@ -982,11 +986,13 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'lb.title': 'Ranking', 'lb.overall': 'Geral', 'lb.gyms': 'Academias', 'lb.under13': '13 e menores',
     'lb.emptyTitle': 'Ainda sem competidores aqui', 'lb.emptySub': 'Tente um nível mais amplo ou seja o primeiro a subir.',
     'lb.noGeo': 'Adicione sua localização no seu perfil (Editar perfil) para classificar neste nível.',
+    'lb.noGym': 'Entre em uma academia no seu perfil (Editar perfil) para ver o ranking da sua academia.',
     'lb.kidsNote': 'Atletas menores de 14 anos por ROR. Para a privacidade deles, mostramos só o primeiro nome.',
     'lb.kidsEmptyTitle': 'Ainda sem menores no ranking aqui',
     'lb.kidsEmptySub': 'Tente um nível mais amplo; eles aparecem depois de competir.',
     'lb.you': '(você)', 'lb.yours': '(seu)', 'lb.w': 'V', 'lb.l': 'D', 'lb.d': 'E',
 
+    'geo.gym': 'Academia',
     'geo.city': 'Cidade', 'geo.state': 'Estado', 'geo.country': 'País',
     'geo.continent': 'Continente', 'geo.world': 'Mundo',
 
@@ -1172,11 +1178,11 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'gym.nameReqBody': 'Dê um nome à sua academia.', 'gym.createFail': 'Não foi possível criar a academia',
 
     'find.network': 'Minha rede', 'find.area': 'Abertos na região',
-    'find.networkNote': 'Competidores da sua academia e das academias amigas.',
+    'find.networkNote': 'Competidores da sua academia, das academias amigas e dos seus amigos.',
     'find.areaNote': 'Qualquer um marcado como “disponível para um desafio”. Filtre por região e faixa.',
     'find.areaCity': 'Região / cidade', 'find.anyCity': 'Qualquer cidade', 'find.anyBelt': 'Qualquer faixa',
     'find.joinFirst': 'Entre em uma academia primeiro', 'find.joinFirstSub': 'Sua rede vem da sua academia e das academias amigas.',
-    'find.nobody': 'Ainda não há ninguém aqui', 'find.nobodyNetwork': 'Convide parceiros ou faça amizade com outras academias.',
+    'find.nobody': 'Ainda não há ninguém aqui', 'find.nobodyNetwork': 'Adicione amigos, convide parceiros ou faça amizade com outras academias.',
     'find.nobodyArea': 'Tente uma região mais ampla, ou marque-se como disponível para que te encontrem.', 'find.challenge': 'Desafiar', 'find.avatarNudge': 'Adicione um avatar de perfil para poder desafiar pessoas.',
 
     'om.post': 'Publicar um open mat', 'om.title': 'Título', 'om.city': 'Cidade', 'om.address': 'Endereço (opcional)',
@@ -1451,11 +1457,13 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'lb.title': 'Classement', 'lb.overall': 'Général', 'lb.gyms': 'Salles', 'lb.under13': '13 ans et moins',
     'lb.emptyTitle': 'Aucun grappler ici pour l’instant', 'lb.emptySub': 'Essaie un niveau plus large, ou sois le premier à grimper.',
     'lb.noGeo': 'Ajoute ta localisation dans ton profil (Modifier le profil) pour figurer à ce niveau.',
+    'lb.noGym': 'Rejoins une salle dans ton profil (Modifier le profil) pour voir le classement de ta salle.',
     'lb.kidsNote': 'Athlètes de moins de 14 ans par ROR. Pour leur vie privée, seul le prénom est affiché.',
     'lb.kidsEmptyTitle': 'Aucun mineur classé ici',
     'lb.kidsEmptySub': 'Essaie un niveau plus large ; ils apparaîtront après avoir combattu.',
     'lb.you': '(toi)', 'lb.yours': '(à toi)', 'lb.w': 'V', 'lb.l': 'D', 'lb.d': 'N',
 
+    'geo.gym': 'Salle',
     'geo.city': 'Ville', 'geo.state': 'État', 'geo.country': 'Pays',
     'geo.continent': 'Continent', 'geo.world': 'Monde',
 
@@ -1641,11 +1649,11 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'gym.nameReqBody': 'Donne un nom à ta salle.', 'gym.createFail': 'Impossible de créer la salle',
 
     'find.network': 'Mon réseau', 'find.area': 'Ouverts dans la zone',
-    'find.networkNote': 'Les compétiteurs de ta salle et des salles amies.',
+    'find.networkNote': 'Les compétiteurs de ta salle, des salles amies et tes amis.',
     'find.areaNote': 'Toute personne marquée « disponible pour un défi ». Filtre par zone et ceinture.',
     'find.areaCity': 'Zone / ville', 'find.anyCity': 'N’importe quelle ville', 'find.anyBelt': 'Toutes ceintures',
     'find.joinFirst': 'Rejoins d’abord une salle', 'find.joinFirstSub': 'Ton réseau vient de ta salle et des salles amies.',
-    'find.nobody': 'Personne ici pour l’instant', 'find.nobodyNetwork': 'Invite des partenaires ou lie-toi à d’autres salles.',
+    'find.nobody': 'Personne ici pour l’instant', 'find.nobodyNetwork': 'Ajoute des amis, invite des partenaires ou lie-toi à d’autres salles.',
     'find.nobodyArea': 'Essaie une zone plus large, ou rends-toi disponible pour qu’on te trouve.', 'find.challenge': 'Défier', 'find.avatarNudge': 'Ajoutez un avatar de profil pour pouvoir défier des gens.',
 
     'om.post': 'Publier un open mat', 'om.title': 'Titre', 'om.city': 'Ville', 'om.address': 'Adresse (optionnel)',
