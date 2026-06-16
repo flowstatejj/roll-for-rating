@@ -11,6 +11,7 @@ import { listFounders, makeFoundingByEmail, setFoundingById, type Founder } from
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
 import { fetchDisputes, resolveDispute, type DisputeReport, type MatchDispute } from '@/lib/matches';
+import { fetchUserReports, resolveUserReport, type UserReport } from '@/lib/safety';
 import type { BeltRank } from '@/lib/types';
 
 export default function AdminScreen() {
@@ -24,6 +25,8 @@ export default function AdminScreen() {
   const [founders, setFounders] = useState<Founder[]>([]);
   const [disputes, setDisputes] = useState<MatchDispute[]>([]);
   const [resolvingId, setResolvingId] = useState<string | null>(null);
+  const [reports, setReports] = useState<UserReport[]>([]);
+  const [actingReportId, setActingReportId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -36,7 +39,35 @@ export default function AdminScreen() {
     } catch (e) {
       console.warn('Failed to load disputes', e);
     }
+    try {
+      setReports(await fetchUserReports());
+    } catch (e) {
+      console.warn('Failed to load reports', e);
+    }
   }, []);
+
+  function actOnReport(rep: UserReport, action: 'dismiss' | 'remove' | 'ban') {
+    const label = action === 'dismiss' ? t('admin.repDismiss') : action === 'remove' ? t('admin.repRemove') : t('admin.repBan');
+    const body = action === 'ban' ? t('admin.repBanConfirm') : action === 'remove' ? t('admin.repRemoveConfirm') : t('admin.repDismissConfirm');
+    Alert.alert(label, body, [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: label,
+        style: action === 'dismiss' ? 'default' : 'destructive',
+        onPress: async () => {
+          setActingReportId(rep.id);
+          try {
+            await resolveUserReport(rep.id, action);
+            await load();
+          } catch (e: any) {
+            Alert.alert(t('admin.error'), e.message ?? t('md.tryAgain'));
+          } finally {
+            setActingReportId(null);
+          }
+        },
+      },
+    ]);
+  }
 
   useEffect(() => {
     load();
@@ -148,6 +179,35 @@ export default function AdminScreen() {
                   onPress={() => resolve(d, r)}
                 />
               ))}
+            </Card>
+          ))}
+        </>
+      )}
+
+      {/* User reports — moderation queue (App Store 1.2: act within 24h) */}
+      {reports.length > 0 && (
+        <>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two, marginBottom: Spacing.one }}>
+            <Ionicons name="flag" size={20} color={theme.danger} />
+            <ThemedText style={{ fontWeight: '800', fontSize: 18 }}>{t('admin.reportsTitle')} · {reports.length}</ThemedText>
+          </View>
+          {reports.map((rep) => (
+            <Card key={rep.id} style={{ gap: Spacing.two, borderColor: theme.danger, borderWidth: 1 }}>
+              <ThemedText style={{ fontWeight: '800' }}>{rep.reported_name ?? t('admin.repUnknown')}</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {t('admin.repReason').replace('{reason}', rep.reason).replace('{reporter}', rep.reporter_name ?? '—')}
+              </ThemedText>
+              {rep.details ? (
+                <ThemedText type="small" themeColor="textSecondary">{rep.details}</ThemedText>
+              ) : null}
+              {rep.match_id ? (
+                <Button label={t('admin.viewVideo')} variant="secondary" icon="play-circle" onPress={() => router.push(`/match/${rep.match_id}`)} />
+              ) : null}
+              <Button label={t('admin.repDismiss')} variant="secondary" onPress={() => actOnReport(rep, 'dismiss')} loading={actingReportId === rep.id} />
+              {rep.match_id ? (
+                <Button label={t('admin.repRemove')} onPress={() => actOnReport(rep, 'remove')} loading={actingReportId === rep.id} />
+              ) : null}
+              <Button label={t('admin.repBan')} onPress={() => actOnReport(rep, 'ban')} loading={actingReportId === rep.id} />
             </Card>
           ))}
         </>

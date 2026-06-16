@@ -46,6 +46,8 @@ export interface Profile {
   is_minor: boolean;
   /** Admin: can manage the app (flag founding members, etc.). */
   is_admin: boolean;
+  /** Suspended for violating community guidelines (App Store 1.2). Signed out on load. */
+  banned: boolean;
   /** Founding member: gold badge everywhere + free access (comp entitlement). */
   is_founding_member: boolean;
   birthdate: string | null;

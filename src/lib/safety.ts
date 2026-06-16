@@ -57,3 +57,33 @@ export async function reportUser(args: {
   });
   if (error) throw error;
 }
+
+// --- Admin moderation queue (App Store 1.2: act on reports within 24h) -------
+export interface UserReport {
+  id: string;
+  created_at: string;
+  reason: string;
+  details: string | null;
+  reporter_name: string | null;
+  reported_id: string | null;
+  reported_name: string | null;
+  reported_banned: boolean;
+  match_id: string | null;
+  video_count: number;
+}
+
+/** Admin: open moderation reports (filed by users or auto-filed on a block). */
+export async function fetchUserReports(): Promise<UserReport[]> {
+  const { data, error } = await supabase.rpc('admin_user_reports');
+  if (error) throw error;
+  return (data ?? []) as UserReport[];
+}
+
+/** Admin: act on a report — dismiss, remove the content, or ban the user. */
+export async function resolveUserReport(
+  reportId: string,
+  action: 'dismiss' | 'remove' | 'ban',
+): Promise<void> {
+  const { error } = await supabase.rpc('admin_resolve_user_report', { p_report_id: reportId, p_action: action });
+  if (error) throw error;
+}
