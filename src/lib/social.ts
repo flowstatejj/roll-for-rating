@@ -1,3 +1,4 @@
+import { fetchMyFriends } from './friends';
 import { continentForCountry } from './geo';
 import { fetchBlockedIds } from './safety';
 import { supabase } from './supabase';
@@ -150,6 +151,30 @@ export async function fetchFriendlyOpponents(userId: string, myGymId: string): P
     .order('rating', { ascending: false });
   if (pErr) throw pErr;
   return (data ?? []) as Profile[];
+}
+
+/**
+ * The full "network" challenge pool: members of your gym + friendly gyms, PLUS
+ * your personal friends — deduped and sorted by rating. Works without a gym too
+ * (friends only), so friends are always reachable for a roll.
+ */
+export async function fetchNetworkOpponents(userId: string, myGymId: string | null): Promise<Profile[]> {
+  const gymPool = myGymId ? await fetchFriendlyOpponents(userId, myGymId) : [];
+
+  const friends = await fetchMyFriends();
+  const friendIds = friends.map((f) => f.id).filter((id) => id !== userId);
+  let friendProfiles: Profile[] = [];
+  if (friendIds.length) {
+    const { data, error } = await supabase.from('profiles').select('*').in('id', friendIds);
+    if (error) throw error;
+    friendProfiles = (data ?? []) as Profile[];
+  }
+
+  const byId = new Map<string, Profile>();
+  for (const p of [...gymPool, ...friendProfiles]) {
+    if (p.id !== userId) byId.set(p.id, p);
+  }
+  return [...byId.values()].sort((a, b) => b.rating - a.rating);
 }
 
 // ---------------------------------------------------------------------------

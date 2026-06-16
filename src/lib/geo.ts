@@ -13,6 +13,11 @@ export const GEO_LEVELS: { key: GeoLevel; label: string }[] = [
   { key: 'world', label: 'World' },
 ];
 
+// Ranking/leaderboard scope: your Gym first, then geography widening to World.
+// Shared by the Rankings and Biggest Pots boards.
+export type Scope = 'gym' | GeoLevel;
+export const SCOPE_KEYS: Scope[] = ['gym', 'city', 'state', 'country', 'continent', 'world'];
+
 export interface Geo {
   city: string | null;
   state: string | null;
@@ -51,4 +56,19 @@ export function geoMatches(viewer: Geo | null, target: Geo | null, level: GeoLev
   const t = target[level];
   if (!v || !t) return false;
   return norm(v) === norm(t);
+}
+
+/**
+ * Does `target` fall in `viewer`'s scope? 'gym' compares gym membership; every
+ * other scope defers to geoMatches. Used by Rankings + Biggest Pots filtering.
+ */
+export function scopeMatches(
+  viewerGeo: Geo | null,
+  viewerGymId: string | null,
+  targetGeo: Geo | null,
+  targetGymId: string | null,
+  scope: Scope,
+): boolean {
+  if (scope === 'gym') return !!viewerGymId && targetGymId === viewerGymId;
+  return geoMatches(viewerGeo, targetGeo, scope);
 }

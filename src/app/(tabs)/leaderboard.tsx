@@ -1,21 +1,22 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
+import { DropField, OptionRow, dropdownStyles } from '@/components/dropdowns';
 import { ThemedText } from '@/components/themed-text';
 import { Avatar, BeltChip, Button, Card, EmptyState, Loading, Screen } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
-import { GEO_LEVELS, geoMatches, type Geo, type GeoLevel } from '@/lib/geo';
+import { scopeMatches, type Geo, type GeoLevel, type Scope, SCOPE_KEYS } from '@/lib/geo';
 import { createMatchRequest } from '@/lib/invites';
 import { fetchJuniors } from '@/lib/juniors';
 import { fetchKidsLeaderboard, fetchLeaderboard, fetchMyGeo, type KidsLeaderRow, type LeaderRow } from '@/lib/matches';
 import { fetchGymPowerRanking } from '@/lib/tournaments';
 import type { GymPower, Profile } from '@/lib/types';
-import { inWeightClass, WEIGHT_FILTERS, type WeightClassKey } from '@/lib/weight';
+import { inWeightClass, weightClassFor, WEIGHT_FILTERS, type WeightClassKey } from '@/lib/weight';
 
 type Tab = 'overall' | 'kids' | 'gyms';
 
@@ -27,8 +28,11 @@ export default function LeaderboardScreen() {
   const userId = session?.user.id;
 
   const [tab, setTab] = useState<Tab>('overall');
-  const [level, setLevel] = useState<GeoLevel>('world');
-  const [weightFilter, setWeightFilter] = useState<WeightClassKey>('absolute');
+  const [scope, setScope] = useState<Scope>('city'); // default to the member's own city
+  const [weightFilter, setWeightFilter] = useState<WeightClassKey>(() => weightClassFor(profile?.weight_lbs) ?? 'absolute');
+  const [openMenu, setOpenMenu] = useState<null | 'scope' | 'weight'>(null);
+  const scopeTouched = useRef(false);
+  const weightTouched = useRef(false);
   const [rows, setRows] = useState<LeaderRow[]>([]);
   const [gyms, setGyms] = useState<GymPower[]>([]);
   const [kids, setKids] = useState<KidsLeaderRow[]>([]);
@@ -61,27 +65,57 @@ export default function LeaderboardScreen() {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
+  // Default the weight filter to the member's own class once their profile loads,
+  // unless they've already picked one.
+  useEffect(() => {
+    if (weightTouched.current) return;
+    const own = weightClassFor(profile?.weight_lbs);
+    if (own) setWeightFilter(own);
+  }, [profile?.weight_lbs]);
+
+  // Fall back off the "city" default to World only when the member has no city to
+  // rank in (so the board isn't empty for someone who hasn't set a location).
+  useEffect(() => {
+    if (scopeTouched.current || scope !== 'city') return;
+    if (myGeo && !myGeo.city) setScope('world');
+  }, [myGeo, scope]);
+
+  // Gym scope has no server-side kids board, so juniors fall back to World there.
+  const kidsLevel: GeoLevel = scope === 'gym' ? 'world' : scope;
+
   // Kids board re-fetches per level (server filters by geography).
   useEffect(() => {
     if (!canSeeKids) return;
-    fetchKidsLeaderboard(level).then(setKids).catch((e) => console.warn('kids board', e));
-  }, [level, canSeeKids]);
+    fetchKidsLeaderboard(kidsLevel).then(setKids).catch((e) => console.warn('kids board', e));
+  }, [kidsLevel, canSeeKids]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await load();
-    if (canSeeKids) await fetchKidsLeaderboard(level).then(setKids).catch(() => {});
+    if (canSeeKids) await fetchKidsLeaderboard(kidsLevel).then(setKids).catch(() => {});
     setRefreshing(false);
-  }, [load, canSeeKids, level]);
+  }, [load, canSeeKids, kidsLevel]);
 
   const overallFiltered = useMemo(
     () =>
       rows
-        .filter((r) => geoMatches(myGeo, r.geo, level))
+        .filter((r) => scopeMatches(myGeo, profile?.gym_id ?? null, r.geo, r.gym_id, scope))
         .filter((r) => inWeightClass(r.weight_lbs, weightFilter))
         .slice(0, 100),
-    [rows, myGeo, level, weightFilter],
+    [rows, myGeo, scope, weightFilter, profile?.gym_id],
   );
+
+  // Scope options exclude Gym on the kids board (no server gym filter for juniors).
+  const scopeOptions = tab === 'kids' ? SCOPE_KEYS.filter((s) => s !== 'gym') : SCOPE_KEYS;
+  const scopeLabel = (s: Scope) => t(s === 'gym' ? 'geo.gym' : `geo.${s}`);
+
+  const selectTab = (tb: Tab) => {
+    if (tb === 'kids' && scope === 'gym') { setScope('city'); scopeTouched.current = true; }
+    setTab(tb);
+    setOpenMenu(null);
+  };
+  const pickScope = (s: Scope) => { scopeTouched.current = true; setScope(s); setOpenMenu(null); };
+  const pickWeight = (w: WeightClassKey) => { weightTouched.current = true; setWeightFilter(w); setOpenMenu(null); };
 
   function challenge(row: KidsLeaderRow) {
     if (juniors.length === 0) return;
@@ -111,41 +145,56 @@ export default function LeaderboardScreen() {
       </ThemedText>
 
       <View style={styles.segment}>
-        <Seg label={t('lb.overall')} active={tab === 'overall'} onPress={() => setTab('overall')} />
-        <Seg label={t('lb.gyms')} active={tab === 'gyms'} onPress={() => setTab('gyms')} />
-        {canSeeKids && <Seg label={t('lb.under13')} active={tab === 'kids'} onPress={() => setTab('kids')} />}
+        <Seg label={t('lb.overall')} active={tab === 'overall'} onPress={() => selectTab('overall')} />
+        <Seg label={t('lb.gyms')} active={tab === 'gyms'} onPress={() => selectTab('gyms')} />
+        {canSeeKids && <Seg label={t('lb.under13')} active={tab === 'kids'} onPress={() => selectTab('kids')} />}
       </View>
 
-      {/* Geographic level (people boards only) */}
+      {/* Scope + weight dropdowns (people boards only) */}
       {tab !== 'gyms' && (
-        <>
-          <View style={styles.levels}>
-            {GEO_LEVELS.map((l) => (
-              <Chip key={l.key} label={t(`geo.${l.key}`)} active={level === l.key} onPress={() => setLevel(l.key)} />
-            ))}
+        <View style={{ gap: Spacing.two }}>
+          <View style={dropdownStyles.controls}>
+            <DropField
+              icon="earth-outline"
+              text={scopeLabel(scope)}
+              open={openMenu === 'scope'}
+              onPress={() => setOpenMenu((m) => (m === 'scope' ? null : 'scope'))}
+            />
+            {tab === 'overall' && (
+              <DropField
+                icon="barbell-outline"
+                text={t(`wc.${weightFilter}`)}
+                open={openMenu === 'weight'}
+                onPress={() => setOpenMenu((m) => (m === 'weight' ? null : 'weight'))}
+              />
+            )}
           </View>
-          {level !== 'world' && !myGeo?.[level] && (
-            <ThemedText type="small" themeColor="textSecondary">
-              {t('lb.noGeo')}
-            </ThemedText>
-          )}
-        </>
-      )}
 
-      {/* Weight class (overall board only) */}
-      {tab === 'overall' && (
-        <>
-          <View style={styles.levels}>
-            {WEIGHT_FILTERS.map((k) => (
-              <Chip key={k} label={t(`wc.${k}`)} active={weightFilter === k} onPress={() => setWeightFilter(k)} />
-            ))}
-          </View>
-          {weightFilter !== 'absolute' && (
-            <ThemedText type="small" themeColor="textSecondary">
-              {t('lb.weightNote')}
-            </ThemedText>
+          {openMenu === 'scope' && (
+            <Card style={dropdownStyles.menu}>
+              {scopeOptions.map((s) => (
+                <OptionRow key={s} label={scopeLabel(s)} selected={scope === s} onPress={() => pickScope(s)} />
+              ))}
+            </Card>
           )}
-        </>
+          {openMenu === 'weight' && (
+            <Card style={dropdownStyles.menu}>
+              {WEIGHT_FILTERS.map((k) => (
+                <OptionRow key={k} label={t(`wc.${k}`)} selected={weightFilter === k} onPress={() => pickWeight(k)} />
+              ))}
+            </Card>
+          )}
+
+          {scope === 'gym' && !profile?.gym_id && (
+            <ThemedText type="small" themeColor="textSecondary">{t('lb.noGym')}</ThemedText>
+          )}
+          {scope !== 'gym' && scope !== 'world' && !myGeo?.[scope] && (
+            <ThemedText type="small" themeColor="textSecondary">{t('lb.noGeo')}</ThemedText>
+          )}
+          {tab === 'overall' && weightFilter !== 'absolute' && (
+            <ThemedText type="small" themeColor="textSecondary">{t('lb.weightNote')}</ThemedText>
+          )}
+        </View>
       )}
 
       {tab === 'gyms' ? (
@@ -288,22 +337,9 @@ function Seg({ label, active, onPress }: { label: string; active: boolean; onPre
   );
 }
 
-function Chip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
-  const theme = useTheme();
-  return (
-    <Pressable
-      onPress={onPress}
-      style={[styles.chip, { backgroundColor: active ? theme.accent : theme.tile, borderColor: active ? theme.accent : theme.tileBorder }]}>
-      <ThemedText style={{ color: active ? theme.accentText : theme.text, fontWeight: '700', fontSize: 12 }}>{label}</ThemedText>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   segment: { flexDirection: 'row', gap: Spacing.two },
   seg: { flex: 1, alignItems: 'center', paddingVertical: Spacing.two, borderRadius: 10, borderWidth: 1 },
-  levels: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.one },
-  chip: { paddingVertical: Spacing.one, paddingHorizontal: Spacing.three, borderRadius: 999, borderWidth: 1 },
   list: { paddingVertical: Spacing.one, paddingHorizontal: Spacing.one },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.two, paddingHorizontal: Spacing.two },
   tap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.three },

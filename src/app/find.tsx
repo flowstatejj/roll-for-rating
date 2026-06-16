@@ -9,7 +9,7 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
-import { fetchFriendlyOpponents, fetchOpenChallengers } from '@/lib/social';
+import { fetchNetworkOpponents, fetchOpenChallengers } from '@/lib/social';
 import { type BeltRank, type Profile } from '@/lib/types';
 
 type Mode = 'network' | 'area';
@@ -30,8 +30,7 @@ export default function FindScreen() {
   const load = useCallback(async () => {
     try {
       if (mode === 'network') {
-        if (!profile?.gym_id) return setResults([]);
-        setResults(await fetchFriendlyOpponents(userId, profile.gym_id));
+        setResults(await fetchNetworkOpponents(userId, profile?.gym_id ?? null));
       } else {
         setResults(await fetchOpenChallengers(userId, { city, belt: belt === 'any' ? null : belt }));
       }
@@ -95,9 +94,7 @@ export default function FindScreen() {
         </>
       )}
 
-      {mode === 'network' && !profile?.gym_id ? (
-        <EmptyState icon="barbell-outline" title={t('find.joinFirst')} subtitle={t('find.joinFirstSub')} />
-      ) : results.length === 0 ? (
+      {results.length === 0 ? (
         <EmptyState
           icon="people-outline"
           title={t('find.nobody')}

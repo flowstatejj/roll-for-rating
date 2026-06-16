@@ -10,6 +10,9 @@ export interface WagerLeader {
   rating: number;
   pot_won: number;
   wagered_wins: number;
+  // Resolved location + gym for scope filtering (profile first, gym fallback).
+  geo: Geo;
+  gym_id: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -103,14 +106,37 @@ export async function setMatchPlan(matchId: string, when: string, where: string)
   if (error) throw error;
 }
 
-/** Top players by total Elo won through wagers ("Biggest Pots"). */
+/** Top players by total Elo won through wagers ("Biggest Pots"), with each
+ *  leader's resolved location + gym attached for scope filtering. */
 export async function fetchWagerLeaderboard(): Promise<WagerLeader[]> {
   const { data, error } = await supabase.rpc('wager_leaderboard', { p_limit: 50 });
   if (error) throw error;
-  return (data ?? []).map((r: any) => ({
+  const base = (data ?? []).map((r: any) => ({
     ...r,
     pot_won: Number(r.pot_won),
     wagered_wins: Number(r.wagered_wins),
+  }));
+
+  // Enrich with geo/gym in one extra query (the RPC doesn't return location).
+  const ids = base.map((r: any) => r.user_id);
+  const geoById = new Map<string, { geo: Geo; gym_id: string | null }>();
+  if (ids.length) {
+    const { data: profs } = await supabase
+      .from('profiles')
+      .select('id, city, state, country, continent, gym_id, gym:gyms!profiles_gym_id_fkey(city,state,country,continent)')
+      .in('id', ids);
+    for (const p of (profs ?? []) as any[]) {
+      geoById.set(p.id, {
+        geo: resolveGeo({ city: p.city, state: p.state, country: p.country, continent: p.continent }, p.gym ?? null),
+        gym_id: p.gym_id ?? null,
+      });
+    }
+  }
+
+  return base.map((r: any) => ({
+    ...r,
+    geo: geoById.get(r.user_id)?.geo ?? { city: null, state: null, country: null, continent: null },
+    gym_id: geoById.get(r.user_id)?.gym_id ?? null,
   })) as WagerLeader[];
 }
 
