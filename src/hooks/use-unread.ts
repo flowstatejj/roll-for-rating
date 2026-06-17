@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 
 import { useAuth } from '@/lib/auth';
 import { fetchUnreadCount } from '@/lib/notifications';
@@ -22,9 +23,10 @@ export function useUnread(): number {
     }
   }, [userId]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  // Refetch whenever the host screen regains focus — e.g. returning from the
+  // Notifications screen after they were marked read — so the badge clears even
+  // when the realtime UPDATE doesn't fire.
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
   useEffect(() => {
     if (!userId) return;
