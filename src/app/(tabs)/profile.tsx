@@ -569,6 +569,15 @@ export default function ProfileScreen() {
         />
       )}
 
+      {profile.is_founding_member && (
+        <Button
+          label={t('profile.elite')}
+          variant="secondary"
+          icon="ribbon-outline"
+          onPress={() => router.push('/elite')}
+        />
+      )}
+
       <Button
         label={t('profile.settings')}
         variant="secondary"
