@@ -163,6 +163,14 @@ export default function MatchDetailScreen() {
     }
   }
 
+  // Either competitor (challenger OR the opponent who accepted) can call it off.
+  function confirmCancel() {
+    Alert.alert(t('md.cancelTitle'), t('md.cancelBody'), [
+      { text: t('md.keepMatch'), style: 'cancel' },
+      { text: t('md.cancel'), style: 'destructive', onPress: () => act(() => cancelMatch(match!.id)) },
+    ]);
+  }
+
   function submitResult() {
     if (!winner) {
       Alert.alert(t('md.incomplete'), t('md.pickWinner'));
@@ -495,9 +503,10 @@ export default function MatchDetailScreen() {
         </Card>
       )}
 
-      {/* Cancel option for competitors while still pending */}
+      {/* Either competitor (challenger or the opponent who accepted) can cancel
+          while the match is still pending — before any result is recorded. */}
       {(match.status === 'pending_opponent' || match.status === 'pending_referee') && amCompetitor && (
-        <Button label={t('md.cancel')} variant="ghost" onPress={() => act(() => cancelMatch(match.id))} loading={busy} />
+        <Button label={t('md.cancel')} variant="danger" icon="close-circle" onPress={confirmCancel} loading={busy} />
       )}
     </Screen>
   );
