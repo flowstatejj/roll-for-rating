@@ -364,8 +364,8 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     // Paywall (subscription)
     'pw.title': 'Unlock Roll for Rating',
-    'pw.subtitle': 'Your real BJJ rating — plus leagues, tournaments, and the whole gym.',
-    'pw.f1': 'Earn a real, refereed BJJ rating (ROR)',
+    'pw.subtitle': 'Every roll counts for something - plus leagues, tournaments, and the whole gym.',
+    'pw.f1': 'Put your ROR on the line in every refereed match',
     'pw.f2': 'Run & join leagues and tournaments',
     'pw.f3': 'Climb gym, local & global leaderboards',
     'pw.f4': 'Quests, streaks & the submission hunt',
@@ -839,8 +839,8 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     // Paywall (subscription)
     'pw.title': 'Desbloquea Roll for Rating',
-    'pw.subtitle': 'Tu rating real de BJJ — más ligas, torneos y todo el gimnasio.',
-    'pw.f1': 'Gana un rating de BJJ real y arbitrado (ROR)',
+    'pw.subtitle': 'Cada combate cuenta para algo - más ligas, torneos y todo el gimnasio.',
+    'pw.f1': 'Pon tu ROR en juego en cada combate arbitrado',
     'pw.f2': 'Crea y únete a ligas y torneos',
     'pw.f3': 'Escala en rankings de gimnasio, locales y globales',
     'pw.f4': 'Misiones, rachas y la caza de sumisiones',
@@ -1314,8 +1314,8 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     // Paywall (subscription)
     'pw.title': 'Desbloqueie o Roll for Rating',
-    'pw.subtitle': 'Seu rating real de BJJ — além de ligas, torneios e toda a academia.',
-    'pw.f1': 'Conquiste um rating de BJJ real e arbitrado (ROR)',
+    'pw.subtitle': 'Cada luta vale alguma coisa - além de ligas, torneios e toda a academia.',
+    'pw.f1': 'Coloque seu ROR em jogo em cada luta arbitrada',
     'pw.f2': 'Crie e participe de ligas e torneios',
     'pw.f3': 'Suba nos rankings da academia, locais e globais',
     'pw.f4': 'Missões, sequências e a caça às finalizações',
@@ -1789,8 +1789,8 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
 
     // Paywall (subscription)
     'pw.title': 'Débloquez Roll for Rating',
-    'pw.subtitle': 'Votre vrai rating de JJB — plus ligues, tournois et toute la salle.',
-    'pw.f1': 'Gagnez un vrai rating de JJB arbitré (ROR)',
+    'pw.subtitle': 'Chaque combat compte pour quelque chose - plus ligues, tournois et toute la salle.',
+    'pw.f1': 'Mettez votre ROR en jeu à chaque combat arbitré',
     'pw.f2': 'Créez et rejoignez des ligues et tournois',
     'pw.f3': 'Grimpez dans les classements de salle, locaux et mondiaux',
     'pw.f4': 'Quêtes, séries et la chasse aux soumissions',
