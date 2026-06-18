@@ -22,10 +22,7 @@ export default function CompetitionsScreen() {
 
   const [source, setSource] = useState<CompSource>('smoothcomp');
   const [url, setUrl] = useState('');
-  const [wins, setWins] = useState('');
-  const [losses, setLosses] = useState('');
   const [busy, setBusy] = useState(false);
-  const [reading, setReading] = useState(false);
   const [records, setRecords] = useState<CompetitionRecord[]>([]);
 
   const load = useCallback(async () => {
@@ -38,34 +35,11 @@ export default function CompetitionsScreen() {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  async function autoRead() {
-    if (!url.trim()) {
-      Alert.alert(t('cp.pasteLinkTitle'), t('cp.pasteLinkBody'));
-      return;
-    }
-    setReading(true);
-    try {
-      const r = await readCompetitionLink(source, url.trim());
-      setWins(String(r.wins));
-      setLosses(String(r.losses));
-      Alert.alert(t('cp.readTitle'), t('cp.readBody').replace('{w}', String(r.wins)).replace('{l}', String(r.losses)));
-    } catch (e: any) {
-      Alert.alert(t('cp.readFailTitle'), e.message ?? t('cp.readFailBody'));
-    } finally {
-      setReading(false);
-    }
-  }
-
-  async function importNow() {
-    const w = parseInt(wins, 10);
-    const l = parseInt(losses, 10);
-    if (Number.isNaN(w) || Number.isNaN(l) || w < 0 || l < 0) {
-      Alert.alert(t('cp.checkTitle'), t('cp.checkBody'));
-      return;
-    }
+  // Apply a detected record to the member's rating (one update per source / month).
+  async function applyRecord(wins: number, losses: number) {
     setBusy(true);
     try {
-      const res = await importCompetitionRecord({ source, profileUrl: url.trim(), wins: w, losses: l });
+      const res = await importCompetitionRecord({ source, profileUrl: url.trim(), wins, losses, verified: true });
       await refreshProfile();
       await load();
       const sign = res.rating_delta >= 0 ? '+' : '';
@@ -73,19 +47,48 @@ export default function CompetitionsScreen() {
         t('cp.importedTitle'),
         t('cp.importedBody')
           .replace('{src}', COMP_SOURCE_LABELS[source])
-          .replace('{w}', String(w))
-          .replace('{l}', String(l))
+          .replace('{w}', String(wins))
+          .replace('{l}', String(losses))
           .replace('{delta}', `${sign}${res.rating_delta}`)
           .replace('{new}', String(res.new_rating)),
       );
-      setWins('');
-      setLosses('');
       setUrl('');
     } catch (e: any) {
       Alert.alert(t('cp.importFail'), e.message ?? t('md.tryAgain'));
     } finally {
       setBusy(false);
     }
+  }
+
+  // Read the pasted link, then confirm + import the detected record.
+  async function readAndImport() {
+    if (!url.trim()) {
+      Alert.alert(t('cp.pasteLinkTitle'), t('cp.pasteLinkBody'));
+      return;
+    }
+    setBusy(true);
+    let detected: { found: boolean; wins: number; losses: number } | null = null;
+    try {
+      detected = await readCompetitionLink(source, url.trim());
+    } catch (e: any) {
+      Alert.alert(t('cp.readFailTitle'), e.message ?? t('cp.readFailBody'));
+    } finally {
+      setBusy(false);
+    }
+    if (!detected) return;
+    if (!detected.found) {
+      Alert.alert(t('cp.notFoundTitle'), t('cp.notFound'));
+      return;
+    }
+    const { wins, losses } = detected;
+    Alert.alert(
+      t('cp.foundTitle'),
+      t('cp.foundBody').replace('{w}', String(wins)).replace('{l}', String(losses)),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('cp.import'), onPress: () => applyRecord(wins, losses) },
+      ],
+    );
   }
 
   return (
@@ -132,23 +135,18 @@ export default function CompetitionsScreen() {
         />
 
         <Button
-          label={t('cp.readLink')}
+          label={t('cp.readImport')}
           icon="scan"
-          variant="secondary"
-          loading={reading}
-          onPress={autoRead}
+          loading={busy}
+          onPress={readAndImport}
         />
 
-        <View style={styles.wl}>
-          <View style={{ flex: 1 }}>
-            <TextField label={t('cp.wins')} value={wins} onChangeText={setWins} keyboardType="number-pad" placeholder="0" />
-          </View>
-          <View style={{ flex: 1 }}>
-            <TextField label={t('cp.losses')} value={losses} onChangeText={setLosses} keyboardType="number-pad" placeholder="0" />
-          </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+          <Ionicons name="time-outline" size={14} color={theme.textSecondary} />
+          <ThemedText type="small" themeColor="textSecondary" style={{ flex: 1 }}>
+            {t('cp.onceMonth')}
+          </ThemedText>
         </View>
-
-        <Button label={t('cp.import')} icon="download" loading={busy} onPress={importNow} />
       </Card>
 
       {/* Existing records */}
@@ -187,7 +185,6 @@ export default function CompetitionsScreen() {
 const styles = StyleSheet.create({
   sources: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   sourceChip: { paddingVertical: Spacing.two, paddingHorizontal: Spacing.three, borderRadius: 999, borderWidth: 1 },
-  wl: { flexDirection: 'row', gap: Spacing.three },
   sectionLabel: { fontSize: 18, fontWeight: '800', marginTop: Spacing.one },
   divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.one },
   recordRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.two, paddingHorizontal: Spacing.two },

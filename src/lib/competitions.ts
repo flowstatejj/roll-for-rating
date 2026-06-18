@@ -42,12 +42,12 @@ export async function importCompetitionRecord(args: {
 export async function readCompetitionLink(
   source: CompSource,
   url: string,
-): Promise<{ wins: number; losses: number }> {
+): Promise<{ found: boolean; wins: number; losses: number }> {
   const { data, error } = await supabase.functions.invoke('read-competition-link', {
     body: { source, url },
   });
   if (error) {
-    throw new Error('Auto-read isn’t set up yet — enter your W/L manually for now.');
+    throw new Error('Couldn’t read that link right now. Please try again in a bit.');
   }
-  return data as { wins: number; losses: number };
+  return data as { found: boolean; wins: number; losses: number };
 }
