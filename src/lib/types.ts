@@ -545,38 +545,6 @@ export interface PuzzleStats {
 }
 
 // ---------------------------------------------------------------------------
-// Competition records (external W/L import)
-// ---------------------------------------------------------------------------
-export type CompSource = 'smoothcomp' | 'ibjjf' | 'adcc' | 'other';
-
-export const COMP_SOURCE_LABELS: Record<CompSource, string> = {
-  smoothcomp: 'Smoothcomp',
-  ibjjf: 'IBJJF',
-  adcc: 'ADCC',
-  other: 'Other',
-};
-
-export interface CompetitionRecord {
-  id: string;
-  user_id: string;
-  source: CompSource;
-  profile_url: string | null;
-  wins: number;
-  losses: number;
-  verified: boolean;
-  rating_delta: number;
-  created_at: string;
-}
-
-export interface CompetitionImportResult {
-  source: CompSource;
-  wins: number;
-  losses: number;
-  rating_delta: number;
-  new_rating: number;
-}
-
-// ---------------------------------------------------------------------------
 // Match videos
 // ---------------------------------------------------------------------------
 export interface MatchVideo {

@@ -538,13 +538,6 @@ export default function ProfileScreen() {
         <Button label={t('profile.editProfile')} variant="secondary" icon="create-outline" onPress={startEdit} />
       )}
 
-      <Button
-        label={t('profile.importComp')}
-        variant="secondary"
-        icon="ribbon-outline"
-        onPress={() => router.push('/competitions')}
-      />
-
       {!profile.is_minor && (
         <>
           <Button
