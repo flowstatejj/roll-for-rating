@@ -11,6 +11,7 @@ import type {
   TournamentTeamBuild,
   TournamentTeamRule,
   ResultType,
+  SentInvite,
 } from './types';
 
 // ---------------------------------------------------------------------------
@@ -119,6 +120,20 @@ export interface TournamentInvite {
 export async function inviteToTournament(tid: string, userId: string): Promise<void> {
   const { error } = await supabase.rpc('invite_to_tournament', { p_tid: tid, p_user: userId });
   if (error) throw error;
+}
+
+/** Host invites several people at once; returns how many invites went out. */
+export async function inviteManyToTournament(tid: string, userIds: string[]): Promise<number> {
+  const { data, error } = await supabase.rpc('invite_many_to_tournament', { p_tid: tid, p_users: userIds });
+  if (error) throw error;
+  return (data as number) ?? 0;
+}
+
+/** Everyone the host has invited to this tournament, with status. Host only. */
+export async function fetchTournamentInvitesSent(tid: string): Promise<SentInvite[]> {
+  const { data, error } = await supabase.rpc('tournament_invites_sent', { p_tid: tid });
+  if (error) throw error;
+  return (data ?? []) as SentInvite[];
 }
 
 /** Invited user accepts (registers) or declines. */

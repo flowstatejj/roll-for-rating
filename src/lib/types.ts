@@ -458,6 +458,18 @@ export interface AppNotification {
   created_at: string;
 }
 
+// A person the organizer/host has invited to a league or tournament, with the
+// current state of that invite (used by the Invite players screen).
+export interface SentInvite {
+  user_id: string;
+  display_name: string;
+  username: string;
+  belt_rank: string;
+  rating: number;
+  status: 'pending' | 'accepted' | 'declined';
+  created_at: string;
+}
+
 // A match row joined with the three people's profiles (used in lists / detail).
 export interface MatchWithPeople extends Match {
   challenger: Pick<Profile, 'id' | 'username' | 'display_name' | 'belt_rank' | 'rating'>;

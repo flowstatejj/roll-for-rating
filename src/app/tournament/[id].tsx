@@ -8,7 +8,6 @@ import { Avatar, BeltChip, Button, Card, EmptyState, Loading, Screen, TextField 
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
-import { fetchMyFriends, type FriendProfile } from '@/lib/friends';
 import { useTranslation } from '@/lib/i18n';
 import { searchProfiles } from '@/lib/matches';
 import { supabase } from '@/lib/supabase';
@@ -25,7 +24,6 @@ import {
   generatePlayoff,
   generateTournament,
   hasTournamentInvite,
-  inviteToTournament,
   registerForTournament,
   respondTournamentInvite,
   setMatReferee,
@@ -39,7 +37,7 @@ import type {
   TournamentTeam,
 } from '@/lib/types';
 
-type Picker = { mode: 'ref'; matId: string } | { mode: 'member'; teamId: string } | { mode: 'invite' } | null;
+type Picker = { mode: 'ref'; matId: string } | { mode: 'member'; teamId: string } | null;
 
 export default function TournamentDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -62,7 +60,6 @@ export default function TournamentDetailScreen() {
   const [picker, setPicker] = useState<Picker>(null);
   const [pq, setPq] = useState('');
   const [presults, setPresults] = useState<Profile[]>([]);
-  const [friends, setFriends] = useState<FriendProfile[]>([]);
   const [newTeam, setNewTeam] = useState('');
 
   const load = useCallback(async () => {
@@ -95,14 +92,11 @@ export default function TournamentDetailScreen() {
 
   useEffect(() => {
     if (!picker) return;
-    // For invites with an empty box we show friends; otherwise search everyone.
-    if (picker.mode === 'invite' && friends.length === 0) fetchMyFriends().then(setFriends).catch(() => {});
-    const showFriends = picker.mode === 'invite' && !pq.trim();
     const h = setTimeout(async () => {
-      try { setPresults(showFriends ? [] : await searchProfiles(pq, [])); } catch { /* ignore */ }
+      try { setPresults(pq.trim() ? await searchProfiles(pq, []) : []); } catch { /* ignore */ }
     }, 250);
     return () => clearTimeout(h);
-  }, [pq, picker, friends.length]);
+  }, [pq, picker]);
 
   if (loading) return <Loading />;
   if (!tr) {
@@ -129,12 +123,6 @@ export default function TournamentDetailScreen() {
   async function pick(p: Profile) {
     if (!picker) return;
     const cur = picker;
-    if (cur.mode === 'invite') {
-      // Keep the picker open so the host can invite several people in a row.
-      setPq('');
-      await act(() => inviteToTournament(id, p.id));
-      return;
-    }
     setPicker(null); setPq(''); setPresults([]);
     if (cur.mode === 'ref') await act(() => setMatReferee(cur.matId, p.id));
     else await act(() => addTeamMember(cur.teamId, p.id));
@@ -197,39 +185,30 @@ export default function TournamentDetailScreen() {
       )}
       {isEntrant && <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center' }}>{t('tn.registered')}</ThemedText>}
 
-      {/* Host: invite specific people */}
+      {/* Host: invite specific people (opens the dedicated invite screen) */}
       {isHost && tr.status !== 'complete' && (
-        <Button label={t('tn.invitePlayers')} icon="person-add" variant="secondary" onPress={() => { setPicker({ mode: 'invite' }); setPq(''); setPresults([]); }} />
+        <Button
+          label={t('tn.invitePlayers')}
+          icon="person-add"
+          variant="secondary"
+          onPress={() => router.push({ pathname: '/invite', params: { type: 'tournament', id, name: tr.name } })}
+        />
       )}
 
-      {/* Picker panel */}
+      {/* Picker panel (set referee / add team member) */}
       {picker && (
         <Card style={{ gap: Spacing.two, borderColor: theme.accent, borderWidth: 1 }}>
-          <ThemedText style={{ fontWeight: '800' }}>{picker.mode === 'ref' ? t('tn.pickRef') : picker.mode === 'invite' ? t('tn.pickInvite') : t('tn.pickMember')}</ThemedText>
+          <ThemedText style={{ fontWeight: '800' }}>{picker.mode === 'ref' ? t('tn.pickRef') : t('tn.pickMember')}</ThemedText>
           <TextField value={pq} onChangeText={setPq} placeholder={t('mn.searchPlaceholder')} autoCapitalize="none" />
-          {(() => {
-            const showFriends = picker.mode === 'invite' && !pq.trim();
-            const rows: { id: string; display_name: string; belt_rank: string; warrior?: string | null; color?: string | null }[] =
-              showFriends
-                ? friends.map((f) => ({ id: f.id, display_name: f.display_name, belt_rank: f.belt_rank, warrior: f.avatar_warrior, color: f.avatar_color }))
-                : presults.map((p) => ({ id: p.id, display_name: p.display_name, belt_rank: p.belt_rank, warrior: p.avatar_warrior, color: p.avatar_color }));
-            return (
-              <>
-                {showFriends && (
-                  <ThemedText type="small" themeColor="textSecondary">{rows.length ? t('frn.inviteFriendsHint') : t('frn.noFriendsHint')}</ThemedText>
-                )}
-                {rows.slice(0, 8).map((p) => (
-                  <Pressable key={p.id} onPress={() => pick({ id: p.id } as Profile)}>
-                    <View style={styles.prow}>
-                      <Avatar name={p.display_name} size={32} warrior={p.warrior ?? undefined} color={p.color ?? undefined} />
-                      <ThemedText style={{ flex: 1, fontWeight: '700' }} numberOfLines={1}>{p.display_name}</ThemedText>
-                      <BeltChip belt={p.belt_rank as any} size="sm" />
-                    </View>
-                  </Pressable>
-                ))}
-              </>
-            );
-          })()}
+          {presults.slice(0, 8).map((p) => (
+            <Pressable key={p.id} onPress={() => pick(p)}>
+              <View style={styles.prow}>
+                <Avatar name={p.display_name} size={32} warrior={p.avatar_warrior ?? undefined} color={p.avatar_color ?? undefined} />
+                <ThemedText style={{ flex: 1, fontWeight: '700' }} numberOfLines={1}>{p.display_name}</ThemedText>
+                <BeltChip belt={p.belt_rank} size="sm" />
+              </View>
+            </Pressable>
+          ))}
           <Button label={t('common.cancel')} variant="ghost" onPress={() => { setPicker(null); setPq(''); }} />
         </Card>
       )}

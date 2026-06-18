@@ -1,14 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Alert, Pressable, Share, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Avatar, BeltChip, Button, Card, EmptyState, Loading, Screen, TextField } from '@/components/ui/kit';
+import { Avatar, BeltChip, Button, Card, EmptyState, Loading, Screen } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
-import { fetchMyFriends, type FriendProfile } from '@/lib/friends';
 import { useTranslation } from '@/lib/i18n';
 import {
   currentLeagueWeek,
@@ -18,13 +17,11 @@ import {
   fetchStandings,
   generateWeek,
   hasLeagueInvite,
-  inviteToLeague,
   joinLeague,
   leaveLeague,
   respondLeagueInvite,
 } from '@/lib/leagues';
-import { searchProfiles } from '@/lib/matches';
-import type { League, LeagueFixture, LeagueMember, LeagueStanding, Profile } from '@/lib/types';
+import type { League, LeagueFixture, LeagueMember, LeagueStanding } from '@/lib/types';
 
 export default function LeagueDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -41,12 +38,6 @@ export default function LeagueDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [invited, setInvited] = useState(false);
-
-  // Organizer invite picker
-  const [picking, setPicking] = useState(false);
-  const [pq, setPq] = useState('');
-  const [presults, setPresults] = useState<Profile[]>([]);
-  const [friends, setFriends] = useState<FriendProfile[]>([]);
 
   const load = useCallback(async () => {
     try {
@@ -68,16 +59,6 @@ export default function LeagueDetailScreen() {
   }, [id]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
-
-  // While the picker is open: empty query shows friends, typing searches everyone.
-  useEffect(() => {
-    if (!picking) return;
-    if (friends.length === 0) fetchMyFriends().then(setFriends).catch(() => {});
-    const h = setTimeout(async () => {
-      try { setPresults(pq.trim() ? await searchProfiles(pq, []) : []); } catch { /* ignore */ }
-    }, 250);
-    return () => clearTimeout(h);
-  }, [pq, picking, friends.length]);
 
   if (loading) return <Loading />;
   if (!league) {
@@ -113,12 +94,6 @@ export default function LeagueDetailScreen() {
     } catch {
       Alert.alert(t('le.code'), league!.join_code);
     }
-  }
-
-  // Invite a person; keep the picker open so the organizer can invite several.
-  async function invitePerson(uid: string) {
-    setPq('');
-    await act(() => inviteToLeague(id, uid));
   }
 
   function startFixture(f: LeagueFixture) {
@@ -186,39 +161,14 @@ export default function LeagueDetailScreen() {
         </View>
       )}
 
-      {/* Organizer: invite specific people (friends first) */}
+      {/* Organizer: invite specific people (opens the dedicated invite screen) */}
       {isOrganizer && (
-        <Button label={t('le.invitePlayers')} icon="person-add" variant="secondary" onPress={() => { setPicking(true); setPq(''); setPresults([]); }} />
-      )}
-      {picking && (
-        <Card style={{ gap: Spacing.two, borderColor: theme.accent, borderWidth: 1 }}>
-          <ThemedText style={{ fontWeight: '800' }}>{t('le.pickInvite')}</ThemedText>
-          <TextField value={pq} onChangeText={setPq} placeholder={t('frn.searchPh')} autoCapitalize="none" />
-          {(() => {
-            const memberIds = new Set(members.map((m) => m.user_id));
-            const rows: { id: string; display_name: string; belt_rank: string; warrior?: string | null; color?: string | null }[] =
-              pq.trim()
-                ? presults.filter((p) => !memberIds.has(p.id)).map((p) => ({ id: p.id, display_name: p.display_name, belt_rank: p.belt_rank, warrior: p.avatar_warrior, color: p.avatar_color }))
-                : friends.filter((f) => !memberIds.has(f.id)).map((f) => ({ id: f.id, display_name: f.display_name, belt_rank: f.belt_rank, warrior: f.avatar_warrior, color: f.avatar_color }));
-            return (
-              <>
-                {!pq.trim() && (
-                  <ThemedText type="small" themeColor="textSecondary">{rows.length ? t('frn.inviteFriendsHint') : t('frn.noFriendsHint')}</ThemedText>
-                )}
-                {rows.slice(0, 10).map((p) => (
-                  <Pressable key={p.id} onPress={() => invitePerson(p.id)}>
-                    <View style={styles.prow}>
-                      <Avatar name={p.display_name} size={32} warrior={p.warrior ?? undefined} color={p.color ?? undefined} />
-                      <ThemedText style={{ flex: 1, fontWeight: '700' }} numberOfLines={1}>{p.display_name}</ThemedText>
-                      <BeltChip belt={p.belt_rank as any} size="sm" />
-                    </View>
-                  </Pressable>
-                ))}
-              </>
-            );
-          })()}
-          <Button label={t('common.cancel')} variant="ghost" onPress={() => { setPicking(false); setPq(''); }} />
-        </Card>
+        <Button
+          label={t('le.invitePlayers')}
+          icon="person-add"
+          variant="secondary"
+          onPress={() => router.push({ pathname: '/invite', params: { type: 'league', id: league.id, name: league.name } })}
+        />
       )}
 
       {/* This week */}
