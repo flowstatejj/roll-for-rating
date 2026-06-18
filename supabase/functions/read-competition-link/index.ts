@@ -8,7 +8,9 @@
 // Requires secret: ANTHROPIC_API_KEY.
 // Deploy in the Supabase dashboard.
 
-const MODEL = 'claude-haiku-4-5';
+// Sonnet 4.6 supports the web_fetch server tool (Haiku does not); a competition
+// import is one-time per customer, so the few extra cents don't matter.
+const MODEL = 'claude-sonnet-4-6';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -68,13 +70,18 @@ Deno.serve(async (req) => {
     });
 
     const aiData = await aiResp.json();
-    if (!aiResp.ok) return json({ error: aiData?.error?.message ?? 'Read failed' }, 502);
+    if (!aiResp.ok) {
+      console.error('read-competition-link: Anthropic error', aiResp.status, JSON.stringify(aiData?.error ?? aiData));
+      return json({ error: aiData?.error?.message ?? 'Read failed' }, 502);
+    }
 
     // The final text block carries the JSON (web_fetch_tool_result blocks precede it).
     const texts = (aiData.content ?? []).filter((b: any) => b.type === 'text').map((b: any) => b.text);
     const parsed = extractRecord(texts.join('\n')) ?? { found: false, wins: 0, losses: 0 };
+    console.log('read-competition-link:', JSON.stringify(parsed), 'stop=', aiData?.stop_reason);
     return json(parsed);
   } catch (e) {
+    console.error('read-competition-link: exception', String((e as Error)?.message ?? e));
     return json({ error: String((e as Error)?.message ?? e) }, 500);
   }
 });
