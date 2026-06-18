@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { League, LeagueFixture, LeagueMember, LeagueStanding } from './types';
+import type { League, LeagueFixture, LeagueMember, LeagueStanding, SentInvite } from './types';
 
 const PERSON = 'id,display_name,belt_rank,rating';
 const MEMBER_SELECT = `*, profile:profiles!league_members_user_id_fkey(${PERSON},avatar_path)`;
@@ -129,6 +129,20 @@ export interface LeagueInvite {
 export async function inviteToLeague(leagueId: string, userId: string): Promise<void> {
   const { error } = await supabase.rpc('invite_to_league', { p_lid: leagueId, p_user: userId });
   if (error) throw error;
+}
+
+/** Organizer invites several people at once; returns how many invites went out. */
+export async function inviteManyToLeague(leagueId: string, userIds: string[]): Promise<number> {
+  const { data, error } = await supabase.rpc('invite_many_to_league', { p_lid: leagueId, p_users: userIds });
+  if (error) throw error;
+  return (data as number) ?? 0;
+}
+
+/** Everyone the organizer has invited to this league, with status. Organizer only. */
+export async function fetchLeagueInvitesSent(leagueId: string): Promise<SentInvite[]> {
+  const { data, error } = await supabase.rpc('league_invites_sent', { p_lid: leagueId });
+  if (error) throw error;
+  return (data ?? []) as SentInvite[];
 }
 
 /** Invited user accepts (joins) or declines. */
