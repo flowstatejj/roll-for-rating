@@ -119,3 +119,20 @@ export async function avatarSignedUrl(path: string | null | undefined): Promise<
   if (error) return null;
   return data?.signedUrl ?? null;
 }
+
+/**
+ * Batch-resolve signed URLs for many avatar paths in ONE request (e.g. the
+ * leaderboard). Returns a path -> URL map; paths the viewer can't read (gated
+ * minor photos) are simply omitted, so those rows fall back to their avatar.
+ */
+export async function avatarSignedUrls(paths: (string | null | undefined)[]): Promise<Record<string, string>> {
+  const unique = [...new Set(paths.filter((p): p is string => !!p))];
+  if (unique.length === 0) return {};
+  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrls(unique, 3600);
+  if (error || !data) return {};
+  const map: Record<string, string> = {};
+  for (const d of data) {
+    if (d.path && d.signedUrl) map[d.path] = d.signedUrl;
+  }
+  return map;
+}
