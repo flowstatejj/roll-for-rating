@@ -90,7 +90,9 @@ export default function ProfileScreen() {
           return;
         }
       }
-      await uploadAvatar(userId, uri);
+      const newPath = await uploadAvatar(userId, uri);
+      // Show the new photo immediately (unique path -> fresh, uncached object).
+      avatarSignedUrl(newPath).then(setAvatarUrl);
       await refreshProfile();
     } catch (e: any) {
       Alert.alert(t('pf.photoFail'), e.message ?? t('md.tryAgain'));

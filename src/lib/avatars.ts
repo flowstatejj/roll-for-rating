@@ -78,7 +78,14 @@ export async function setWarriorAvatar(profileId: string, warrior: string, color
 export async function uploadAvatar(profileId: string, uri: string): Promise<string> {
   const ext = (uri.split('?')[0].split('.').pop() || 'jpg').toLowerCase();
   const contentType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
-  const path = `${profileId}/avatar.${ext}`;
+  // Unique path per upload: a fresh object the CDN has never cached, and a path
+  // string that actually CHANGES so the UI re-resolves immediately (no stale
+  // photo for a few seconds after changing it).
+  const path = `${profileId}/avatar-${Date.now()}.${ext}`;
+
+  // Remember the current avatar so we can delete it once the new one is saved.
+  const { data: prof } = await supabase.from('profiles').select('avatar_path').eq('id', profileId).single();
+  const prevPath = (prof as { avatar_path: string | null } | null)?.avatar_path ?? null;
 
   // RN can't make a Blob from an ArrayBuffer, so read the file as base64 and
   // upload an ArrayBuffer directly (the supported Expo + Supabase path).
@@ -93,6 +100,11 @@ export async function uploadAvatar(profileId: string, uri: string): Promise<stri
     .update({ avatar_path: path, avatar_warrior: null, avatar_color: null })
     .eq('id', profileId);
   if (updErr) throw updErr;
+
+  // Best-effort cleanup of the old file so storage doesn't accumulate.
+  if (prevPath && prevPath !== path) {
+    supabase.storage.from(BUCKET).remove([prevPath]).then(() => {}, () => {});
+  }
   return path;
 }
 
