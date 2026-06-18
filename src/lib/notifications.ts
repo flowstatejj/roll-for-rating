@@ -76,3 +76,14 @@ export async function markAllRead(userId: string): Promise<void> {
     .eq('read', false);
   if (error) throw error;
 }
+
+/** Mark a specific set of notifications read (used when a tab is viewed). */
+export async function markRead(userId: string, ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+  const { error } = await supabase
+    .from('notifications')
+    .update({ read: true })
+    .eq('user_id', userId)
+    .in('id', ids);
+  if (error) throw error;
+}
