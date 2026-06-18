@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { DropField, OptionRow, dropdownStyles } from '@/components/dropdowns';
 import { ThemedText } from '@/components/themed-text';
 import { Avatar, BeltChip, Button, Card, EmptyState, Loading, Screen } from '@/components/ui/kit';
+import { avatarSignedUrls } from '@/lib/avatars';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
@@ -34,6 +35,7 @@ export default function LeaderboardScreen() {
   const scopeTouched = useRef(false);
   const weightTouched = useRef(false);
   const [rows, setRows] = useState<LeaderRow[]>([]);
+  const [avatarUrls, setAvatarUrls] = useState<Record<string, string>>({});
   const [gyms, setGyms] = useState<GymPower[]>([]);
   const [kids, setKids] = useState<KidsLeaderRow[]>([]);
   const [juniors, setJuniors] = useState<Profile[]>([]);
@@ -53,6 +55,8 @@ export default function LeaderboardScreen() {
         userId ? fetchMyGeo(userId).catch(() => null) : Promise.resolve(null),
       ]);
       setRows(overall);
+      // One batched request to sign all the photo avatars for the board.
+      avatarSignedUrls(overall.map((r) => r.avatar_path)).then(setAvatarUrls).catch(() => {});
       setGyms(gymRanks);
       setJuniors(juniorList);
       setMyGeo(geo);
@@ -243,6 +247,7 @@ export default function LeaderboardScreen() {
                       <Avatar
                         name={p.display_name}
                         size={40}
+                        uri={p.avatar_path ? avatarUrls[p.avatar_path] : undefined}
                         warrior={p.avatar_warrior}
                         color={p.avatar_color}
                         founding={p.is_founding_member}
