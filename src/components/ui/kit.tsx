@@ -227,7 +227,16 @@ export function Avatar({
           alignItems: 'center',
           justifyContent: 'center',
         }}>
-        <ThemedText style={{ fontWeight: '700', fontSize: s * 0.4 }}>{initials || '?'}</ThemedText>
+        <ThemedText
+          style={{
+            fontWeight: '700',
+            fontSize: s * 0.4,
+            lineHeight: s * 0.5,
+            textAlign: 'center',
+            includeFontPadding: false,
+          }}>
+          {initials || '?'}
+        </ThemedText>
       </View>
     );
   };
