@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Button, Card, Screen } from '@/components/ui/kit';
+import { Button, Card, EmptyState, Screen } from '@/components/ui/kit';
 import { WarriorAvatar } from '@/components/warrior-avatar';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -26,6 +26,16 @@ export default function AvatarBuilderScreen() {
   );
   const [color, setColor] = useState<string>(profile?.avatar_color || DEFAULT_AVATAR_COLOR);
   const [saving, setSaving] = useState(false);
+
+  // Warrior avatars are for younger members only — adults use a profile photo.
+  if (profile && !profile.is_minor) {
+    return (
+      <Screen>
+        <Stack.Screen options={{ title: t('av.title') }} />
+        <EmptyState icon="camera-outline" title={t('av.adultsTitle')} subtitle={t('av.adultsBody')} />
+      </Screen>
+    );
+  }
 
   async function save() {
     if (!userId) return;

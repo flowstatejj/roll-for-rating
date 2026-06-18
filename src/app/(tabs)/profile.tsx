@@ -70,7 +70,6 @@ export default function ProfileScreen() {
     Alert.alert(t('pf.photoTitle'), t('pf.photoBody'), [
       { text: t('pf.takePhoto'), onPress: () => doPhoto(true) },
       { text: t('pf.choosePhoto'), onPress: () => doPhoto(false) },
-      { text: t('av.useWarrior'), onPress: () => router.push('/avatar-builder') },
       { text: t('common.cancel'), style: 'cancel' },
     ]);
   }
