@@ -93,6 +93,9 @@ export default function InviteScreen() {
   function toggle(pid: string) {
     setChecked((prev) => { const n = new Set(prev); n.has(pid) ? n.delete(pid) : n.add(pid); return n; });
   }
+  function toggleAll(all: boolean) {
+    setChecked(all ? new Set(staged.map((p) => p.id)) : new Set());
+  }
 
   async function send() {
     const ids = staged.filter((p) => checked.has(p.id)).map((p) => p.id);
@@ -114,6 +117,7 @@ export default function InviteScreen() {
   const declined = useMemo(() => sent.filter((s) => s.status === 'declined'), [sent]);
   const list = tab === 'invited' ? invited : declined;
   const checkedCount = staged.filter((p) => checked.has(p.id)).length;
+  const allChecked = staged.length > 0 && checkedCount === staged.length;
 
   if (loading) return <Loading />;
 
@@ -153,7 +157,14 @@ export default function InviteScreen() {
       {/* Staging list with checkboxes */}
       {staged.length > 0 && (
         <Card style={{ gap: Spacing.two }}>
-          <ThemedText style={{ fontWeight: '800' }}>{t('inv.selected')} · {staged.length}</ThemedText>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <ThemedText style={{ fontWeight: '800', flex: 1 }}>{t('inv.selected')} · {staged.length}</ThemedText>
+            <Pressable onPress={() => toggleAll(!allChecked)} hitSlop={8}>
+              <ThemedText style={{ color: theme.accent, fontWeight: '700', fontSize: 13 }}>
+                {allChecked ? t('inv.selectNone') : t('inv.selectAll')}
+              </ThemedText>
+            </Pressable>
+          </View>
           {staged.map((p) => {
             const on = checked.has(p.id);
             return (
