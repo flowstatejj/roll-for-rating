@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { Alert } from 'react-native';
 
+import { PENDING_REFERRAL_KEY, redeemReferralCode } from './referrals';
 import { supabase } from './supabase';
 import type { BeltRank, Profile } from './types';
 
@@ -83,6 +84,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(data);
   }, []);
 
+  // If a referral code was captured at signup, attach it once a session exists.
+  // Cleared on a definitive outcome; a bare network failure is retried next session.
+  const redeemPendingReferral = useCallback(async () => {
+    try {
+      const code = await AsyncStorage.getItem(PENDING_REFERRAL_KEY);
+      if (!code) return;
+      const res = await redeemReferralCode(code);
+      if (res.ok || res.reason) await AsyncStorage.removeItem(PENDING_REFERRAL_KEY);
+    } catch {
+      /* best-effort */
+    }
+  }, []);
+
   // On launch: restore any saved session, then subscribe to auth changes.
   useEffect(() => {
     let active = true;
@@ -93,6 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (data.session?.user) {
         await loadProfile(data.session.user.id);
         loadOnboarded(data.session.user.id);
+        redeemPendingReferral();
       }
       setInitializing(false);
     });
@@ -102,6 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (newSession?.user) {
         loadProfile(newSession.user.id);
         loadOnboarded(newSession.user.id);
+        redeemPendingReferral();
       } else {
         setProfile(null);
         setOnboarded(null);
@@ -112,7 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       active = false;
       sub.subscription.unsubscribe();
     };
-  }, [loadProfile, loadOnboarded]);
+  }, [loadProfile, loadOnboarded, redeemPendingReferral]);
 
   const markOnboarded = useCallback(async () => {
     if (session?.user) await AsyncStorage.setItem(onboardKey(session.user.id), '1');

@@ -1,7 +1,10 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import { Link, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
+
+import { PENDING_REFERRAL_KEY } from '@/lib/referrals';
 
 const TERMS_URL = 'https://rfr-site.onrender.com/terms.html';
 
@@ -31,8 +34,21 @@ export default function SignUpScreen() {
   const [dobD, setDobD] = useState('');
   const [dobY, setDobY] = useState('');
   const [parentEmail, setParentEmail] = useState('');
+  const [refCode, setRefCode] = useState('');
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Prefill a referral code from a ?ref= route param or the opening deep link.
+  const params = useLocalSearchParams<{ ref?: string }>();
+  useEffect(() => {
+    if (params.ref) { setRefCode(String(params.ref).toUpperCase()); return; }
+    Linking.getInitialURL()
+      .then((url) => {
+        const m = url?.match(/[?&]ref=([^&]+)/i);
+        if (m) setRefCode(decodeURIComponent(m[1]).toUpperCase());
+      })
+      .catch(() => {});
+  }, [params.ref]);
 
   const dob = parseDob(dobM, dobD, dobY);
   const isMinor = dob !== null && dob.age < 18;
@@ -78,6 +94,8 @@ export default function SignUpScreen() {
         birthdate: dob.iso,
         parentEmail: isMinor ? parentEmail.trim() : null,
       });
+      // Captured here, attached on first sign-in (see AuthProvider).
+      if (refCode.trim()) await AsyncStorage.setItem(PENDING_REFERRAL_KEY, refCode.trim().toUpperCase());
       Alert.alert(
         t('su.createdTitle'),
         isMinor ? t('su.createdMinor') : t('su.createdAdult'),
@@ -207,6 +225,15 @@ export default function SignUpScreen() {
               </ThemedText>
             </View>
           )}
+
+          <TextField
+            label={t('su.referralCode')}
+            value={refCode}
+            onChangeText={(v) => setRefCode(v.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8))}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            placeholder={t('su.referralPlaceholder')}
+          />
 
           <Pressable onPress={() => setAgreed((v) => !v)} style={styles.agreeRow}>
             <Ionicons
