@@ -572,6 +572,15 @@ export default function ProfileScreen() {
         />
       )}
 
+      {(profile.is_founding_member || profile.is_admin) && (
+        <Button
+          label={t('profile.affiliate')}
+          variant="secondary"
+          icon="cash-outline"
+          onPress={() => router.push('/affiliate')}
+        />
+      )}
+
       <Button
         label={t('profile.settings')}
         variant="secondary"
