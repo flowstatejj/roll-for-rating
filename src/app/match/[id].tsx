@@ -3,6 +3,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Animated, Pressable, StyleSheet, View } from 'react-native';
 
+import { MatchTimer } from '@/components/match-timer';
 import { MatchVideos } from '@/components/match-videos';
 import { SubmissionPicker } from '@/components/submission-picker';
 import { ThemedText } from '@/components/themed-text';
@@ -252,6 +253,10 @@ export default function MatchDetailScreen() {
       <Stack.Screen options={{ title: t('nav.match') }} />
 
       <StatusBanner match={match} />
+
+      {match.status !== 'completed' && (
+        <MatchTimer matchId={id} canControl={amCompetitor || amReferee} />
+      )}
 
       {match.wager > 0 && match.status !== 'completed' && (
         <View style={[styles.banner, { backgroundColor: theme.accent + '22', flexDirection: 'row', gap: Spacing.two }]}>
