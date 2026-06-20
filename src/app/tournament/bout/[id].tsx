@@ -2,6 +2,7 @@ import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-rou
 import { useCallback, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
+import { MatchTimer } from '@/components/match-timer';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Card, Loading, Screen } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
@@ -113,6 +114,8 @@ export default function BoutRunnerScreen() {
   return (
     <Screen>
       <Stack.Screen options={{ title: t('tn.record') }} />
+
+      {!done && <MatchTimer matchId={`bout:${id}`} canControl />}
 
       <Card style={{ gap: Spacing.one }}>
         <ThemedText style={{ fontWeight: '800', fontSize: 18 }}>{aName} {t('le.vs')} {bName}</ThemedText>
