@@ -24,6 +24,7 @@ import {
   generatePlayoff,
   generateTournament,
   hasTournamentInvite,
+  leaveTournament,
   registerForTournament,
   respondTournamentInvite,
   setMatReferee,
@@ -68,7 +69,7 @@ export default function TournamentDetailScreen() {
       setTr(trow);
       const { data: ent } = await supabase
         .from('tournament_entrants')
-        .select('profile:profiles(id, username, display_name, belt_rank, rating, is_minor)')
+        .select('profile:profiles(id, username, display_name, belt_rank, rating, is_minor, avatar_warrior, avatar_color)')
         .eq('tournament_id', id);
       setEntrants(((ent ?? []).map((e: any) => e.profile).filter(Boolean)) as Profile[]);
       hasTournamentInvite(id).then(setInvited).catch(() => {});
@@ -146,6 +147,36 @@ export default function TournamentDetailScreen() {
 
   const rounds = [...new Set(bouts.map((b) => `${b.bracket}:${b.round_no}`))];
 
+  // Confirm + guard the irreversible bracket generation.
+  function confirmGenerate() {
+    const n = isTeam ? teams.length : entrants.length;
+    if (n < 2) { Alert.alert(t('tn.needMoreTitle'), t('tn.needMoreBody')); return; }
+    Alert.alert(t('tn.generateTitle'), t('tn.generateBody').replace('{n}', String(n)), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('tn.generate'), onPress: () => act(() => generateTournament(id)) },
+    ]);
+  }
+
+  // Let an entrant pull themselves out before the bracket is drawn.
+  function confirmWithdraw() {
+    Alert.alert(t('tn.withdrawTitle'), t('tn.withdrawBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('tn.withdraw'), style: 'destructive', onPress: () => act(() => leaveTournament(id, userId)) },
+    ]);
+  }
+
+  // Crown a champion once everything is decided.
+  const champion = (() => {
+    if (!generated) return null;
+    const done = tr.status === 'complete' || bouts.every((b) => b.status === 'done' || b.status === 'bye');
+    if (!done) return null;
+    if (tr.format === 'round_robin' || tr.format === 'rr_playoff') return standings[0]?.name ?? null;
+    const decided = bouts.filter((b) => b.status === 'done' && (b.winner === 'a' || b.winner === 'b'));
+    if (decided.length === 0) return null;
+    const final = decided.reduce((a, b) => (b.round_no > a.round_no ? b : a));
+    return final.winner === 'a' ? final.a_name : final.b_name;
+  })();
+
   return (
     <Screen>
       <Stack.Screen options={{ title: tr.name }} />
@@ -166,6 +197,17 @@ export default function TournamentDetailScreen() {
         </Pressable>
       </Card>
 
+      {/* Champion (when everything is decided) */}
+      {champion && (
+        <Card style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.three, borderColor: theme.accent, borderWidth: 1 }}>
+          <ThemedText style={{ fontSize: 30 }}>🏆</ThemedText>
+          <View style={{ flex: 1 }}>
+            <ThemedText type="small" themeColor="textSecondary">{t('tn.champion')}</ThemedText>
+            <ThemedText style={{ fontWeight: '900', fontSize: 20 }} numberOfLines={1}>{champion}</ThemedText>
+          </View>
+        </Card>
+      )}
+
       {/* Invitation to accept (you've been invited by the host) */}
       {invited && !isEntrant && tr.status !== 'complete' && (
         <Card style={{ gap: Spacing.two, borderColor: theme.accent, borderWidth: 1 }}>
@@ -183,7 +225,14 @@ export default function TournamentDetailScreen() {
       {!isEntrant && !invited && tr.status !== 'complete' && (
         <Button label={isTeam ? t('tn.registerTeam') : t('tn.register')} icon="add-circle" loading={busy} onPress={() => act(() => registerForTournament(id))} />
       )}
-      {isEntrant && <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center' }}>{t('tn.registered')}</ThemedText>}
+      {isEntrant && (
+        <View style={{ gap: Spacing.one }}>
+          <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center' }}>{t('tn.registered')}</ThemedText>
+          {!generated && tr.status !== 'complete' && (
+            <Button label={t('tn.withdraw')} icon="exit-outline" variant="ghost" loading={busy} onPress={confirmWithdraw} />
+          )}
+        </View>
+      )}
 
       {/* Host: invite specific people (opens the dedicated invite screen) */}
       {isHost && tr.status !== 'complete' && (
@@ -193,6 +242,29 @@ export default function TournamentDetailScreen() {
           variant="secondary"
           onPress={() => router.push({ pathname: '/invite', params: { type: 'tournament', id, name: tr.name } })}
         />
+      )}
+
+      {/* Entrants (individual tournaments) — so the host and players can see who's in */}
+      {!isTeam && (
+        <>
+          <ThemedText style={styles.section}>{t('tn.entrants')} · {entrants.length}</ThemedText>
+          {entrants.length === 0 ? (
+            <EmptyState icon="people-outline" title={t('tn.noEntrants')} subtitle={isHost ? t('tn.noEntrantsSub') : ''} />
+          ) : (
+            <Card style={{ paddingVertical: Spacing.one }}>
+              {entrants.map((p, i) => (
+                <View key={p.id}>
+                  {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
+                  <Pressable onPress={() => router.push(`/user/${p.id}`)} style={styles.prow}>
+                    <Avatar name={p.display_name} size={32} warrior={p.avatar_warrior ?? undefined} color={p.avatar_color ?? undefined} />
+                    <ThemedText style={{ flex: 1, fontWeight: '700' }} numberOfLines={1}>{p.display_name}</ThemedText>
+                    <BeltChip belt={p.belt_rank} size="sm" />
+                  </Pressable>
+                </View>
+              ))}
+            </Card>
+          )}
+        </>
       )}
 
       {/* Picker panel (set referee / add team member) */}
@@ -285,7 +357,7 @@ export default function TournamentDetailScreen() {
 
       {/* Host: generate */}
       {isHost && !generated && (
-        <Button label={t('tn.generate')} icon="shuffle" loading={busy} onPress={() => act(() => generateTournament(id))} />
+        <Button label={t('tn.generate')} icon="shuffle" loading={busy} onPress={confirmGenerate} />
       )}
       {isHost && generated && tr.format === 'rr_playoff' && !bouts.some((b) => b.bracket === 'playoff') && (
         <Button label={t('tn.startPlayoff')} icon="trophy" variant="secondary" loading={busy} onPress={() => act(() => generatePlayoff(id, 4))} />
