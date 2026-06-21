@@ -42,6 +42,7 @@ export default function TournamentsScreen() {
   const [teamRule, setTeamRule] = useState<TournamentTeamRule>('none');
   const [teamBuild, setTeamBuild] = useState<TournamentTeamBuild>('host');
   const [ranked, setRanked] = useState(false);
+  const [advScoring, setAdvScoring] = useState(false);
   const [winPts, setWinPts] = useState('3');
   const [drawPts, setDrawPts] = useState('1');
   const [lossPts, setLossPts] = useState('0');
@@ -174,20 +175,32 @@ export default function TournamentsScreen() {
             <Switch value={ranked} onValueChange={setRanked} trackColor={{ true: theme.accent }} />
           </View>
 
-          <Field label={t('tn.scoring')}>
-            <View style={{ flexDirection: 'row', gap: Spacing.two }}>
-              <View style={{ flex: 1 }}><TextField label={t('tn.win')} value={winPts} onChangeText={setWinPts} keyboardType="numbers-and-punctuation" /></View>
-              <View style={{ flex: 1 }}><TextField label={t('tn.draw')} value={drawPts} onChangeText={setDrawPts} keyboardType="numbers-and-punctuation" /></View>
-              <View style={{ flex: 1 }}><TextField label={t('tn.loss')} value={lossPts} onChangeText={setLossPts} keyboardType="numbers-and-punctuation" /></View>
+          <View style={{ width: 90 }}><TextField label={t('tn.mats')} value={mats} onChangeText={setMats} keyboardType="number-pad" /></View>
+
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+            <View style={{ flex: 1 }}>
+              <ThemedText style={{ fontWeight: '700' }}>{t('tn.advScoring')}</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">{t('tn.advScoringHint')}</ThemedText>
             </View>
-          </Field>
-          <ThemedText type="small" themeColor="textSecondary">{t('tn.scoreHint')}</ThemedText>
-          <View style={{ flexDirection: 'row', gap: Spacing.two }}>
-            <View style={{ flex: 1 }}><TextField label={t('tn.killBonus')} value={killBonus} onChangeText={setKillBonus} keyboardType="numbers-and-punctuation" /></View>
-            <View style={{ flex: 1 }}><TextField label={t('tn.breakBonus')} value={breakBonus} onChangeText={setBreakBonus} keyboardType="numbers-and-punctuation" /></View>
-            <View style={{ width: 90 }}><TextField label={t('tn.mats')} value={mats} onChangeText={setMats} keyboardType="number-pad" /></View>
+            <Switch value={advScoring} onValueChange={setAdvScoring} trackColor={{ true: theme.accent }} />
           </View>
-          <ThemedText type="small" themeColor="textSecondary">{t('tn.subBonusHint')}</ThemedText>
+          {advScoring && (
+            <>
+              <Field label={t('tn.scoring')}>
+                <View style={{ flexDirection: 'row', gap: Spacing.two }}>
+                  <View style={{ flex: 1 }}><TextField label={t('tn.win')} value={winPts} onChangeText={setWinPts} keyboardType="numbers-and-punctuation" /></View>
+                  <View style={{ flex: 1 }}><TextField label={t('tn.draw')} value={drawPts} onChangeText={setDrawPts} keyboardType="numbers-and-punctuation" /></View>
+                  <View style={{ flex: 1 }}><TextField label={t('tn.loss')} value={lossPts} onChangeText={setLossPts} keyboardType="numbers-and-punctuation" /></View>
+                </View>
+              </Field>
+              <ThemedText type="small" themeColor="textSecondary">{t('tn.scoreHint')}</ThemedText>
+              <View style={{ flexDirection: 'row', gap: Spacing.two }}>
+                <View style={{ flex: 1 }}><TextField label={t('tn.killBonus')} value={killBonus} onChangeText={setKillBonus} keyboardType="numbers-and-punctuation" /></View>
+                <View style={{ flex: 1 }}><TextField label={t('tn.breakBonus')} value={breakBonus} onChangeText={setBreakBonus} keyboardType="numbers-and-punctuation" /></View>
+              </View>
+              <ThemedText type="small" themeColor="textSecondary">{t('tn.subBonusHint')}</ThemedText>
+            </>
+          )}
 
           <Button label={t('tn.createBtn')} icon="add-circle" onPress={submit} loading={busy} />
           <Button label={t('common.cancel')} variant="ghost" onPress={() => setCreating(false)} />

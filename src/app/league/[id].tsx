@@ -102,6 +102,19 @@ export default function LeagueDetailScreen() {
     router.push(`/match/new?opponent=${opponent}&league=${league!.id}&week=${week}`);
   }
 
+  // Confirm + guard generating this week's fixtures.
+  function confirmGenWeek() {
+    if (members.length < 2) { Alert.alert(t('le.needMoreTitle'), t('le.needMoreBody')); return; }
+    Alert.alert(
+      t('le.genTitle').replace('{w}', String(week)),
+      t('le.genBody').replace('{n}', String(members.length)),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('le.generate'), onPress: () => act(() => generateWeek(league!.id, week)) },
+      ],
+    );
+  }
+
   return (
     <Screen>
       <Stack.Screen options={{ title: league.name }} />
@@ -174,7 +187,7 @@ export default function LeagueDetailScreen() {
       {/* This week */}
       <ThemedText style={styles.section}>{t('le.thisWeek')}</ThemedText>
       {isOrganizer && fixtures.length === 0 && (
-        <Button label={t('le.generate')} icon="shuffle" variant="secondary" loading={busy} onPress={() => act(() => generateWeek(league.id, week))} />
+        <Button label={t('le.generate')} icon="shuffle" variant="secondary" loading={busy} onPress={confirmGenWeek} />
       )}
       {fixtures.length === 0 ? (
         <EmptyState icon="shuffle-outline" title={t('le.noFixturesTitle')} subtitle={isOrganizer ? t('le.noFixturesOrg') : t('le.noFixturesSub')} />

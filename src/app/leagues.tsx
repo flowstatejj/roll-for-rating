@@ -46,6 +46,7 @@ export default function LeaguesScreen() {
   const [desc, setDesc] = useState('');
   const [audience, setAudience] = useState<LeagueAudience>('all');
   const [ranked, setRanked] = useState(false);
+  const [advScoring, setAdvScoring] = useState(false);
   const [visibility, setVisibility] = useState<LeagueVisibility>('open');
   const [meetDay, setMeetDay] = useState(5);
   const [meetTime, setMeetTime] = useState('');
@@ -233,19 +234,30 @@ export default function LeaguesScreen() {
           <TextField label={t('le.location')} value={location} onChangeText={setLocation} placeholder={t('le.locationPh')} />
           <TextField label={t('le.city')} value={city} onChangeText={setCity} autoCapitalize="words" />
 
-          <Field label={t('le.scoring')}>
-            <View style={{ flexDirection: 'row', gap: Spacing.two }}>
-              <View style={{ flex: 1 }}><TextField label={t('le.win')} value={winPts} onChangeText={setWinPts} keyboardType="numbers-and-punctuation" /></View>
-              <View style={{ flex: 1 }}><TextField label={t('le.draw')} value={drawPts} onChangeText={setDrawPts} keyboardType="numbers-and-punctuation" /></View>
-              <View style={{ flex: 1 }}><TextField label={t('le.loss')} value={lossPts} onChangeText={setLossPts} keyboardType="numbers-and-punctuation" /></View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+            <View style={{ flex: 1 }}>
+              <ThemedText style={{ fontWeight: '700' }}>{t('le.advScoring')}</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">{t('le.advScoringHint')}</ThemedText>
             </View>
-          </Field>
-          <ThemedText type="small" themeColor="textSecondary">{t('le.scoreHint')}</ThemedText>
-          <View style={{ flexDirection: 'row', gap: Spacing.two }}>
-            <View style={{ flex: 1 }}><TextField label={t('le.killBonus')} value={killBonus} onChangeText={setKillBonus} keyboardType="numbers-and-punctuation" /></View>
-            <View style={{ flex: 1 }}><TextField label={t('le.breakBonus')} value={breakBonus} onChangeText={setBreakBonus} keyboardType="numbers-and-punctuation" /></View>
+            <Switch value={advScoring} onValueChange={setAdvScoring} trackColor={{ true: theme.accent }} />
           </View>
-          <ThemedText type="small" themeColor="textSecondary">{t('le.subBonusHint')}</ThemedText>
+          {advScoring && (
+            <>
+              <Field label={t('le.scoring')}>
+                <View style={{ flexDirection: 'row', gap: Spacing.two }}>
+                  <View style={{ flex: 1 }}><TextField label={t('le.win')} value={winPts} onChangeText={setWinPts} keyboardType="numbers-and-punctuation" /></View>
+                  <View style={{ flex: 1 }}><TextField label={t('le.draw')} value={drawPts} onChangeText={setDrawPts} keyboardType="numbers-and-punctuation" /></View>
+                  <View style={{ flex: 1 }}><TextField label={t('le.loss')} value={lossPts} onChangeText={setLossPts} keyboardType="numbers-and-punctuation" /></View>
+                </View>
+              </Field>
+              <ThemedText type="small" themeColor="textSecondary">{t('le.scoreHint')}</ThemedText>
+              <View style={{ flexDirection: 'row', gap: Spacing.two }}>
+                <View style={{ flex: 1 }}><TextField label={t('le.killBonus')} value={killBonus} onChangeText={setKillBonus} keyboardType="numbers-and-punctuation" /></View>
+                <View style={{ flex: 1 }}><TextField label={t('le.breakBonus')} value={breakBonus} onChangeText={setBreakBonus} keyboardType="numbers-and-punctuation" /></View>
+              </View>
+              <ThemedText type="small" themeColor="textSecondary">{t('le.subBonusHint')}</ThemedText>
+            </>
+          )}
 
           <Button label={t('le.createBtn')} icon="add-circle" onPress={submitCreate} loading={busy} />
           <Button label={t('common.cancel')} variant="ghost" onPress={() => setCreating(false)} />
