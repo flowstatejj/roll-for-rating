@@ -382,6 +382,7 @@ export async function fetchLeaderboard(limit = 200): Promise<LeaderRow[]> {
     // disambiguate: profiles<->gyms has two FKs (gym_id and owner_id); we want gym_id.
     .select('*, gym:gyms!profiles_gym_id_fkey(city,state,country,continent)')
     .neq('age_tier', 'kid')
+    .eq('participating', true) // guardians (non-participating) never rank
     .order('rating', { ascending: false })
     .limit(limit);
   if (error) throw error;
@@ -435,6 +436,7 @@ export async function searchProfiles(query: string, excludeIds: string[]): Promi
     .from('profiles')
     .select('*')
     .neq('age_tier', 'kid') // under-14 juniors are never searchable
+    .eq('participating', true) // guardians (non-participating) aren't opponents/invitees
     .order('rating', { ascending: false })
     .limit(25);
 

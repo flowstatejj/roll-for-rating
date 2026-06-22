@@ -27,6 +27,8 @@ interface SignUpArgs {
   birthdate: string;
   /** Required for minors — the parent/guardian who must approve the account. */
   parentEmail: string | null;
+  /** False for a guardian account (manages children, does not compete). Defaults true. */
+  participating?: boolean;
 }
 
 interface AuthContextValue {
@@ -136,7 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [session]);
 
   const signUp = useCallback(
-    async ({ email, password, username, displayName, beltRank, birthdate, parentEmail }: SignUpArgs) => {
+    async ({ email, password, username, displayName, beltRank, birthdate, parentEmail, participating = true }: SignUpArgs) => {
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -148,6 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             belt_rank: beltRank,
             birthdate,
             parent_email: parentEmail ?? '',
+            participating,
           },
         },
       });

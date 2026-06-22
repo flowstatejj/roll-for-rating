@@ -11,6 +11,7 @@ import { useAuth } from '@/lib/auth';
 import { parseDob } from '@/lib/dob';
 import { useTranslation } from '@/lib/i18n';
 import { addJunior, fetchJuniors, removeJunior } from '@/lib/juniors';
+import { useSubscription } from '@/lib/subscription';
 import { type BeltRank, type Profile } from '@/lib/types';
 
 const BELTS: BeltRank[] = ['white', 'blue', 'purple', 'brown', 'black'];
@@ -19,11 +20,16 @@ export default function JuniorsScreen() {
   const { profile } = useAuth();
   const theme = useTheme();
   const { t } = useTranslation();
+  const { plan, familyProduct, purchase, purchasing } = useSubscription();
 
   const [juniors, setJuniors] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  // Capacity: family = unlimited; individual/comp = one managed child.
+  const isFamily = plan === 'family';
+  const atCapacity = !isFamily && juniors.length >= 1;
 
   // add-form state
   const [name, setName] = useState('');
@@ -65,8 +71,8 @@ export default function JuniorsScreen() {
       Alert.alert(t('su.dob'), t('jr.dobInvalid'));
       return;
     }
-    if (dob.age >= 14 || dob.age < 0) {
-      Alert.alert(t('jr.under14Title'), t('jr.under14Body'));
+    if (dob.age >= 18 || dob.age < 0) {
+      Alert.alert(t('jr.under18Title'), t('jr.under18Body'));
       return;
     }
     setBusy(true);
@@ -84,6 +90,17 @@ export default function JuniorsScreen() {
       Alert.alert(t('jr.addFail'), e.message ?? t('md.tryAgain'));
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function onUpgrade() {
+    try {
+      await purchase('family');
+      // On success the entitlement refreshes and `isFamily` flips to true.
+    } catch (e) {
+      const code = String((e as { code?: string })?.code ?? '');
+      if (/cancel/i.test(code)) return;
+      Alert.alert(t('jr.upgradeFail'));
     }
   }
 
@@ -117,6 +134,10 @@ export default function JuniorsScreen() {
 
       <ThemedText type="small" themeColor="textSecondary">
         {t('jr.intro')}
+      </ThemedText>
+
+      <ThemedText type="small" themeColor="textSecondary">
+        {isFamily ? t('jr.capFamily') : t('jr.capIndividual')}
       </ThemedText>
 
       {juniors.length === 0 && !adding ? (
@@ -184,6 +205,20 @@ export default function JuniorsScreen() {
 
           <Button label={t('jr.addBtn')} icon="add" loading={busy} onPress={onAdd} />
           <Button label={t('common.cancel')} variant="ghost" onPress={resetForm} />
+        </Card>
+      ) : atCapacity ? (
+        <Card style={{ gap: Spacing.two, borderWidth: 1, borderColor: theme.accent }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+            <Ionicons name="people" size={20} color={theme.accent} />
+            <ThemedText style={{ fontWeight: '800', flex: 1 }}>{t('jr.upgradeTitle')}</ThemedText>
+          </View>
+          <ThemedText type="small" themeColor="textSecondary">{t('jr.upgradeBody')}</ThemedText>
+          <Button
+            label={t('jr.upgradeBtn').replace('{price}', familyProduct?.displayPrice ?? t('pw.familyPriceFallback'))}
+            icon="arrow-up-circle"
+            loading={purchasing}
+            onPress={onUpgrade}
+          />
         </Card>
       ) : (
         <Button label={t('jr.add')} icon="add" variant="secondary" onPress={() => setAdding(true)} />

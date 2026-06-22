@@ -25,22 +25,25 @@ export default function PaywallScreen() {
   const theme = useTheme();
   const { t } = useTranslation();
   const { signOut } = useAuth();
-  const { product, purchase, purchasing, restore } = useSubscription();
+  const { product, familyProduct, purchase, purchasing, restore } = useSubscription();
   const [restoring, setRestoring] = useState(false);
+  const [selected, setSelected] = useState<'individual' | 'family'>('individual');
 
   useEffect(() => {
     track('paywall_view');
   }, []);
 
-  const price = product?.displayPrice ?? t('pw.priceFallback');
+  const indivPrice = product?.displayPrice ?? t('pw.priceFallback');
+  const familyPrice = familyProduct?.displayPrice ?? t('pw.familyPriceFallback');
+  const price = selected === 'family' ? familyPrice : indivPrice;
   const trialLine = t('pw.trial').replace(/\{price\}/g, price);
   const legal = t('pw.legal').replace(/\{price\}/g, price);
   const features = [t('pw.f1'), t('pw.f2'), t('pw.f3'), t('pw.f4')];
 
   async function onSubscribe() {
-    track('paywall_subscribe_tap');
+    track('paywall_subscribe_tap', { plan: selected });
     try {
-      await purchase();
+      await purchase(selected);
     } catch (e) {
       const code = String((e as { code?: string })?.code ?? '');
       if (/cancel/i.test(code)) return; // user backed out — not an error
@@ -84,6 +87,26 @@ export default function PaywallScreen() {
         ))}
       </Card>
 
+      <View style={{ gap: Spacing.two }}>
+        <PlanCard
+          title={t('pw.indivTitle')}
+          price={indivPrice}
+          per={t('pw.perMonth')}
+          blurb={t('pw.indivBlurb')}
+          selected={selected === 'individual'}
+          onPress={() => setSelected('individual')}
+        />
+        <PlanCard
+          title={t('pw.familyTitle')}
+          price={familyPrice}
+          per={t('pw.perMonth')}
+          blurb={t('pw.familyBlurb')}
+          badge={t('pw.familyBadge')}
+          selected={selected === 'family'}
+          onPress={() => setSelected('family')}
+        />
+      </View>
+
       <View style={{ gap: Spacing.two, alignItems: 'center' }}>
         <ThemedText style={{ fontWeight: '800', fontSize: 18, textAlign: 'center' }}>
           {trialLine}
@@ -118,6 +141,48 @@ export default function PaywallScreen() {
         </ThemedText>
       </Pressable>
     </Screen>
+  );
+}
+
+function PlanCard({
+  title,
+  price,
+  per,
+  blurb,
+  badge,
+  selected,
+  onPress,
+}: {
+  title: string;
+  price: string;
+  per: string;
+  blurb: string;
+  badge?: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  const theme = useTheme();
+  return (
+    <Pressable onPress={onPress}>
+      <Card style={{ borderWidth: 2, borderColor: selected ? theme.accent : theme.tileBorder, gap: Spacing.one }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+          <Ionicons
+            name={selected ? 'radio-button-on' : 'radio-button-off'}
+            size={20}
+            color={selected ? theme.accent : theme.textSecondary}
+          />
+          <ThemedText style={{ fontWeight: '800', fontSize: 16, flex: 1 }}>{title}</ThemedText>
+          {badge ? (
+            <View style={{ backgroundColor: theme.accent, borderRadius: 999, paddingHorizontal: Spacing.two, paddingVertical: 2 }}>
+              <ThemedText type="small" style={{ color: theme.accentText, fontWeight: '800' }}>{badge}</ThemedText>
+            </View>
+          ) : null}
+          <ThemedText style={{ fontWeight: '900', fontSize: 16 }}>{price}</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">{per}</ThemedText>
+        </View>
+        <ThemedText type="small" themeColor="textSecondary" style={{ marginLeft: 28 }}>{blurb}</ThemedText>
+      </Card>
+    </Pressable>
   );
 }
 
