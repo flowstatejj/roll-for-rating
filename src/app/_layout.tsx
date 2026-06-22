@@ -1,6 +1,8 @@
+import { Ionicons } from '@expo/vector-icons';
 import { DarkTheme, Stack, ThemeProvider, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { Pressable } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -27,6 +29,27 @@ const NavTheme = {
     primary: Colors.dark.accent,
   },
 };
+
+/**
+ * Header back control. The default native back arrow only appears when there's a
+ * screen beneath this one in the stack — so a detail screen opened cold from a
+ * notification / share deep link (or after a router.replace) would have NO way
+ * out. This always shows a chevron: it pops when possible, otherwise falls back
+ * to Home so the user is never stranded.
+ */
+function HeaderBack() {
+  const router = useRouter();
+  return (
+    <Pressable
+      onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))}
+      hitSlop={16}
+      style={{ paddingRight: 16, paddingVertical: 4 }}
+      accessibilityRole="button"
+      accessibilityLabel="Back">
+      <Ionicons name="chevron-back" size={28} color={Colors.dark.accent} />
+    </Pressable>
+  );
+}
 
 function RootNavigator() {
   const { session, initializing, onboarded } = useAuth();
@@ -73,7 +96,7 @@ function RootNavigator() {
   if (session && onboarded && !subReady) return <Loading />;
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack screenOptions={{ headerShown: false, headerLeft: () => <HeaderBack /> }}>
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="onboarding" />
