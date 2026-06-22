@@ -37,6 +37,9 @@ export default function SignUpScreen() {
   const [refCode, setRefCode] = useState('');
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
+  // 'compete' = a grappler; 'guardian' = a non-participating parent who manages children.
+  const [mode, setMode] = useState<'compete' | 'guardian'>('compete');
+  const isGuardian = mode === 'guardian';
 
   // Prefill a referral code from a ?ref= route param or the opening deep link.
   const params = useLocalSearchParams<{ ref?: string }>();
@@ -71,11 +74,15 @@ export default function SignUpScreen() {
       Alert.alert(t('su.dob'), t('su.dobUnreal'));
       return;
     }
-    if (isKid) {
+    if (isGuardian && isMinor) {
+      Alert.alert(t('su.guardianAdultTitle'), t('su.guardianAdultBody'));
+      return;
+    }
+    if (!isGuardian && isKid) {
       Alert.alert(t('su.askParentTitle'), t('su.askParentBody'));
       return;
     }
-    if (isMinor && !parentEmail.trim()) {
+    if (!isGuardian && isMinor && !parentEmail.trim()) {
       Alert.alert(t('su.parentEmail'), t('su.parentEmailReqBody'));
       return;
     }
@@ -90,9 +97,10 @@ export default function SignUpScreen() {
         password,
         username: username.trim(),
         displayName: displayName.trim(),
-        beltRank: belt,
+        beltRank: isGuardian ? 'white' : belt,
         birthdate: dob.iso,
-        parentEmail: isMinor ? parentEmail.trim() : null,
+        parentEmail: !isGuardian && isMinor ? parentEmail.trim() : null,
+        participating: !isGuardian,
       });
       // Captured here, attached on first sign-in (see AuthProvider).
       if (refCode.trim()) await AsyncStorage.setItem(PENDING_REFERRAL_KEY, refCode.trim().toUpperCase());
@@ -116,6 +124,24 @@ export default function SignUpScreen() {
         </ThemedText>
 
         <View style={styles.form}>
+          <View style={styles.modeRow}>
+            <Pressable
+              onPress={() => setMode('compete')}
+              style={[styles.modeOption, { borderColor: !isGuardian ? theme.accent : theme.border, backgroundColor: !isGuardian ? theme.accent + '14' : 'transparent' }]}>
+              <Ionicons name="flame" size={18} color={!isGuardian ? theme.accent : theme.textSecondary} />
+              <ThemedText style={{ fontWeight: '700', fontSize: 13, color: !isGuardian ? theme.accent : theme.text }}>{t('su.modeCompete')}</ThemedText>
+            </Pressable>
+            <Pressable
+              onPress={() => setMode('guardian')}
+              style={[styles.modeOption, { borderColor: isGuardian ? theme.accent : theme.border, backgroundColor: isGuardian ? theme.accent + '14' : 'transparent' }]}>
+              <Ionicons name="people" size={18} color={isGuardian ? theme.accent : theme.textSecondary} />
+              <ThemedText style={{ fontWeight: '700', fontSize: 13, color: isGuardian ? theme.accent : theme.text }}>{t('su.modeGuardian')}</ThemedText>
+            </Pressable>
+          </View>
+          {isGuardian && (
+            <ThemedText type="small" themeColor="textSecondary">{t('su.guardianNote')}</ThemedText>
+          )}
+
           <TextField label={t('su.displayName')} value={displayName} onChangeText={setDisplayName} placeholder="Ryan K" />
           <TextField
             label={t('su.username')}
@@ -134,6 +160,7 @@ export default function SignUpScreen() {
           />
           <TextField label={t('auth.password')} value={password} onChangeText={setPassword} secureTextEntry placeholder={t('su.passwordPlaceholder')} />
 
+          {!isGuardian && (
           <View style={{ gap: Spacing.one }}>
             <ThemedText type="smallBold" themeColor="textSecondary">
               {t('su.beltRank')}
@@ -165,10 +192,11 @@ export default function SignUpScreen() {
               })}
             </View>
           </View>
+          )}
 
           <View style={{ gap: Spacing.one }}>
             <ThemedText type="smallBold" themeColor="textSecondary">
-              {t('su.dob')}
+              {isGuardian ? t('su.dobGuardian') : t('su.dob')}
             </ThemedText>
             <View style={styles.dobRow}>
               <View style={{ flex: 1 }}>
@@ -201,7 +229,7 @@ export default function SignUpScreen() {
             </View>
           </View>
 
-          {isKid && (
+          {!isGuardian && isKid && (
             <View style={[styles.kidNotice, { borderColor: theme.accent, backgroundColor: theme.accent + '14' }]}>
               <ThemedText style={{ fontWeight: '800' }}>{t('su.kidNoticeTitle')}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
@@ -210,7 +238,7 @@ export default function SignUpScreen() {
             </View>
           )}
 
-          {isMinor && !isKid && (
+          {!isGuardian && isMinor && !isKid && (
             <View style={{ gap: Spacing.one }}>
               <TextField
                 label={t('su.parentEmail')}
@@ -266,6 +294,8 @@ export default function SignUpScreen() {
 
 const styles = StyleSheet.create({
   form: { gap: Spacing.three },
+  modeRow: { flexDirection: 'row', gap: Spacing.two },
+  modeOption: { flex: 1, flexDirection: 'row', gap: Spacing.one, alignItems: 'center', justifyContent: 'center', paddingVertical: Spacing.three, borderRadius: 10, borderWidth: 1 },
   belts: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   dobRow: { flexDirection: 'row', gap: Spacing.two, alignItems: 'flex-end' },
   kidNotice: { gap: 4, borderWidth: 1, borderRadius: 10, padding: Spacing.three },

@@ -35,8 +35,17 @@ import {
 import { supabase } from './supabase';
 import { useAuth } from './auth';
 
-/** Auto-renewable subscription SKU — must match the product id in App Store Connect. */
+/** Auto-renewable subscription SKUs — must match the product ids in App Store Connect. */
 export const PRO_MONTHLY_SKU = 'com.flowstatejj.rollforrating.pro.monthly';
+export const FAMILY_MONTHLY_SKU = 'com.flowstatejj.rollforrating.family.monthly';
+
+/** The two plan tiers. `individual` covers the holder + one managed child;
+ *  `family` covers the holder + unlimited managed children. */
+export type Plan = 'individual' | 'family';
+const SKU_FOR: Record<Plan, string> = {
+  individual: PRO_MONTHLY_SKU,
+  family: FAMILY_MONTHLY_SKU,
+};
 
 const IAP_AVAILABLE = Platform.OS === 'ios' || Platform.OS === 'android';
 
@@ -46,6 +55,8 @@ export interface SubInfo {
   source: string | null;
   productId: string | null;
   expiresAt: string | null;
+  /** which tier the active entitlement is, when there is one */
+  plan: Plan | null;
 }
 
 interface SubscriptionContextValue {
@@ -53,11 +64,17 @@ interface SubscriptionContextValue {
   ready: boolean;
   /** has active access (real subscription, grace period, or comp) */
   active: boolean;
+  /** the active plan tier, or null when not subscribed */
+  plan: Plan | null;
   info: SubInfo | null;
+  /** the individual ($4.99) StoreKit product, when loaded */
   product: ProductSubscriptionIOS | null;
+  /** the family ($9.99) StoreKit product, when loaded */
+  familyProduct: ProductSubscriptionIOS | null;
   purchasing: boolean;
   refresh: () => Promise<boolean>;
-  purchase: () => Promise<void>;
+  /** buy a tier — defaults to individual to preserve the old call sites */
+  purchase: (plan?: Plan) => Promise<void>;
   restore: () => Promise<boolean>;
 }
 
@@ -68,6 +85,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [info, setInfo] = useState<SubInfo | null>(null);
   const [product, setProduct] = useState<ProductSubscriptionIOS | null>(null);
+  const [familyProduct, setFamilyProduct] = useState<ProductSubscriptionIOS | null>(null);
   const [purchasing, setPurchasing] = useState(false);
   const purchasingRef = useRef(false);
 
@@ -83,16 +101,18 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     if (error) {
       // Fail CLOSED would lock everyone out on a transient error; the gate also
       // checks `ready`, so we surface "inactive" but let a retry recover.
-      setInfo({ active: false, status: null, source: null, productId: null, expiresAt: null });
+      setInfo({ active: false, status: null, source: null, productId: null, expiresAt: null, plan: null });
     } else {
       const row = Array.isArray(data) ? data[0] : data;
       active = !!row?.active;
+      const planTier: Plan | null = row?.plan === 'family' ? 'family' : row?.plan === 'individual' ? 'individual' : null;
       setInfo({
         active,
         status: row?.status ?? null,
         source: row?.source ?? null,
         productId: row?.product_id ?? null,
         expiresAt: row?.expires_at ?? null,
+        plan: active ? planTier : null,
       });
     }
     setReady(true);
@@ -125,9 +145,12 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     (async () => {
       try {
         await initConnection();
-        const products = await fetchProducts({ skus: [PRO_MONTHLY_SKU], type: 'subs' });
-        const sub = (products as ProductSubscriptionIOS[]).find((p) => p.id === PRO_MONTHLY_SKU);
-        if (!cancelled && sub) setProduct(sub);
+        const products = await fetchProducts({ skus: [PRO_MONTHLY_SKU, FAMILY_MONTHLY_SKU], type: 'subs' });
+        const list = products as ProductSubscriptionIOS[];
+        const indiv = list.find((p) => p.id === PRO_MONTHLY_SKU);
+        const fam = list.find((p) => p.id === FAMILY_MONTHLY_SKU);
+        if (!cancelled && indiv) setProduct(indiv);
+        if (!cancelled && fam) setFamilyProduct(fam);
       } catch {
         // Store unavailable (e.g. no sandbox account) — paywall shows a fallback price.
       }
@@ -159,13 +182,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user?.id]);
 
-  const purchase = useCallback(async () => {
+  const purchase = useCallback(async (plan: Plan = 'individual') => {
     if (!IAP_AVAILABLE) throw new Error('Subscriptions are only available in the mobile app.');
     if (purchasingRef.current) return;
     purchasingRef.current = true;
     setPurchasing(true);
     try {
-      await requestPurchase({ request: { apple: { sku: PRO_MONTHLY_SKU } }, type: 'subs' });
+      await requestPurchase({ request: { apple: { sku: SKU_FOR[plan] } }, type: 'subs' });
       // Outcome is delivered via purchaseUpdatedListener / purchaseErrorListener.
     } catch (e) {
       purchasingRef.current = false;
@@ -186,14 +209,16 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     () => ({
       ready,
       active: !!info?.active,
+      plan: info?.plan ?? null,
       info,
       product,
+      familyProduct,
       purchasing,
       refresh,
       purchase,
       restore,
     }),
-    [ready, info, product, purchasing, refresh, purchase, restore],
+    [ready, info, product, familyProduct, purchasing, refresh, purchase, restore],
   );
 
   return <SubscriptionContext.Provider value={value}>{children}</SubscriptionContext.Provider>;

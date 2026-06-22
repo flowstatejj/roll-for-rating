@@ -323,7 +323,7 @@ export default function ProfileScreen() {
       )}
 
       {/* Held titles */}
-      {titles.length > 0 && (
+      {profile.participating && titles.length > 0 && (
         <View style={styles.titleRow}>
           {titles.map((t) => (
             <View key={t} style={[styles.titleChip, { borderColor: theme.accent, backgroundColor: theme.accent + '22' }]}>
@@ -334,7 +334,19 @@ export default function ProfileScreen() {
         </View>
       )}
 
-      {/* Rating panel */}
+      {/* Guardian (non-participating): no rating/competition surfaces. */}
+      {!profile.participating && (
+        <Card style={styles.openRow}>
+          <Ionicons name="people" size={22} color={theme.accent} />
+          <View style={{ flex: 1 }}>
+            <ThemedText style={{ fontWeight: '800' }}>{t('pf.guardianTitle')}</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">{t('pf.guardianBody')}</ThemedText>
+          </View>
+        </Card>
+      )}
+
+      {/* Rating panel (competitors only) */}
+      {profile.participating && (
       <Card style={{ backgroundColor: theme.accent }}>
         <ThemedText style={{ color: theme.accentText, opacity: 0.85, fontWeight: '700' }}>RATING</ThemedText>
         <ThemedText style={{ color: theme.accentText, fontSize: 52, fontWeight: '800', lineHeight: 56 }}>
@@ -360,9 +372,10 @@ export default function ProfileScreen() {
           <MiniStat label="Win %" value={`${winRate}%`} tint={theme.accentText} />
         </View>
       </Card>
+      )}
 
       {/* Open for a challenge / protected-account status (age-tier aware) */}
-      {profile.is_minor && profile.consent_status === 'pending' ? (
+      {!profile.participating ? null : profile.is_minor && profile.consent_status === 'pending' ? (
         // Minor waiting on a parent to approve the account.
         <Card style={[styles.openRow, { flexWrap: 'wrap' }]}>
           <Ionicons name="time" size={22} color={theme.accent} />
