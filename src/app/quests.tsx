@@ -53,7 +53,6 @@ export default function QuestsScreen() {
 
   if (loading || !profile) return <Loading />;
 
-  const weekly = quests.filter((q) => q.period !== 'once');
   const challenges = quests.filter((q) => q.period === 'once');
 
   const renderQuest = (q: Quest) => {
@@ -93,18 +92,14 @@ export default function QuestsScreen() {
     <Screen>
       <Stack.Screen options={{ title: t('nav.quests') }} />
 
-      <ThemedText style={styles.section}>{t('q.weekQuests')}</ThemedText>
-      <View style={{ gap: Spacing.two }}>{weekly.map(renderQuest)}</View>
-      <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center' }}>
-        {t('q.reset')}
-      </ThemedText>
-
-      {challenges.length > 0 && (
-        <>
-          <ThemedText style={styles.section}>{t('q.challenges')}</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">{t('q.challengesSub')}</ThemedText>
-          <View style={{ gap: Spacing.two }}>{challenges.map(renderQuest)}</View>
-        </>
+      <ThemedText style={styles.section}>{t('q.challenges')}</ThemedText>
+      <ThemedText type="small" themeColor="textSecondary">{t('q.challengesSub')}</ThemedText>
+      {challenges.length > 0 ? (
+        <View style={{ gap: Spacing.two }}>{challenges.map(renderQuest)}</View>
+      ) : (
+        <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center', marginTop: Spacing.two }}>
+          {t('q.allDone')}
+        </ThemedText>
       )}
     </Screen>
   );

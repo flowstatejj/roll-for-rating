@@ -124,13 +124,9 @@ declare
   uid uuid := auth.uid();
   wk timestamptz := date_trunc('week', now());
   wkp text := to_char(date_trunc('week', now()), 'IYYY-IW');
-  w2 integer; pub1 integer; f1 integer;
   strk integer; legc integer; chokec integer; tric integer; legtot integer; choketot integer;
   gt integer;
 begin
-  select count(*) into w2 from public.matches where status='completed' and winner_id=uid and completed_at>=wk;
-  select count(*) into pub1 from public.matches where status='completed' and is_public and completed_at>=wk and (challenger_id=uid or opponent_id=uid);
-  select count(*) into f1 from public.matches where status='completed' and winner_id=uid and result='submission' and completed_at>=wk;
   strk := public.weekly_roll_streak(uid);
   legc := public.hunter_progress(uid,'leg',30);
   chokec := public.hunter_progress(uid,'choke',30);
@@ -140,9 +136,6 @@ begin
   gt := public.globetrotter_progress(uid);
 
   return jsonb_build_array(
-    jsonb_build_object('key','wins2','period','week','title','Win 2 matches','progress',w2,'target',2,'reward',20,'claimed', exists(select 1 from public.quest_claims where user_id=uid and quest_key='wins2' and period_key=wkp)),
-    jsonb_build_object('key','public1','period','week','title','Compete in a public match','progress',pub1,'target',1,'reward',15,'claimed', exists(select 1 from public.quest_claims where user_id=uid and quest_key='public1' and period_key=wkp)),
-    jsonb_build_object('key','finish1','period','week','title','Win by submission','progress',f1,'target',1,'reward',15,'claimed', exists(select 1 from public.quest_claims where user_id=uid and quest_key='finish1' and period_key=wkp)),
     jsonb_build_object('key','shapeShifter','period','once','title','Shape Shifter — all triangles in 7 days','progress',tric,'target',4,'reward',15,'claimed', exists(select 1 from public.quest_claims where user_id=uid and quest_key='shapeShifter' and period_key='once')),
     jsonb_build_object('key','legHunter','period','once','title','Leg Hunter — all leg locks in 30 days','progress',legc,'target',legtot,'reward',18,'claimed', exists(select 1 from public.quest_claims where user_id=uid and quest_key='legHunter' and period_key='once')),
     jsonb_build_object('key','headHunter','period','once','title','Head Hunter — all chokes in 30 days','progress',chokec,'target',choketot,'reward',20,'claimed', exists(select 1 from public.quest_claims where user_id=uid and quest_key='headHunter' and period_key='once')),
@@ -168,18 +161,12 @@ create or replace function public.claim_quest(p_key text)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare
   uid uuid := auth.uid();
-  wk timestamptz := date_trunc('week', now());
-  period text; progress integer; target integer; reward integer;
+  period text := 'once'; progress integer; target integer; reward integer;
 begin
-  if p_key in ('wins2','public1','finish1') then period := to_char(date_trunc('week', now()), 'IYYY-IW');
-  else period := 'once'; end if;
   if exists (select 1 from public.quest_claims where user_id=uid and quest_key=p_key and period_key=period) then
     return jsonb_build_object('ok', false, 'reason', 'Already claimed'); end if;
 
-  if p_key='wins2' then target:=2; reward:=20; select count(*) into progress from public.matches where status='completed' and winner_id=uid and completed_at>=wk;
-  elsif p_key='public1' then target:=1; reward:=15; select count(*) into progress from public.matches where status='completed' and is_public and completed_at>=wk and (challenger_id=uid or opponent_id=uid);
-  elsif p_key='finish1' then target:=1; reward:=15; select count(*) into progress from public.matches where status='completed' and winner_id=uid and result='submission' and completed_at>=wk;
-  elsif p_key='shapeShifter' then target:=4; reward:=15; progress:=public.triangle_progress(uid,7);
+  if p_key='shapeShifter' then target:=4; reward:=15; progress:=public.triangle_progress(uid,7);
   elsif p_key='legHunter' then reward:=18; select count(*) into target from public.submission_values where category='leg'; progress:=public.hunter_progress(uid,'leg',30);
   elsif p_key='headHunter' then reward:=20; select count(*) into target from public.submission_values where category='choke'; progress:=public.hunter_progress(uid,'choke',30);
   elsif p_key='ksGym' then target:=1; reward:=10; progress:=public.king_slayer_progress(uid,'gym');
