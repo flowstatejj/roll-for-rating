@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react';
 import { Alert, Pressable, Share, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Avatar, BeltChip, Button, Card, EmptyState, Loading, Screen } from '@/components/ui/kit';
+import { Avatar, BeltChip, Button, Card, EmptyState, Loading, Screen, TextField } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
@@ -13,15 +13,17 @@ import {
   currentLeagueWeek,
   fetchFixtures,
   fetchLeague,
+  fetchLeagueMessages,
   fetchMembers,
   fetchStandings,
   generateWeek,
   hasLeagueInvite,
   joinLeague,
   leaveLeague,
+  postLeagueMessage,
   respondLeagueInvite,
 } from '@/lib/leagues';
-import type { League, LeagueFixture, LeagueMember, LeagueStanding } from '@/lib/types';
+import type { League, LeagueFixture, LeagueMember, LeagueMessage, LeagueStanding } from '@/lib/types';
 
 export default function LeagueDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -35,9 +37,12 @@ export default function LeagueDetailScreen() {
   const [members, setMembers] = useState<LeagueMember[]>([]);
   const [fixtures, setFixtures] = useState<LeagueFixture[]>([]);
   const [standings, setStandings] = useState<LeagueStanding[]>([]);
+  const [messages, setMessages] = useState<LeagueMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [invited, setInvited] = useState(false);
+  const [msgText, setMsgText] = useState('');
+  const [postingMsg, setPostingMsg] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -45,10 +50,16 @@ export default function LeagueDetailScreen() {
       setLeague(l);
       if (l) {
         const week = currentLeagueWeek(l);
-        const [m, f, s] = await Promise.all([fetchMembers(id), fetchFixtures(id, week), fetchStandings(id)]);
+        const [m, f, s, msgs] = await Promise.all([
+          fetchMembers(id),
+          fetchFixtures(id, week),
+          fetchStandings(id),
+          fetchLeagueMessages(id).catch(() => []),
+        ]);
         setMembers(m);
         setFixtures(f);
         setStandings(s);
+        setMessages(msgs);
       }
       hasLeagueInvite(id).then(setInvited).catch(() => {});
     } catch (e) {
@@ -100,6 +111,20 @@ export default function LeagueDetailScreen() {
     const opponent = f.player_a === userId ? f.player_b : f.player_a;
     if (!opponent) return;
     router.push(`/match/new?opponent=${opponent}&league=${league!.id}&week=${week}`);
+  }
+
+  async function postAnnouncement() {
+    if (!msgText.trim()) return;
+    setPostingMsg(true);
+    try {
+      await postLeagueMessage(id, msgText.trim());
+      setMsgText('');
+      setMessages(await fetchLeagueMessages(id));
+    } catch (e: any) {
+      Alert.alert(t('md.error'), e.message ?? t('md.tryAgain'));
+    } finally {
+      setPostingMsg(false);
+    }
   }
 
   // Confirm + guard generating this week's fixtures.
@@ -182,6 +207,42 @@ export default function LeagueDetailScreen() {
           variant="secondary"
           onPress={() => router.push({ pathname: '/invite', params: { type: 'league', id: league.id, name: league.name } })}
         />
+      )}
+
+      {/* Announcements */}
+      {(isMember || isOrganizer) && (
+        <>
+          <ThemedText style={styles.section}>{t('le.announcements')}</ThemedText>
+          {isOrganizer && (
+            <Card style={{ gap: Spacing.two }}>
+              <TextField
+                label={t('le.postAnnouncement')}
+                value={msgText}
+                onChangeText={setMsgText}
+                placeholder={t('le.announcePlaceholder')}
+                multiline
+              />
+              <Button label={t('le.post')} icon="megaphone" loading={postingMsg} onPress={postAnnouncement} />
+            </Card>
+          )}
+          {messages.length === 0 ? (
+            <EmptyState icon="megaphone-outline" title={t('le.noAnnouncements')} subtitle={isOrganizer ? t('le.noAnnouncementsOrg') : t('le.noAnnouncementsSub')} />
+          ) : (
+            <Card style={{ paddingVertical: Spacing.one }}>
+              {messages.map((m, i) => (
+                <View key={m.id}>
+                  {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
+                  <View style={{ paddingVertical: Spacing.two, paddingHorizontal: Spacing.two, gap: 2 }}>
+                    <ThemedText>{m.body}</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {m.author?.display_name ?? t('le.organizer')} · {new Date(m.created_at).toLocaleDateString()}
+                    </ThemedText>
+                  </View>
+                </View>
+              ))}
+            </Card>
+          )}
+        </>
       )}
 
       {/* This week */}

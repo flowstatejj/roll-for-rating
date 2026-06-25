@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { League, LeagueFixture, LeagueMember, LeagueStanding, SentInvite } from './types';
+import type { League, LeagueFixture, LeagueMember, LeagueMessage, LeagueStanding, SentInvite } from './types';
 
 const PERSON = 'id,display_name,belt_rank,rating';
 const MEMBER_SELECT = `*, profile:profiles!league_members_user_id_fkey(${PERSON},avatar_path)`;
@@ -194,6 +194,23 @@ export async function fetchStandings(leagueId: string): Promise<LeagueStanding[]
     .in('id', rows.map((r) => r.user_id));
   const byId = new Map((profs ?? []).map((p: any) => [p.id, p]));
   return rows.map((r) => ({ ...r, profile: byId.get(r.user_id) ?? null }));
+}
+
+// --- League announcements (organizer posts; members are notified) ----------
+export async function fetchLeagueMessages(leagueId: string): Promise<LeagueMessage[]> {
+  const { data, error } = await supabase
+    .from('league_messages')
+    .select('*, author:profiles(display_name)')
+    .eq('league_id', leagueId)
+    .order('created_at', { ascending: false })
+    .limit(50);
+  if (error) throw error;
+  return (data ?? []) as LeagueMessage[];
+}
+
+export async function postLeagueMessage(leagueId: string, body: string): Promise<void> {
+  const { error } = await supabase.rpc('post_league_message', { p_lid: leagueId, p_body: body });
+  if (error) throw error;
 }
 
 /** Link the match a fixture was played as (called after creating a league match). */

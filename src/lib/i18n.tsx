@@ -22,7 +22,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'auth.newHere': 'New here?', 'auth.createAccount': 'Create an account',
 
     'settings.title': 'Settings', 'settings.language': 'Language',
-    'settings.languageHint': 'Choose the language the app is shown in.', 'settings.account': 'Account',
+    'settings.languageHint': 'Choose the language the app is shown in.', 'settings.notifications': 'Notifications', 'settings.notifHint': 'Choose which push notifications you receive. They keep you posted even when the app is closed.', 'settings.account': 'Account',
     'common.cancel': 'Cancel', 'common.ok': 'OK',
 
     'profile.settings': 'Settings', 'profile.editProfile': 'Edit profile',
@@ -79,6 +79,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'le.rankedChip': 'Ranked', 'le.casualChip': 'For fun',
     'le.notFound': 'League not found', 'le.meets': 'Meets', 'le.week': 'Week', 'le.of': 'of', 'le.joinLeague': 'Join league', 'le.notMember': 'Join to get your weekly matchup and appear in the standings.', 'le.shareCode': 'Share code', 'le.leave': 'Leave', 'le.thisWeek': 'This week', 'le.generate': 'Generate this week', 'le.genTitle': 'Generate week {w}?', 'le.genBody': 'Pair up the {n} members for this week.', 'le.needMoreTitle': 'Not enough members', 'le.needMoreBody': 'You need at least 2 members to generate fixtures.',
     'le.noFixturesTitle': 'No matchups yet', 'le.noFixturesOrg': 'Tap Generate to pair this week.', 'le.noFixturesSub': "The organizer will post this week's pairings.", 'le.yourMatch': 'Your match this week', 'le.notPaired': "You're not paired this week.", 'le.bye': 'Bye this week — no opponent.', 'le.byeShort': 'bye', 'le.vs': 'vs', 'le.viewMatch': 'View', 'le.startMatch': 'Start match',
+    'le.announcements': 'Announcements', 'le.postAnnouncement': 'Post an announcement', 'le.announcePlaceholder': 'Message to all members…', 'le.post': 'Post', 'le.noAnnouncements': 'No announcements yet', 'le.noAnnouncementsOrg': 'Post an update to notify every member.', 'le.noAnnouncementsSub': 'The organizer hasn’t posted anything yet.',
     'le.standings': 'Standings', 'le.noStandingsTitle': 'No results yet', 'le.noStandingsSub': 'Standings appear as matches are played.', 'le.member': 'Member', 'le.played': 'played', 'le.members': 'Members', 'le.organizer': 'Organizer', 'le.shareMsg': 'Join my league "{name}" on Roll for Rating — code: {code}', 'le.code': 'Code',
     'tn.name': 'Tournament name', 'tn.nameReq': 'Enter a tournament name.', 'tn.create': 'Create a tournament', 'tn.namePh': 'e.g. Friday Smoker', 'tn.desc': 'Description', 'tn.descPh': 'Optional details',
     'tn.format': 'Format', 'tn.fmt.single_elim': 'Single elim', 'tn.fmt.round_robin': 'Round robin', 'tn.fmt.double_elim': 'Double elim', 'tn.fmt.rr_playoff': 'RR + playoff',
@@ -272,6 +273,8 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'notif.justNow': 'just now', 'notif.minAgo': '{n}m ago', 'notif.hAgo': '{n}h ago', 'notif.dAgo': '{n}d ago',
     'notif.tNew': 'New challenge', 'notif.tRefNew': "You're refereeing", 'notif.tAccepted': 'Challenge accepted', 'notif.tReady': 'Ready to record', 'notif.tDeclined': 'Challenge declined', 'notif.tCancelled': 'Match cancelled', 'notif.tResult': 'Result recorded', 'notif.tGym': 'Gym friend request', 'notif.tReaction': 'New reaction', 'notif.tMessage': 'New message',
     'notif.bNew': '{name} challenged you', 'notif.bRefNew': "{name} set up a match — you're the ref", 'notif.bAccepted': '{name} accepted your challenge', 'notif.bReady': '{c} vs {o} is ready to score', 'notif.bDeclined': '{name} declined your challenge', 'notif.bCancelled': 'Your match vs {name} was cancelled', 'notif.bDraw': 'Draw vs {name} — ROR {rb} → {ra}', 'notif.bWin': 'You beat {name} — ROR {rb} → {ra}', 'notif.bLoss': 'You lost to {name} — ROR {rb} → {ra}', 'notif.bGym': '{gym} wants to connect', 'notif.bReaction': '{name} reacted {emoji} to your match', 'notif.bMessage': '{name}: {snippet}',
+    'notif.tVideo': 'New match video', 'notif.bVideo': '{name} posted a video of your match', 'notif.tLgMatchup': 'Weekly matchup', 'notif.bLgMatchup': 'You face {o} this week', 'notif.tLgMessage': '{name} announcement', 'notif.bLgMessage': '{snippet}',
+    'notif.cat.challenges': 'Challenges & match updates', 'notif.cat.results': 'Match results', 'notif.cat.messages': 'Messages', 'notif.cat.videos': 'New videos', 'notif.cat.reactions': 'Reactions', 'notif.cat.friends': 'Friends', 'notif.cat.leagues': 'Leagues & tournaments', 'notif.cat.gym': 'Gym requests',
 
     'riv.intro': "Your head-to-head record against everyone you've rolled.",
     'riv.emptyTitle': 'No rivalries yet', 'riv.emptySub': 'Complete a match to start a head-to-head record.',
@@ -531,7 +534,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'auth.newHere': '¿Nuevo por aquí?', 'auth.createAccount': 'Crear una cuenta',
 
     'settings.title': 'Ajustes', 'settings.language': 'Idioma',
-    'settings.languageHint': 'Elige el idioma en que se muestra la app.', 'settings.account': 'Cuenta',
+    'settings.languageHint': 'Elige el idioma en que se muestra la app.', 'settings.notifications': 'Notificaciones', 'settings.notifHint': 'Elige qué notificaciones push recibes. Te mantienen al día aunque la app esté cerrada.', 'settings.account': 'Cuenta',
     'common.cancel': 'Cancelar', 'common.ok': 'OK',
 
     'profile.settings': 'Ajustes', 'profile.editProfile': 'Editar perfil',
@@ -588,6 +591,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'le.rankedChip': 'Clasificatoria', 'le.casualChip': 'Por diversión',
     'le.notFound': 'Liga no encontrada', 'le.meets': 'Se reúne', 'le.week': 'Semana', 'le.of': 'de', 'le.joinLeague': 'Unirse a la liga', 'le.notMember': 'Únete para ver tu enfrentamiento semanal y aparecer en la clasificación.', 'le.shareCode': 'Compartir código', 'le.leave': 'Salir', 'le.thisWeek': 'Esta semana', 'le.generate': 'Generar esta semana', 'le.genTitle': '¿Generar la semana {w}?', 'le.genBody': 'Empareja a los {n} miembros de esta semana.', 'le.needMoreTitle': 'Faltan miembros', 'le.needMoreBody': 'Necesitas al menos 2 miembros para generar los enfrentamientos.',
     'le.noFixturesTitle': 'Aún no hay enfrentamientos', 'le.noFixturesOrg': 'Toca Generar para emparejar esta semana.', 'le.noFixturesSub': 'El organizador publicará los emparejamientos.', 'le.yourMatch': 'Tu combate de esta semana', 'le.notPaired': 'No tienes emparejamiento esta semana.', 'le.bye': 'Descansas esta semana, sin rival.', 'le.byeShort': 'descansa', 'le.vs': 'vs', 'le.viewMatch': 'Ver', 'le.startMatch': 'Iniciar combate',
+    'le.announcements': 'Anuncios', 'le.postAnnouncement': 'Publicar un anuncio', 'le.announcePlaceholder': 'Mensaje para todos los miembros…', 'le.post': 'Publicar', 'le.noAnnouncements': 'Aún no hay anuncios', 'le.noAnnouncementsOrg': 'Publica una novedad para notificar a todos los miembros.', 'le.noAnnouncementsSub': 'El organizador aún no ha publicado nada.',
     'le.standings': 'Clasificación', 'le.noStandingsTitle': 'Aún no hay resultados', 'le.noStandingsSub': 'La clasificación aparece a medida que se juegan los combates.', 'le.member': 'Miembro', 'le.played': 'jugados', 'le.members': 'Miembros', 'le.organizer': 'Organizador', 'le.shareMsg': 'Únete a mi liga "{name}" en Roll for Rating — código: {code}', 'le.code': 'Código',
     'tn.name': 'Nombre del torneo', 'tn.nameReq': 'Ingresa un nombre.', 'tn.create': 'Crear un torneo', 'tn.namePh': 'p. ej. Smoker del viernes', 'tn.desc': 'Descripción', 'tn.descPh': 'Detalles opcionales',
     'tn.format': 'Formato', 'tn.fmt.single_elim': 'Eliminación simple', 'tn.fmt.round_robin': 'Todos contra todos', 'tn.fmt.double_elim': 'Doble eliminación', 'tn.fmt.rr_playoff': 'Liguilla + playoff',
@@ -781,6 +785,8 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'notif.justNow': 'ahora mismo', 'notif.minAgo': 'hace {n} min', 'notif.hAgo': 'hace {n} h', 'notif.dAgo': 'hace {n} d',
     'notif.tNew': 'Nuevo reto', 'notif.tRefNew': 'Estás arbitrando', 'notif.tAccepted': 'Reto aceptado', 'notif.tReady': 'Listo para registrar', 'notif.tDeclined': 'Reto rechazado', 'notif.tCancelled': 'Combate cancelado', 'notif.tResult': 'Resultado registrado', 'notif.tGym': 'Solicitud de amistad de gimnasio', 'notif.tReaction': 'Nueva reacción', 'notif.tMessage': 'Nuevo mensaje',
     'notif.bNew': '{name} te retó', 'notif.bRefNew': '{name} creó un combate — eres el árbitro', 'notif.bAccepted': '{name} aceptó tu reto', 'notif.bReady': '{c} vs {o} está listo para puntuar', 'notif.bDeclined': '{name} rechazó tu reto', 'notif.bCancelled': 'Tu combate contra {name} fue cancelado', 'notif.bDraw': 'Empate vs {name} — ROR {rb} → {ra}', 'notif.bWin': 'Venciste a {name} — ROR {rb} → {ra}', 'notif.bLoss': 'Perdiste contra {name} — ROR {rb} → {ra}', 'notif.bGym': '{gym} quiere conectar', 'notif.bReaction': '{name} reaccionó {emoji} a tu combate', 'notif.bMessage': '{name}: {snippet}',
+    'notif.tVideo': 'Nuevo video del combate', 'notif.bVideo': '{name} publicó un video de tu combate', 'notif.tLgMatchup': 'Enfrentamiento de la semana', 'notif.bLgMatchup': 'Te enfrentas a {o} esta semana', 'notif.tLgMessage': 'Anuncio de {name}', 'notif.bLgMessage': '{snippet}',
+    'notif.cat.challenges': 'Retos y novedades de combates', 'notif.cat.results': 'Resultados', 'notif.cat.messages': 'Mensajes', 'notif.cat.videos': 'Videos nuevos', 'notif.cat.reactions': 'Reacciones', 'notif.cat.friends': 'Amigos', 'notif.cat.leagues': 'Ligas y torneos', 'notif.cat.gym': 'Solicitudes de gimnasio',
 
     'riv.intro': 'Tu historial cara a cara contra todos con quienes has rodado.',
     'riv.emptyTitle': 'Aún no hay rivalidades', 'riv.emptySub': 'Completa un combate para empezar un historial cara a cara.',
@@ -1040,7 +1046,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'auth.newHere': 'Novo por aqui?', 'auth.createAccount': 'Criar uma conta',
 
     'settings.title': 'Configurações', 'settings.language': 'Idioma',
-    'settings.languageHint': 'Escolha o idioma em que o app é exibido.', 'settings.account': 'Conta',
+    'settings.languageHint': 'Escolha o idioma em que o app é exibido.', 'settings.notifications': 'Notificações', 'settings.notifHint': 'Escolha quais notificações push você recebe. Elas mantêm você por dentro mesmo com o app fechado.', 'settings.account': 'Conta',
     'common.cancel': 'Cancelar', 'common.ok': 'OK',
 
     'profile.settings': 'Configurações', 'profile.editProfile': 'Editar perfil',
@@ -1097,6 +1103,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'le.rankedChip': 'Ranqueada', 'le.casualChip': 'Por diversão',
     'le.notFound': 'Liga não encontrada', 'le.meets': 'Encontros', 'le.week': 'Semana', 'le.of': 'de', 'le.joinLeague': 'Entrar na liga', 'le.notMember': 'Entre para ver seu confronto da semana e aparecer na classificação.', 'le.shareCode': 'Compartilhar código', 'le.leave': 'Sair', 'le.thisWeek': 'Esta semana', 'le.generate': 'Gerar esta semana', 'le.genTitle': 'Gerar a semana {w}?', 'le.genBody': 'Forme os pares dos {n} membros desta semana.', 'le.needMoreTitle': 'Membros insuficientes', 'le.needMoreBody': 'Você precisa de pelo menos 2 membros para gerar os confrontos.',
     'le.noFixturesTitle': 'Ainda sem confrontos', 'le.noFixturesOrg': 'Toque em Gerar para emparelhar esta semana.', 'le.noFixturesSub': 'O organizador publicará os confrontos.', 'le.yourMatch': 'Sua luta desta semana', 'le.notPaired': 'Você não tem confronto esta semana.', 'le.bye': 'Você folga esta semana, sem adversário.', 'le.byeShort': 'folga', 'le.vs': 'vs', 'le.viewMatch': 'Ver', 'le.startMatch': 'Iniciar luta',
+    'le.announcements': 'Avisos', 'le.postAnnouncement': 'Publicar um aviso', 'le.announcePlaceholder': 'Mensagem para todos os membros…', 'le.post': 'Publicar', 'le.noAnnouncements': 'Ainda sem avisos', 'le.noAnnouncementsOrg': 'Publique uma novidade para notificar todos os membros.', 'le.noAnnouncementsSub': 'O organizador ainda não publicou nada.',
     'le.standings': 'Classificação', 'le.noStandingsTitle': 'Ainda sem resultados', 'le.noStandingsSub': 'A classificação aparece conforme as lutas acontecem.', 'le.member': 'Membro', 'le.played': 'jogadas', 'le.members': 'Membros', 'le.organizer': 'Organizador', 'le.shareMsg': 'Entre na minha liga "{name}" no Roll for Rating — código: {code}', 'le.code': 'Código',
     'tn.name': 'Nome do torneio', 'tn.nameReq': 'Digite um nome.', 'tn.create': 'Criar um torneio', 'tn.namePh': 'ex. Smoker de sexta', 'tn.desc': 'Descrição', 'tn.descPh': 'Detalhes opcionais',
     'tn.format': 'Formato', 'tn.fmt.single_elim': 'Eliminatória simples', 'tn.fmt.round_robin': 'Todos contra todos', 'tn.fmt.double_elim': 'Dupla eliminatória', 'tn.fmt.rr_playoff': 'Pontos + playoff',
@@ -1290,6 +1297,8 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'notif.justNow': 'agora mesmo', 'notif.minAgo': 'há {n} min', 'notif.hAgo': 'há {n} h', 'notif.dAgo': 'há {n} d',
     'notif.tNew': 'Novo desafio', 'notif.tRefNew': 'Você está arbitrando', 'notif.tAccepted': 'Desafio aceito', 'notif.tReady': 'Pronto para registrar', 'notif.tDeclined': 'Desafio recusado', 'notif.tCancelled': 'Luta cancelada', 'notif.tResult': 'Resultado registrado', 'notif.tGym': 'Pedido de amizade de academia', 'notif.tReaction': 'Nova reação', 'notif.tMessage': 'Nova mensagem',
     'notif.bNew': '{name} desafiou você', 'notif.bRefNew': '{name} criou uma luta — você é o árbitro', 'notif.bAccepted': '{name} aceitou seu desafio', 'notif.bReady': '{c} vs {o} está pronto para pontuar', 'notif.bDeclined': '{name} recusou seu desafio', 'notif.bCancelled': 'Sua luta contra {name} foi cancelada', 'notif.bDraw': 'Empate vs {name} — ROR {rb} → {ra}', 'notif.bWin': 'Você venceu {name} — ROR {rb} → {ra}', 'notif.bLoss': 'Você perdeu para {name} — ROR {rb} → {ra}', 'notif.bGym': '{gym} quer se conectar', 'notif.bReaction': '{name} reagiu {emoji} à sua luta', 'notif.bMessage': '{name}: {snippet}',
+    'notif.tVideo': 'Novo vídeo da luta', 'notif.bVideo': '{name} publicou um vídeo da sua luta', 'notif.tLgMatchup': 'Confronto da semana', 'notif.bLgMatchup': 'Você enfrenta {o} esta semana', 'notif.tLgMessage': 'Aviso de {name}', 'notif.bLgMessage': '{snippet}',
+    'notif.cat.challenges': 'Desafios e novidades das lutas', 'notif.cat.results': 'Resultados', 'notif.cat.messages': 'Mensagens', 'notif.cat.videos': 'Novos vídeos', 'notif.cat.reactions': 'Reações', 'notif.cat.friends': 'Amigos', 'notif.cat.leagues': 'Ligas e torneios', 'notif.cat.gym': 'Pedidos de academia',
 
     'riv.intro': 'Seu retrospecto direto contra todos com quem você rolou.',
     'riv.emptyTitle': 'Ainda sem rivalidades', 'riv.emptySub': 'Complete uma luta para iniciar um retrospecto direto.',
@@ -1549,7 +1558,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'auth.newHere': 'Nouveau ici ?', 'auth.createAccount': 'Créer un compte',
 
     'settings.title': 'Paramètres', 'settings.language': 'Langue',
-    'settings.languageHint': "Choisissez la langue d'affichage de l'application.", 'settings.account': 'Compte',
+    'settings.languageHint': "Choisissez la langue d'affichage de l'application.", 'settings.notifications': 'Notifications', 'settings.notifHint': 'Choisis les notifications push que tu reçois. Elles te tiennent informé même app fermée.', 'settings.account': 'Compte',
     'common.cancel': 'Annuler', 'common.ok': 'OK',
 
     'profile.settings': 'Paramètres', 'profile.editProfile': 'Modifier le profil',
@@ -1606,6 +1615,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'le.rankedChip': 'Classée', 'le.casualChip': 'Pour le fun',
     'le.notFound': 'Ligue introuvable', 'le.meets': 'Rencontres', 'le.week': 'Semaine', 'le.of': 'sur', 'le.joinLeague': 'Rejoindre la ligue', 'le.notMember': 'Rejoins pour avoir ton match de la semaine et apparaître au classement.', 'le.shareCode': 'Partager le code', 'le.leave': 'Quitter', 'le.thisWeek': 'Cette semaine', 'le.generate': 'Générer cette semaine', 'le.genTitle': 'Générer la semaine {w} ?', 'le.genBody': 'Associe les {n} membres pour cette semaine.', 'le.needMoreTitle': 'Pas assez de membres', 'le.needMoreBody': 'Il faut au moins 2 membres pour générer les matchs.',
     'le.noFixturesTitle': 'Aucun match', 'le.noFixturesOrg': 'Touche Générer pour appairer cette semaine.', 'le.noFixturesSub': "L'organisateur publiera les matchs.", 'le.yourMatch': 'Ton match cette semaine', 'le.notPaired': "Tu n'as pas de match cette semaine.", 'le.bye': "Tu es exempt cette semaine, pas d'adversaire.", 'le.byeShort': 'exempt', 'le.vs': 'vs', 'le.viewMatch': 'Voir', 'le.startMatch': 'Lancer le match',
+    'le.announcements': 'Annonces', 'le.postAnnouncement': 'Publier une annonce', 'le.announcePlaceholder': 'Message à tous les membres…', 'le.post': 'Publier', 'le.noAnnouncements': 'Aucune annonce', 'le.noAnnouncementsOrg': 'Publie une mise à jour pour notifier tous les membres.', 'le.noAnnouncementsSub': 'L’organisateur n’a encore rien publié.',
     'le.standings': 'Classement', 'le.noStandingsTitle': 'Aucun résultat', 'le.noStandingsSub': 'Le classement apparaît au fil des matchs.', 'le.member': 'Membre', 'le.played': 'joués', 'le.members': 'Membres', 'le.organizer': 'Organisateur', 'le.shareMsg': 'Rejoins ma ligue « {name} » sur Roll for Rating — code : {code}', 'le.code': 'Code',
     'tn.name': 'Nom du tournoi', 'tn.nameReq': 'Saisis un nom.', 'tn.create': 'Créer un tournoi', 'tn.namePh': 'ex. Smoker du vendredi', 'tn.desc': 'Description', 'tn.descPh': 'Détails facultatifs',
     'tn.format': 'Format', 'tn.fmt.single_elim': 'Élim. simple', 'tn.fmt.round_robin': 'Toutes rondes', 'tn.fmt.double_elim': 'Double élim.', 'tn.fmt.rr_playoff': 'Poules + playoff',
@@ -1799,6 +1809,8 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'notif.justNow': 'à l’instant', 'notif.minAgo': 'il y a {n} min', 'notif.hAgo': 'il y a {n} h', 'notif.dAgo': 'il y a {n} j',
     'notif.tNew': 'Nouveau défi', 'notif.tRefNew': 'Vous arbitrez', 'notif.tAccepted': 'Défi accepté', 'notif.tReady': 'Prêt à enregistrer', 'notif.tDeclined': 'Défi refusé', 'notif.tCancelled': 'Combat annulé', 'notif.tResult': 'Résultat enregistré', 'notif.tGym': 'Demande d’ami de club', 'notif.tReaction': 'Nouvelle réaction', 'notif.tMessage': 'Nouveau message',
     'notif.bNew': '{name} vous a défié', 'notif.bRefNew': '{name} a créé un combat — vous êtes l’arbitre', 'notif.bAccepted': '{name} a accepté votre défi', 'notif.bReady': '{c} vs {o} est prêt à être noté', 'notif.bDeclined': '{name} a refusé votre défi', 'notif.bCancelled': 'Votre combat contre {name} a été annulé', 'notif.bDraw': 'Nul vs {name} — ROR {rb} → {ra}', 'notif.bWin': 'Vous avez battu {name} — ROR {rb} → {ra}', 'notif.bLoss': 'Vous avez perdu contre {name} — ROR {rb} → {ra}', 'notif.bGym': '{gym} veut se connecter', 'notif.bReaction': '{name} a réagi {emoji} à votre combat', 'notif.bMessage': '{name} : {snippet}',
+    'notif.tVideo': 'Nouvelle vidéo du combat', 'notif.bVideo': '{name} a publié une vidéo de ton combat', 'notif.tLgMatchup': 'Match de la semaine', 'notif.bLgMatchup': 'Tu affrontes {o} cette semaine', 'notif.tLgMessage': 'Annonce de {name}', 'notif.bLgMessage': '{snippet}',
+    'notif.cat.challenges': 'Défis et mises à jour des combats', 'notif.cat.results': 'Résultats', 'notif.cat.messages': 'Messages', 'notif.cat.videos': 'Nouvelles vidéos', 'notif.cat.reactions': 'Réactions', 'notif.cat.friends': 'Amis', 'notif.cat.leagues': 'Ligues et tournois', 'notif.cat.gym': 'Demandes de club',
 
     'riv.intro': 'Ton bilan en face-à-face contre tous ceux avec qui tu as combattu.',
     'riv.emptyTitle': 'Aucune rivalité pour l’instant', 'riv.emptySub': 'Termine un combat pour démarrer un bilan en face-à-face.',
