@@ -26,7 +26,7 @@ const TABS: { key: NotifTab; labelKey: string }[] = [
 // (challenges, results, referee, reactions, invites, gym requests) falls into
 // the default "challenges" bucket; the other three are specific carve-outs.
 function tabFor(type: string): NotifTab {
-  if (type === 'message') return 'messages';
+  if (type === 'message' || type === 'league_message') return 'messages';
   if (type === 'friend_request' || type === 'friend_accepted') return 'friends';
   if (type === 'cancelled') return 'cancelled';
   return 'challenges';
@@ -42,6 +42,9 @@ function iconFor(type: string): keyof typeof Ionicons.glyphMap {
     case 'result': return 'trophy';
     case 'reaction': return 'heart';
     case 'message': return 'chatbubble';
+    case 'video': return 'videocam';
+    case 'league_matchup': return 'people-circle';
+    case 'league_message': return 'megaphone';
     case 'gym_request': return 'people';
     case 'tournament_invite': return 'trophy';
     case 'league_invite': return 'people-circle';
@@ -113,7 +116,7 @@ export default function NotificationsScreen() {
   function open(n: AppNotification) {
     if (n.match_id) router.push(`/match/${n.match_id}`);
     else if (n.type === 'tournament_invite' && n.data?.tid) router.push(`/tournament/${n.data.tid}`);
-    else if (n.type === 'league_invite' && n.data?.lid) router.push(`/league/${n.data.lid}`);
+    else if ((n.type === 'league_invite' || n.type === 'league_matchup' || n.type === 'league_message') && n.data?.lid) router.push(`/league/${n.data.lid}`);
     else if (n.type === 'friend_accepted' && n.data?.fid) router.push(`/user/${n.data.fid}`);
     else if (n.type === 'friend_request') router.push('/friends');
     else if (n.type === 'gym_request') router.push('/(tabs)/community');

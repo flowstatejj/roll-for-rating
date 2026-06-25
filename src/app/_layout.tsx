@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { Colors } from '@/constants/theme';
 import { Loading } from '@/components/ui/kit';
+import { usePush } from '@/hooks/use-push';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { I18nProvider, useTranslation } from '@/lib/i18n';
 import { initSentry, wrapWithSentry } from '@/lib/sentry';
@@ -57,6 +58,9 @@ function RootNavigator() {
   const { t } = useTranslation();
   const segments = useSegments();
   const router = useRouter();
+
+  // Device push registration + notification-tap routing.
+  usePush();
 
   useEffect(() => {
     if (initializing) return;

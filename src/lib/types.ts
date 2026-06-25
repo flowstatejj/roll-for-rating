@@ -58,6 +58,8 @@ export interface Profile {
   /** False for a guardian account: pays and manages children but does not
    *  compete; hidden from leaderboards and match search. */
   participating: boolean;
+  /** Per-category push toggles. Missing key = enabled. Keys are NotifCategory. */
+  notif_prefs: Record<string, boolean> | null;
   /** Optional social handles/URLs (adults only). Build links via lib/socials. */
   instagram: string | null;
   tiktok: string | null;
@@ -152,6 +154,15 @@ export interface LeagueStanding {
   draws: number;
   points: number;
   profile?: { id: string; display_name: string; belt_rank: BeltRank; rating: number } | null;
+}
+
+export interface LeagueMessage {
+  id: string;
+  league_id: string;
+  author_id: string;
+  body: string;
+  created_at: string;
+  author?: { display_name: string } | null;
 }
 
 export interface GymPower {
