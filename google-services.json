@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "435911355266",
+    "project_id": "roll-for-rating",
+    "storage_bucket": "roll-for-rating.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:435911355266:android:7ab1f0d37da23147b57d9b",
+        "android_client_info": {
+          "package_name": "com.flowstatejj.rollforrating"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBpEvmMzx2aCDIPQtY4HiW9Mi8o6B1nloI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
