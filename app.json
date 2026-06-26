@@ -53,6 +53,7 @@
     },
     "android": {
       "package": "com.flowstatejj.rollforrating",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#000000",
         "foregroundImage": "./assets/images/icon.png"
