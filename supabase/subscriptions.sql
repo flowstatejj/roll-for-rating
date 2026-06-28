@@ -24,7 +24,7 @@ create table if not exists public.entitlements (
   status                  text not null default 'active'
                             check (status in ('active','grace','expired','revoked')),
   source                  text not null default 'apple'
-                            check (source in ('apple','comp')),
+                            check (source in ('apple','google','comp')),
   environment             text not null default 'Production'
                             check (environment in ('Production','Sandbox')),
   -- StoreKit identifiers — original_transaction_id is the stable subscription key.
