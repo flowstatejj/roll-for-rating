@@ -29,7 +29,8 @@ import {
   requestPurchase,
   restorePurchases,
   type Purchase,
-  type ProductSubscriptionIOS,
+  type ProductSubscription,
+  type ProductSubscriptionAndroid,
 } from 'expo-iap';
 
 import { supabase } from './supabase';
@@ -68,9 +69,9 @@ interface SubscriptionContextValue {
   plan: Plan | null;
   info: SubInfo | null;
   /** the individual ($4.99) StoreKit product, when loaded */
-  product: ProductSubscriptionIOS | null;
+  product: ProductSubscription | null;
   /** the family ($9.99) StoreKit product, when loaded */
-  familyProduct: ProductSubscriptionIOS | null;
+  familyProduct: ProductSubscription | null;
   purchasing: boolean;
   refresh: () => Promise<boolean>;
   /** buy a tier — defaults to individual to preserve the old call sites */
@@ -84,8 +85,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const { session } = useAuth();
   const [ready, setReady] = useState(false);
   const [info, setInfo] = useState<SubInfo | null>(null);
-  const [product, setProduct] = useState<ProductSubscriptionIOS | null>(null);
-  const [familyProduct, setFamilyProduct] = useState<ProductSubscriptionIOS | null>(null);
+  const [product, setProduct] = useState<ProductSubscription | null>(null);
+  const [familyProduct, setFamilyProduct] = useState<ProductSubscription | null>(null);
   const [purchasing, setPurchasing] = useState(false);
   const purchasingRef = useRef(false);
 
@@ -119,18 +120,44 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     return active;
   }, [session]);
 
-  // Send a completed StoreKit transaction to the server for verification.
+  // Send a completed purchase to the server for verification. iOS hands us a
+  // StoreKit transactionId; Android a Play purchaseToken — the edge function
+  // verifies whichever it receives against the right store.
   const validate = useCallback(
     async (purchase: Purchase) => {
-      const transactionId = (purchase as { transactionId?: string }).transactionId;
-      if (!transactionId) return;
-      const { error } = await supabase.functions.invoke('validate-purchase', {
-        body: { transactionId },
-      });
+      let body: Record<string, string>;
+      if (Platform.OS === 'android') {
+        const p = purchase as { purchaseToken?: string; productId?: string; ids?: string[] };
+        if (!p.purchaseToken) return;
+        body = { purchaseToken: p.purchaseToken, productId: p.productId ?? p.ids?.[0] ?? '' };
+      } else {
+        const transactionId = (purchase as { transactionId?: string }).transactionId;
+        if (!transactionId) return;
+        body = { transactionId };
+      }
+      const { error } = await supabase.functions.invoke('validate-purchase', { body });
       if (!error) await refresh();
     },
     [refresh],
   );
+
+  // Fetch the subscription products and cache them. Returns the fetched list so
+  // a caller (e.g. purchase) can read an Android offer token immediately without
+  // waiting on a state update.
+  const loadProducts = useCallback(async (): Promise<ProductSubscription[]> => {
+    try {
+      const products = await fetchProducts({ skus: [PRO_MONTHLY_SKU, FAMILY_MONTHLY_SKU], type: 'subs' });
+      const list = products as ProductSubscription[];
+      const indiv = list.find((p) => p.id === PRO_MONTHLY_SKU);
+      const fam = list.find((p) => p.id === FAMILY_MONTHLY_SKU);
+      if (indiv) setProduct(indiv);
+      if (fam) setFamilyProduct(fam);
+      return list;
+    } catch {
+      // Store unavailable (e.g. no sandbox account) — paywall shows a fallback price.
+      return [];
+    }
+  }, []);
 
   // Initialise IAP, fetch the product, and wire purchase listeners (native only).
   useEffect(() => {
@@ -140,23 +167,21 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
     let purchaseSub: { remove: () => void } | undefined;
     let errorSub: { remove: () => void } | undefined;
-    let cancelled = false;
 
     (async () => {
       try {
         await initConnection();
-        const products = await fetchProducts({ skus: [PRO_MONTHLY_SKU, FAMILY_MONTHLY_SKU], type: 'subs' });
-        const list = products as ProductSubscriptionIOS[];
-        const indiv = list.find((p) => p.id === PRO_MONTHLY_SKU);
-        const fam = list.find((p) => p.id === FAMILY_MONTHLY_SKU);
-        if (!cancelled && indiv) setProduct(indiv);
-        if (!cancelled && fam) setFamilyProduct(fam);
       } catch {
-        // Store unavailable (e.g. no sandbox account) — paywall shows a fallback price.
+        // IAP unavailable — the entitlement RPC below still drives access.
       }
+      await loadProducts();
 
       purchaseSub = purchaseUpdatedListener(async (purchase) => {
         try {
+          // Android can deliver still-pending (deferred-payment) purchases here.
+          // Don't validate or acknowledge until the payment actually clears — an
+          // early acknowledge would leave the user paid-but-unentitled.
+          if ((purchase as { purchaseState?: string }).purchaseState === 'pending') return;
           await validate(purchase);
           // Non-consumable / subscription: finish so it isn't replayed each launch.
           await finishTransaction({ purchase, isConsumable: false });
@@ -174,7 +199,6 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     })();
 
     return () => {
-      cancelled = true;
       purchaseSub?.remove();
       errorSub?.remove();
       endConnection().catch(() => {});
@@ -188,14 +212,35 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     purchasingRef.current = true;
     setPurchasing(true);
     try {
-      await requestPurchase({ request: { apple: { sku: SKU_FOR[plan] } }, type: 'subs' });
+      const sku = SKU_FOR[plan];
+      if (Platform.OS === 'android') {
+        // Play Billing REQUIRES the base-plan offer token; a request without one
+        // is unbuyable and fails silently. If the product hasn't loaded yet,
+        // fetch once more and read the token directly before giving up.
+        let prod = (plan === 'family' ? familyProduct : product) as ProductSubscriptionAndroid | null;
+        let offerToken = prod?.subscriptionOfferDetailsAndroid?.[0]?.offerToken;
+        if (!offerToken) {
+          const list = await loadProducts();
+          prod = (list.find((p) => p.id === sku) as ProductSubscriptionAndroid | undefined) ?? null;
+          offerToken = prod?.subscriptionOfferDetailsAndroid?.[0]?.offerToken;
+        }
+        if (!offerToken) {
+          throw new Error('Subscription details are still loading. Please try again in a moment.');
+        }
+        await requestPurchase({
+          request: { google: { skus: [sku], subscriptionOffers: [{ sku, offerToken }] } },
+          type: 'subs',
+        });
+      } else {
+        await requestPurchase({ request: { apple: { sku } }, type: 'subs' });
+      }
       // Outcome is delivered via purchaseUpdatedListener / purchaseErrorListener.
     } catch (e) {
       purchasingRef.current = false;
       setPurchasing(false);
       throw e;
     }
-  }, []);
+  }, [product, familyProduct, loadProducts]);
 
   const restore = useCallback(async (): Promise<boolean> => {
     if (!IAP_AVAILABLE) return false;
