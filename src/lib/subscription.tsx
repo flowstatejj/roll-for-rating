@@ -121,7 +121,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   }, [session]);
 
   // Send a completed purchase to the server for verification. iOS hands us a
-  // StoreKit transactionId; Android a Play purchaseToken — the edge function
+  // StoreKit transactionId; Android a Play purchaseToken. The edge function
   // verifies whichever it receives against the right store.
   const validate = useCallback(
     async (purchase: Purchase) => {
@@ -154,7 +154,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       if (fam) setFamilyProduct(fam);
       return list;
     } catch {
-      // Store unavailable (e.g. no sandbox account) — paywall shows a fallback price.
+      // Store unavailable (e.g. no sandbox account); paywall shows a fallback price.
       return [];
     }
   }, []);
@@ -172,14 +172,14 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       try {
         await initConnection();
       } catch {
-        // IAP unavailable — the entitlement RPC below still drives access.
+        // IAP unavailable; the entitlement RPC below still drives access.
       }
       await loadProducts();
 
       purchaseSub = purchaseUpdatedListener(async (purchase) => {
         try {
           // Android can deliver still-pending (deferred-payment) purchases here.
-          // Don't validate or acknowledge until the payment actually clears — an
+          // Don't validate or acknowledge until the payment actually clears; an
           // early acknowledge would leave the user paid-but-unentitled.
           if ((purchase as { purchaseState?: string }).purchaseState === 'pending') return;
           await validate(purchase);

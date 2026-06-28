@@ -10,9 +10,9 @@
 //     finishTransaction already acknowledges via Play Billing).
 //
 // Required function secrets (set via `supabase secrets set` or the dashboard):
-//   GOOGLE_PLAY_SERVICE_ACCOUNT_JSON – the full service-account JSON (string)
+//   GOOGLE_PLAY_SERVICE_ACCOUNT_JSON - the full service-account JSON (string)
 //                                      with `client_email` + `private_key`.
-//   GOOGLE_PLAY_PACKAGE_NAME         – com.flowstatejj.rollforrating (default)
+//   GOOGLE_PLAY_PACKAGE_NAME         - com.flowstatejj.rollforrating (default)
 import * as jose from 'npm:jose@5';
 
 export const PACKAGE_NAME =
@@ -174,6 +174,6 @@ export async function acknowledgeSubscription(productId: string, purchaseToken: 
       },
     );
   } catch {
-    // ignore — already acknowledged by the client, or a transient error.
+    // ignore - already acknowledged by the client, or a transient error.
   }
 }

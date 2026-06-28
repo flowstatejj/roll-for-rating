@@ -65,13 +65,13 @@ Deno.serve(async (req) => {
       if (!sub) return json({ error: 'Subscription not found at Google' }, 404);
 
       // Trust ONLY Google's product id (never the client-supplied one) and
-      // require it to be a known SKU — the tier is derived from this string.
+      // require it to be a known SKU; the tier is derived from this string.
       productId = sub.productId;
       if (!KNOWN_ANDROID_SKUS.has(productId)) return json({ error: 'Unknown product' }, 400);
       status = sub.status;
       expiresAt = sub.expiresMs ? new Date(sub.expiresMs).toISOString() : null;
 
-      // Acknowledge so Google doesn't auto-refund within 3 days (best-effort —
+      // Acknowledge so Google doesn't auto-refund within 3 days (best-effort,
       // the client's finishTransaction also acknowledges).
       if (!sub.acknowledged) {
         await acknowledgeSubscription(productId, String(purchaseToken));
@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
         source: 'google',
         // License-tester / sandbox purchases are tagged like iOS sandbox rows.
         environment: sub.isTest ? 'Sandbox' : 'Production',
-        // The purchaseToken is stable across auto-renewals — use it as the
+        // The purchaseToken is stable across auto-renewals; use it as the
         // "original" linking id; latestOrderId is the most recent order.
         original_transaction_id: String(purchaseToken),
         latest_transaction_id: sub.latestOrderId,
