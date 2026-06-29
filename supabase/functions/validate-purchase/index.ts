@@ -30,8 +30,8 @@ function json(body: unknown, status = 200) {
 // The only product ids we sell. The entitlement tier (family vs individual) is
 // derived downstream from product_id, so an unknown id must never be stored.
 const KNOWN_ANDROID_SKUS = new Set([
-  'com.flowstatejj.rollforrating.pro.monthly',
-  'com.flowstatejj.rollforrating.family.monthly',
+  'rollforrating.pro.monthly',
+  'rollforrating.family.monthly',
 ]);
 
 Deno.serve(async (req) => {

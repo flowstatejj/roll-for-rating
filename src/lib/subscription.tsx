@@ -36,9 +36,13 @@ import {
 import { supabase } from './supabase';
 import { useAuth } from './auth';
 
-/** Auto-renewable subscription SKUs — must match the product ids in App Store Connect. */
-export const PRO_MONTHLY_SKU = 'com.flowstatejj.rollforrating.pro.monthly';
-export const FAMILY_MONTHLY_SKU = 'com.flowstatejj.rollforrating.family.monthly';
+/** Auto-renewable subscription SKUs. Apple uses the App Store Connect product
+ *  ids; Google Play caps product ids at 40 chars, so Android uses shorter ids
+ *  (the backend keys the family tier off the id containing "family"). */
+export const PRO_MONTHLY_SKU =
+  Platform.OS === 'android' ? 'rollforrating.pro.monthly' : 'com.flowstatejj.rollforrating.pro.monthly';
+export const FAMILY_MONTHLY_SKU =
+  Platform.OS === 'android' ? 'rollforrating.family.monthly' : 'com.flowstatejj.rollforrating.family.monthly';
 
 /** The two plan tiers. `individual` covers the holder + one managed child;
  *  `family` covers the holder + unlimited managed children. */
