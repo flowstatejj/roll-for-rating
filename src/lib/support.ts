@@ -3,7 +3,7 @@
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
-import { supabase } from './supabase';
+import { getCachedUser, supabase } from './supabase';
 
 export type SupportCategory = 'general' | 'bug' | 'account' | 'billing' | 'safety' | 'feature';
 
@@ -12,12 +12,12 @@ export async function submitSupportRequest(args: {
   subject?: string;
   body: string;
 }): Promise<void> {
-  const { data: auth } = await supabase.auth.getUser();
-  const me = auth.user?.id;
+  const user = await getCachedUser();
+  const me = user?.id;
   if (!me) throw new Error('Not signed in');
   const { error } = await supabase.from('support_requests').insert({
     user_id: me,
-    email: auth.user?.email ?? null,
+    email: user?.email ?? null,
     category: args.category,
     subject: args.subject?.trim() || null,
     body: args.body.trim(),

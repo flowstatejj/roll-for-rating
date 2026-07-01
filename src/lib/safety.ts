@@ -1,17 +1,15 @@
-import { supabase } from './supabase';
+import { getCachedUser, supabase } from './supabase';
 
 /** Block a user — hides them from you and prevents any matches between you. */
 export async function blockUser(blockedId: string): Promise<void> {
-  const { data: auth } = await supabase.auth.getUser();
-  const me = auth.user?.id;
+  const me = (await getCachedUser())?.id;
   if (!me) throw new Error('Not signed in');
   const { error } = await supabase.from('blocked_users').insert({ blocker_id: me, blocked_id: blockedId });
   if (error && !/duplicate|unique/i.test(error.message)) throw error;
 }
 
 export async function unblockUser(blockedId: string): Promise<void> {
-  const { data: auth } = await supabase.auth.getUser();
-  const me = auth.user?.id;
+  const me = (await getCachedUser())?.id;
   if (!me) throw new Error('Not signed in');
   const { error } = await supabase.from('blocked_users').delete().eq('blocker_id', me).eq('blocked_id', blockedId);
   if (error) throw error;
@@ -19,8 +17,7 @@ export async function unblockUser(blockedId: string): Promise<void> {
 
 /** Whether the current user has blocked `otherId`. */
 export async function amIBlocking(otherId: string): Promise<boolean> {
-  const { data: auth } = await supabase.auth.getUser();
-  const me = auth.user?.id;
+  const me = (await getCachedUser())?.id;
   if (!me) return false;
   const { data } = await supabase
     .from('blocked_users')
@@ -45,8 +42,7 @@ export async function reportUser(args: {
   details?: string;
   matchId?: string | null;
 }): Promise<void> {
-  const { data: auth } = await supabase.auth.getUser();
-  const me = auth.user?.id;
+  const me = (await getCachedUser())?.id;
   if (!me) throw new Error('Not signed in');
   const { error } = await supabase.from('user_reports').insert({
     reporter_id: me,
