@@ -34,14 +34,17 @@ export async function fetchGym(gymId: string, userId: string): Promise<GymWithMe
   };
 }
 
-export async function fetchGymMembers(gymId: string): Promise<Profile[]> {
+/** Only the fields the gym members list renders (profiles is a wide table). */
+export type GymMember = Pick<Profile, 'id' | 'display_name' | 'belt_rank' | 'rating'>;
+
+export async function fetchGymMembers(gymId: string): Promise<GymMember[]> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('*')
+    .select('id,display_name,belt_rank,rating')
     .eq('gym_id', gymId)
     .order('rating', { ascending: false });
   if (error) throw error;
-  return (data ?? []) as Profile[];
+  return (data ?? []) as GymMember[];
 }
 
 export async function createGym(
