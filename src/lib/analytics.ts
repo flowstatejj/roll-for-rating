@@ -5,7 +5,7 @@
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
-import { supabase } from './supabase';
+import { getCachedUser, supabase } from './supabase';
 
 // One id per app launch, so we can stitch a session together without any
 // persistent device identifier.
@@ -15,9 +15,9 @@ const APP_VERSION = Constants.expoConfig?.version ?? null;
 /** Record a product-interaction event (e.g. 'paywall_view', 'match_created'). */
 export async function track(event: string, props: Record<string, unknown> = {}): Promise<void> {
   try {
-    const { data: auth } = await supabase.auth.getUser();
+    const user = await getCachedUser();
     await supabase.from('analytics_events').insert({
-      user_id: auth.user?.id ?? null,
+      user_id: user?.id ?? null,
       event,
       props,
       session_id: SESSION_ID,
