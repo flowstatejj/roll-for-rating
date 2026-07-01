@@ -47,12 +47,17 @@ export default function MatchesScreen() {
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   useEffect(() => {
+    if (!userId) return;
+    // Only the current user's matches (as challenger/opponent/referee), not the
+    // whole table — avoids a full refetch on every unrelated public match change.
     const channel = supabase
       .channel('matches-tab')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches', filter: `challenger_id=eq.${userId}` }, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches', filter: `opponent_id=eq.${userId}` }, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches', filter: `referee_id=eq.${userId}` }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [load]);
+  }, [userId, load]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
