@@ -18,8 +18,9 @@ import {
   leaveGym,
   requestGymFriendship,
   respondGymFriendship,
+  type GymMember,
 } from '@/lib/social';
-import type { GymFriend, GymWithMeta, Profile } from '@/lib/types';
+import type { GymFriend, GymWithMeta } from '@/lib/types';
 
 export default function GymDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -29,7 +30,7 @@ export default function GymDetailScreen() {
   const userId = session!.user.id;
 
   const [gym, setGym] = useState<GymWithMeta | null>(null);
-  const [members, setMembers] = useState<Profile[]>([]);
+  const [members, setMembers] = useState<GymMember[]>([]);
   const [ownedGymId, setOwnedGymId] = useState<string | null>(null);
   const [friends, setFriends] = useState<GymFriend[]>([]);
   const [busy, setBusy] = useState(false);
