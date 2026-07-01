@@ -55,17 +55,24 @@ export default function HomeScreen() {
   );
 
   useEffect(() => {
+    if (!userId) return;
+    // Subscribe only to matches this user is part of (as challenger, opponent,
+    // or referee) instead of the whole table — otherwise every public match
+    // change anywhere in the app would trigger a full refetch here.
+    const onChange = () => {
+      load();
+      refreshProfile();
+    };
     const channel = supabase
       .channel('home-matches')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, () => {
-        load();
-        refreshProfile();
-      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches', filter: `challenger_id=eq.${userId}` }, onChange)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches', filter: `opponent_id=eq.${userId}` }, onChange)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches', filter: `referee_id=eq.${userId}` }, onChange)
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [load, refreshProfile]);
+  }, [userId, load, refreshProfile]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

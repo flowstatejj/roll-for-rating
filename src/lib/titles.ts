@@ -21,23 +21,25 @@ async function topRated(apply: (q: any) => any): Promise<Profile | null> {
  * your belt division (global), your gym, and your city.
  */
 export async function fetchChampions(profile: Profile): Promise<Champion[]> {
-  const out: Champion[] = [];
+  // The three scopes are independent — run them in parallel instead of a
+  // sequential waterfall (this fires on every profile-screen focus).
+  const [div, gym, city] = await Promise.all([
+    topRated((q) => q.eq('belt_rank', profile.belt_rank)),
+    profile.gym_id ? topRated((q) => q.eq('gym_id', profile.gym_id)) : Promise.resolve(null),
+    profile.city ? topRated((q) => q.ilike('city', profile.city as string)) : Promise.resolve(null),
+  ]);
 
-  const div = await topRated((q) => q.eq('belt_rank', profile.belt_rank));
+  const out: Champion[] = [];
   out.push({
     key: 'division',
     title: `${BELT_LABELS[profile.belt_rank]} Belt Champion`,
     champ: div,
     isMe: div?.id === profile.id,
   });
-
   if (profile.gym_id) {
-    const gym = await topRated((q) => q.eq('gym_id', profile.gym_id));
     out.push({ key: 'gym', title: 'Gym Champion', champ: gym, isMe: gym?.id === profile.id });
   }
-
   if (profile.city) {
-    const city = await topRated((q) => q.ilike('city', profile.city as string));
     out.push({ key: 'city', title: `${profile.city} Champion`, champ: city, isMe: city?.id === profile.id });
   }
 
