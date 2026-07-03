@@ -1,15 +1,15 @@
 import { supabase } from './supabase';
-import type { BeltRank, Profile } from './types';
+import { PROFILE_COLS, type BeltRank, type Profile } from './types';
 
 /** All under-14 profiles managed by this guardian. */
 export async function fetchJuniors(guardianId: string): Promise<Profile[]> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('*')
+    .select(PROFILE_COLS)
     .eq('managed_by', guardianId)
     .order('created_at', { ascending: true });
   if (error) throw error;
-  return (data ?? []) as Profile[];
+  return (data ?? []) as unknown as Profile[];
 }
 
 function juniorUsername(displayName: string): string {

@@ -1,7 +1,7 @@
 import { resolveGeo, type Geo } from './geo';
 import { fetchBlockedIds } from './safety';
 import { getCachedUser, supabase } from './supabase';
-import type { BeltRank, MatchWithPeople, Profile, ResultType } from './types';
+import { PROFILE_COLS, type BeltRank, type MatchWithPeople, type Profile, type ResultType } from './types';
 
 export interface WagerLeader {
   user_id: string;
@@ -495,7 +495,7 @@ export async function searchProfiles(
 ): Promise<Profile[]> {
   let req = supabase
     .from('profiles')
-    .select('*')
+    .select(PROFILE_COLS)
     .neq('age_tier', 'kid') // under-14 juniors are never searchable
     .eq('participating', true) // guardians (non-participating) aren't opponents/invitees
     .order('rating', { ascending: false })
@@ -510,5 +510,5 @@ export async function searchProfiles(
   if (error) throw error;
   const hide = new Set([...excludeIds, ...blocked]);
   if (me) hide.add(me.id); // you should never find yourself (friends, opponents, invites)
-  return (data ?? []).filter((p) => !hide.has(p.id));
+  return ((data ?? []) as unknown as Profile[]).filter((p) => !hide.has(p.id));
 }

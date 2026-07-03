@@ -2,7 +2,7 @@ import { fetchMyFriends } from './friends';
 import { continentForCountry } from './geo';
 import { fetchBlockedIds } from './safety';
 import { supabase } from './supabase';
-import type { BeltRank, Gym, GymFriend, GymWithMeta, OpenMat, Profile } from './types';
+import { PROFILE_COLS, type BeltRank, type Gym, type GymFriend, type GymWithMeta, type OpenMat, type Profile } from './types';
 
 // ---------------------------------------------------------------------------
 // Gyms
@@ -150,7 +150,7 @@ export async function fetchFriendlyOpponents(userId: string, myGymId: string): P
 
   const { data, error: pErr } = await supabase
     .from('profiles')
-    .select('*')
+    .select(PROFILE_COLS)
     .in('gym_id', gymIds)
     .neq('id', userId)
     .eq('participating', true) // guardians + gym accounts are never opponents
@@ -159,7 +159,7 @@ export async function fetchFriendlyOpponents(userId: string, myGymId: string): P
     // lower-rated gym-mates unreachable. The UI gates rendering at 20 rows.
     .limit(200);
   if (pErr) throw pErr;
-  return (data ?? []) as Profile[];
+  return (data ?? []) as unknown as Profile[];
 }
 
 /**
@@ -174,9 +174,9 @@ export async function fetchNetworkOpponents(userId: string, myGymId: string | nu
   const friendIds = friends.map((f) => f.id).filter((id) => id !== userId);
   let friendProfiles: Profile[] = [];
   if (friendIds.length) {
-    const { data, error } = await supabase.from('profiles').select('*').in('id', friendIds);
+    const { data, error } = await supabase.from('profiles').select(PROFILE_COLS).in('id', friendIds);
     if (error) throw error;
-    friendProfiles = (data ?? []) as Profile[];
+    friendProfiles = (data ?? []) as unknown as Profile[];
   }
 
   const byId = new Map<string, Profile>();
@@ -264,7 +264,7 @@ export async function fetchOpenChallengers(
 ): Promise<Profile[]> {
   let req = supabase
     .from('profiles')
-    .select('*')
+    .select(PROFILE_COLS)
     .eq('open_for_challenge', true)
     .neq('id', userId)
     .order('rating', { ascending: false })
@@ -279,5 +279,5 @@ export async function fetchOpenChallengers(
   const [{ data, error }, blocked] = await Promise.all([req, fetchBlockedIds()]);
   if (error) throw error;
   const hide = new Set(blocked);
-  return (data ?? []).filter((p: Profile) => !hide.has(p.id)) as Profile[];
+  return ((data ?? []) as unknown as Profile[]).filter((p) => !hide.has(p.id));
 }

@@ -16,7 +16,7 @@ import { PENDING_ELITE_INVITE_KEY, applyInviteOrReferralCode, redeemEliteInviteC
 import { useTranslation } from './i18n';
 import { PENDING_REFERRAL_KEY, redeemReferralCode } from './referrals';
 import { supabase } from './supabase';
-import type { BeltRank, Profile } from './types';
+import { PROFILE_COLS, type BeltRank, type Profile } from './types';
 
 const onboardKey = (uid: string) => `onboarded:${uid}`;
 
@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadProfile = useCallback(async (userId: string) => {
     const { data, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select(PROFILE_COLS)
       .eq('id', userId)
       .single();
     if (error) {
@@ -83,8 +83,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(null);
       return;
     }
+    const prof = data as unknown as Profile;
     // App Store 1.2: a banned (ejected) member is signed out on load.
-    if (data?.banned) {
+    if (prof.banned) {
       setProfile(null);
       await supabase.auth.signOut();
       Alert.alert(
@@ -93,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       );
       return;
     }
-    setProfile(data);
+    setProfile(prof);
   }, []);
 
   // If a referral code was captured at signup, attach it once a session exists.

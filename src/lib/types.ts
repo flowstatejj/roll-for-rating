@@ -98,6 +98,22 @@ export interface Profile {
   created_at: string;
 }
 
+/**
+ * Columns to select for a Profile — every field EXCEPT birthdate (and
+ * parent_email, which isn't on this type). The API revokes SELECT on those PII
+ * columns from the `authenticated` role (see supabase/profiles-pii.sql) so a
+ * minor's exact date of birth is never exposed to other users; a `select('*')`
+ * on profiles therefore now errors — use this list instead. `birthdate` stays
+ * on the type (server-side logic + the owning user's metadata use it) but comes
+ * back undefined over the API, which the age helpers already treat as unknown.
+ */
+export const PROFILE_COLS =
+  'id,username,display_name,belt_rank,avatar_path,avatar_warrior,avatar_color,' +
+  'rating,weight_lbs,wins,losses,draws,gym_id,open_for_challenge,city,state,' +
+  'country,continent,activity_streak,last_active_date,is_minor,is_admin,banned,' +
+  'is_founding_member,age_tier,consent_status,managed_by,participating,' +
+  'notif_prefs,instagram,tiktok,youtube,facebook,created_at';
+
 export interface Quest {
   key: string;
   title: string;
