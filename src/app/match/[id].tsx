@@ -549,8 +549,11 @@ function StatusBanner({ match }: { match: MatchWithPeople }) {
     completed: { text: t('md.statusCompleted'), color: theme.success },
     declined: { text: t('md.statusDeclined'), color: theme.textSecondary },
     cancelled: { text: t('md.statusCancelled'), color: theme.textSecondary },
+    disputed: { text: t('md.statusDisputed'), color: theme.danger },
   };
-  const m = map[match.status];
+  // Fallback so an unmapped status (e.g. a newly added one) never crashes the
+  // whole match screen on `m.color` — show a humanized label instead.
+  const m = map[match.status] ?? { text: match.status.replace(/_/g, ' '), color: theme.textSecondary };
   return (
     <View style={[styles.banner, { backgroundColor: m.color + '22' }]}>
       <ThemedText style={{ color: m.color, fontWeight: '800' }}>{m.text}</ThemedText>
