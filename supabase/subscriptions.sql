@@ -36,8 +36,14 @@ create table if not exists public.entitlements (
   updated_at              timestamptz not null default now()
 );
 
-create index if not exists idx_entitlements_orig
-  on public.entitlements (original_transaction_id);
+-- A subscription's original transaction belongs to exactly ONE account.
+-- Partial-UNIQUE (comp rows have a null transaction id and are excluded) so a
+-- single Apple/Google receipt can never entitle multiple users. Doubles as the
+-- lookup index. This is the hard backstop behind validate-purchase's own check.
+drop index if exists public.idx_entitlements_orig;
+create unique index if not exists idx_entitlements_orig_unique
+  on public.entitlements (original_transaction_id)
+  where original_transaction_id is not null;
 
 alter table public.entitlements enable row level security;
 
@@ -105,6 +111,14 @@ language sql security definer set search_path = public as $$
     set source = 'comp', status = 'active', expires_at = null,
         product_id = excluded.product_id, updated_at = now();
 $$;
+
+-- SECURITY: Postgres grants EXECUTE to PUBLIC on new functions by default, and
+-- Supabase additionally grants it to anon/authenticated in the public schema,
+-- which PostgREST exposes as an RPC. Without this revoke, ANY signed-in user
+-- could POST /rest/v1/rpc/grant_comp_entitlement with their own id and self-grant
+-- a permanent free subscription (total paywall bypass). Service-role edge
+-- functions and the SQL editor (postgres) bypass this revoke and still work.
+revoke execute on function public.grant_comp_entitlement(uuid, text) from public, anon, authenticated;
 
 -- Comp the App Review demo account so the reviewer always gets past the paywall,
 -- independent of StoreKit sandbox behaviour. (No-op if the account isn't present.)
