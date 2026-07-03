@@ -35,6 +35,7 @@ export default function MatchChatScreen() {
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   // Plan editor
   const [editingPlan, setEditingPlan] = useState(false);
@@ -69,15 +70,18 @@ export default function MatchChatScreen() {
       setMatch(await fetchMatch(id));
     } catch (e) {
       console.warn('load match failed', e);
+      setError(true);
     }
   }, [id]);
 
-  useEffect(() => {
-    (async () => {
-      await Promise.all([loadMatch(), loadMessages()]);
-      setLoading(false);
-    })();
+  const reload = useCallback(async () => {
+    setError(false);
+    setLoading(true);
+    await Promise.all([loadMatch(), loadMessages()]);
+    setLoading(false);
   }, [loadMatch, loadMessages]);
+
+  useEffect(() => { reload(); }, [reload]);
 
   // Live chat.
   useEffect(() => {
@@ -126,7 +130,18 @@ export default function MatchChatScreen() {
     }
   }
 
-  if (loading || !match) return <Loading />;
+  if (loading) return <Loading />;
+  if (!match) {
+    // Never strand the user on an infinite spinner if the match fails to load
+    // (e.g. a stale push deep link) — show a retry.
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.four, gap: Spacing.two }}>
+        <Ionicons name="cloud-offline-outline" size={30} color={theme.textSecondary} />
+        <ThemedText themeColor="textSecondary">Couldn&apos;t load this chat.</ThemedText>
+        <Button label="Try again" onPress={reload} />
+      </View>
+    );
+  }
 
   const hasPlan = !!(match.meet_when || match.meet_where);
 

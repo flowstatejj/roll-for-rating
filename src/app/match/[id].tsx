@@ -41,6 +41,7 @@ export default function MatchDetailScreen() {
   const [match, setMatch] = useState<MatchWithPeople | null>(null);
   const [reports, setReports] = useState<MatchReport[]>([]);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(false);
   // The viewer's own id plus any managed juniors — so a guardian can act on a
   // junior's behalf (accept/decline/cancel).
   const [myIds, setMyIds] = useState<Set<string>>(new Set([userId]));
@@ -59,12 +60,14 @@ export default function MatchDetailScreen() {
 
   const load = useCallback(async () => {
     if (!id) return;
+    setError(false);
     try {
       const m = await fetchMatch(id);
       setMatch(m);
       if (m.referee_waived) fetchMatchReports(id).then(setReports).catch(() => {});
     } catch (e) {
       console.warn('Failed to load match', e);
+      setError(true);
     }
   }, [id]);
 
@@ -120,7 +123,22 @@ export default function MatchDetailScreen() {
     }
   }, [match?.status, match?.wager, potAnim]);
 
-  if (!match) return <Loading />;
+  if (!match) {
+    // A load failure must never leave the screen spinning forever (e.g. a push
+    // deep link into a match the API can't return) — offer a retry instead.
+    if (error) {
+      return (
+        <Screen>
+          <Card style={{ alignItems: 'center', gap: Spacing.two, marginTop: Spacing.four }}>
+            <Ionicons name="cloud-offline-outline" size={30} color={theme.textSecondary} />
+            <ThemedText themeColor="textSecondary">{t('md.error')}</ThemedText>
+            <Button label={t('md.tryAgain')} onPress={load} />
+          </Card>
+        </Screen>
+      );
+    }
+    return <Loading />;
+  }
 
   // "am" = me or a junior I manage (the referee is always a real logged-in user).
   const amOpponent = myIds.has(match.opponent_id);
