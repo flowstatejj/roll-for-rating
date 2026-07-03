@@ -15,23 +15,33 @@
 -- none are referenced by the client (no supabase.rpc('_...') anywhere in src/).
 --
 -- Run AFTER tournaments-pro.sql and tournament-divisions.sql. Safe to re-run.
--- (grant_comp_entitlement and _settle_match are revoked inline in their own
--- files — subscriptions.sql / match-waive-and-wager.sql.)
 -- ============================================================================
 
--- ---- tournaments-pro.sql helpers -------------------------------------------
-revoke execute on function public._ensure_mats(uuid) from public, anon, authenticated;
-revoke execute on function public._tournament_seeds(uuid) from public, anon, authenticated;
-revoke execute on function public._gen_round_robin(uuid, uuid[], boolean) from public, anon, authenticated;
-revoke execute on function public._gen_single_elim(uuid, uuid[], boolean, text) from public, anon, authenticated;
-revoke execute on function public._advance_bye(uuid, uuid, boolean) from public, anon, authenticated;
-revoke execute on function public._may_record(public.tournament_bouts) from public, anon, authenticated;
-revoke execute on function public._advance_winner(public.tournament_bouts, boolean) from public, anon, authenticated;
-
--- ---- tournament-divisions.sql overloads (division-aware variants) -----------
-revoke execute on function public._gen_round_robin(uuid, uuid[], boolean, uuid) from public, anon, authenticated;
-revoke execute on function public._gen_single_elim(uuid, uuid[], boolean, text, uuid) from public, anon, authenticated;
-revoke execute on function public._division_seeds(uuid) from public, anon, authenticated;
+-- Revoke EXECUTE on EVERY overload of each internal helper. Looping over pg_proc
+-- (instead of hand-listing signatures) is deliberate: several of these are
+-- overloaded and a hand-written list WILL miss one. In particular _settle_match
+-- has BOTH a 5-arg and a 6-arg (p_sub_category) signature, and the tournament
+-- generators have base + division-aware variants — a per-signature revoke of the
+-- 5-arg _settle_match left the 6-arg one publicly callable (force-settle any
+-- match). This catches all present and future overloads. grant_comp_entitlement
+-- is included defensively (also revoked inline in subscriptions.sql).
+do $$
+declare r record;
+begin
+  for r in
+    select p.oid::regprocedure::text as sig
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and p.proname in (
+        '_settle_match', '_advance_bye', '_advance_winner', '_division_seeds',
+        '_ensure_mats', '_gen_round_robin', '_gen_single_elim', '_tournament_seeds',
+        '_may_record', 'grant_comp_entitlement'
+      )
+  loop
+    execute format('revoke execute on function %s from public, anon, authenticated', r.sig);
+  end loop;
+end $$;
 
 -- ============================================================================
 -- matches INSERT column lockdown (mirrors the profiles pattern in schema.sql).
