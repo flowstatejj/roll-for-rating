@@ -32,3 +32,26 @@ revoke execute on function public._advance_winner(public.tournament_bouts, boole
 revoke execute on function public._gen_round_robin(uuid, uuid[], boolean, uuid) from public, anon, authenticated;
 revoke execute on function public._gen_single_elim(uuid, uuid[], boolean, text, uuid) from public, anon, authenticated;
 revoke execute on function public._division_seeds(uuid) from public, anon, authenticated;
+
+-- ============================================================================
+-- matches INSERT column lockdown (mirrors the profiles pattern in schema.sql).
+--
+-- The matches INSERT policy only checks challenger_id = auth.uid(), with NO
+-- column restriction — so a client could insert a row with a forged status,
+-- winner_id, result, result_proposed_by, completed_at or *_rating_after and
+-- then "confirm" it, stealing rating/wager from users who never accepted a
+-- match and minting quest/submission rewards. All legitimate state changes go
+-- through SECURITY DEFINER functions (owner-run, unaffected by these grants).
+--
+-- Restrict a direct client INSERT to exactly the columns the app's createMatch()
+-- sets; everything else (status default 'pending_opponent', winner_id, result,
+-- ratings, result_proposed_by, completed_at, ...) can no longer be client-set.
+-- Run AFTER the migrations that add these columns (public-matches.sql = is_public,
+-- leagues.sql = league_id/league_week, match-waive-and-wager.sql = referee_waived
+-- / wager). Safe to re-run.
+-- ============================================================================
+revoke insert on public.matches from authenticated;
+grant insert (
+  challenger_id, opponent_id, referee_id, referee_waived,
+  wager, is_public, league_id, league_week
+) on public.matches to authenticated;

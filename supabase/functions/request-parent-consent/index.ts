@@ -77,6 +77,14 @@ Deno.serve(async (req) => {
     return json({ ok: true, sent: true, parent_email: pc.parent_email });
   }
 
-  // No email provider configured yet — return the link so it can be shared manually.
-  return json({ ok: true, sent: false, link, parent_email: pc.parent_email });
+  // No email provider configured yet. Do NOT return the approval link: the
+  // caller here is the MINOR (we looked up parent_consents by their own JWT), so
+  // handing back the link would let them click it and self-approve. Fail closed
+  // — an admin can set RESEND_API_KEY (or deliver the link out-of-band) to enable
+  // real parent approval. `link` is intentionally not included in the response.
+  console.warn('request-parent-consent: RESEND_API_KEY unset; approval email not sent for user', user.id);
+  return json(
+    { ok: false, sent: false, error: 'Parent approval email is temporarily unavailable. Please contact support so we can approve your account.' },
+    503,
+  );
 });

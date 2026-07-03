@@ -34,8 +34,31 @@ Deno.serve(async (req) => {
     const jwt = (req.headers.get('Authorization') ?? '').replace('Bearer ', '');
     const { data: userData, error: userErr } = await admin.auth.getUser(jwt);
     if (userErr || !userData?.user) return json({ error: 'Not authenticated' }, 401);
+    const uid = userData.user.id;
 
-    const { error: delErr } = await admin.auth.admin.deleteUser(userData.user.id);
+    // Deleting the auth user cascades DB rows via FKs, but storage FILES and a
+    // couple of PII tables are NOT cascaded — clean them up first so nothing
+    // (especially a minor's match video in the public bucket) is left behind.
+    // All best-effort: account deletion must still succeed if a cleanup step
+    // fails (Apple 5.1.1(v) requires deletion to work).
+    try {
+      const { data: vids } = await admin
+        .from('match_videos').select('path').eq('uploader_id', uid);
+      const paths = (vids ?? []).map((v: { path: string }) => v.path).filter(Boolean);
+      if (paths.length) await admin.storage.from('match-videos').remove(paths);
+    } catch { /* best-effort */ }
+
+    try {
+      const { data: prof } = await admin
+        .from('profiles').select('avatar_path').eq('id', uid).maybeSingle();
+      if (prof?.avatar_path) await admin.storage.from('avatars').remove([prof.avatar_path]);
+    } catch { /* best-effort */ }
+
+    // PII tables that reference the user but do not cascade on delete.
+    try { await admin.from('analytics_events').delete().eq('user_id', uid); } catch { /* best-effort */ }
+    try { await admin.from('support_requests').delete().eq('user_id', uid); } catch { /* best-effort */ }
+
+    const { error: delErr } = await admin.auth.admin.deleteUser(uid);
     if (delErr) return json({ error: delErr.message }, 400);
 
     return json({ ok: true }, 200);
