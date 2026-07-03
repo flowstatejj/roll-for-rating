@@ -36,7 +36,8 @@ language sql stable security definer set search_path = public as $$
       and e.product_id ilike '%family%'
       and (
         e.source = 'comp'
-        or (e.status in ('active','grace') and (e.expires_at is null or e.expires_at > now()))
+        or e.status = 'grace' -- billing-retry grace period IS active (expires_at is already past)
+        or (e.status = 'active' and (e.expires_at is null or e.expires_at > now()))
       )
   );
 $$;
@@ -53,7 +54,8 @@ language sql stable security definer set search_path = public as $$
     where e.user_id = p_user
       and (
         e.source = 'comp'
-        or (e.status in ('active','grace') and (e.expires_at is null or e.expires_at > now()))
+        or e.status = 'grace' -- billing-retry grace period IS active (expires_at is already past)
+        or (e.status = 'active' and (e.expires_at is null or e.expires_at > now()))
       )
   )
   or exists (
@@ -65,7 +67,8 @@ language sql stable security definer set search_path = public as $$
       and ch.managed_by is not null
       and (
         e.source = 'comp'
-        or (e.status in ('active','grace') and (e.expires_at is null or e.expires_at > now()))
+        or e.status = 'grace' -- billing-retry grace period IS active (expires_at is already past)
+        or (e.status = 'active' and (e.expires_at is null or e.expires_at > now()))
       )
   );
 $$;

@@ -285,7 +285,7 @@ export default function MatchDetailScreen() {
         </View>
       )}
 
-      {match.status === 'completed' && match.wager > 0 && (
+      {match.status === 'completed' && match.wager > 0 && match.winner_id && (
         <Animated.View
           style={[
             styles.banner,
