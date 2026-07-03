@@ -128,7 +128,23 @@ Deno.serve(async (req) => {
       return json({ error: 'Missing transactionId or purchaseToken' }, 400);
     }
 
-    // 3) Upsert the entitlement.
+    // 3) A subscription belongs to exactly ONE account. If this receipt's
+    // original transaction is already linked to a different user, reject it —
+    // otherwise one paid sub could entitle unlimited accounts (paywall bypass).
+    // The partial-unique index on entitlements is the hard backstop; this gives
+    // a clean 409 instead of a raw constraint error.
+    const origTxn = row.original_transaction_id as string;
+    const { data: claimed } = await admin
+      .from('entitlements')
+      .select('user_id')
+      .eq('original_transaction_id', origTxn)
+      .neq('user_id', userId)
+      .maybeSingle();
+    if (claimed) {
+      return json({ error: 'This subscription is already linked to another account.' }, 409);
+    }
+
+    // 4) Upsert the entitlement.
     const { error: upErr } = await admin.from('entitlements').upsert(row, { onConflict: 'user_id' });
     if (upErr) return json({ error: upErr.message }, 400);
 

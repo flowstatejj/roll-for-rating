@@ -103,6 +103,14 @@ begin
   return m;
 end; $$;
 
+-- SECURITY: _settle_match applies the Elo swing + wager transfer and marks the
+-- match completed with NO internal authorization check — its callers
+-- (record_match_result / confirm_match_result) authorize first. It must never be
+-- callable directly by a client, or any user could force-settle ANY match and
+-- award themselves the win + wager. Revoke the default PUBLIC/Supabase execute.
+-- The callers are SECURITY DEFINER (owned by postgres) so they still invoke it.
+revoke execute on function public._settle_match(uuid, uuid, result_type, text, text) from public, anon, authenticated;
+
 -- ---------------------------------------------------------------------------
 -- 3. record_match_result — referee scores directly; for a waived match a
 --    competitor logs a PROPOSED result (a video must already be attached).
