@@ -430,22 +430,18 @@ export interface LeaderRow extends Profile {
 }
 
 /**
- * Top players by rating with their resolved location attached (for geographic
- * level filtering). Excludes under-14 juniors (they have their own board).
+ * Top adults by rating WITHIN a geographic scope (gym|city|state|country|
+ * continent|world), ranked on the server so a local board isn't limited to
+ * whoever happens to sit in the global top-N. The geo_leaderboard RPC resolves
+ * each player's location profile-first with gym fallback (matching resolveGeo)
+ * and returns only safe columns. Excludes under-14 juniors (own board).
  */
-export async function fetchLeaderboard(limit = 200): Promise<LeaderRow[]> {
-  const { data, error } = await supabase
-    .from('profiles')
-    // disambiguate: profiles<->gyms has two FKs (gym_id and owner_id); we want gym_id.
-    .select('*, gym:gyms!profiles_gym_id_fkey(city,state,country,continent)')
-    .neq('age_tier', 'kid')
-    .eq('participating', true) // guardians (non-participating) never rank
-    .order('rating', { ascending: false })
-    .limit(limit);
+export async function fetchLeaderboard(level = 'world', limit = 200): Promise<LeaderRow[]> {
+  const { data, error } = await supabase.rpc('geo_leaderboard', { p_level: level, p_limit: limit });
   if (error) throw error;
-  return (data ?? []).map((r: any) => ({
+  return ((data ?? []) as any[]).map((r) => ({
     ...r,
-    geo: resolveGeo({ city: r.city, state: r.state, country: r.country, continent: r.continent }, r.gym ?? null),
+    geo: { city: r.city, state: r.state, country: r.country, continent: r.continent },
   })) as unknown as LeaderRow[];
 }
 

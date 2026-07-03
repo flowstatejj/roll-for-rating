@@ -11,7 +11,7 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
-import { scopeMatches, type Geo, type GeoLevel, type Scope, SCOPE_KEYS } from '@/lib/geo';
+import { type Geo, type GeoLevel, type Scope, SCOPE_KEYS } from '@/lib/geo';
 import { createMatchRequest } from '@/lib/invites';
 import { fetchJuniors } from '@/lib/juniors';
 import { fetchKidsLeaderboard, fetchLeaderboard, fetchMyGeo, type KidsLeaderRow, type LeaderRow } from '@/lib/matches';
@@ -48,15 +48,11 @@ export default function LeaderboardScreen() {
 
   const load = useCallback(async () => {
     try {
-      const [overall, gymRanks, juniorList, geo] = await Promise.all([
-        fetchLeaderboard(),
+      const [gymRanks, juniorList, geo] = await Promise.all([
         fetchGymPowerRanking().catch(() => []),
         userId ? fetchJuniors(userId).catch(() => []) : Promise.resolve([]),
         userId ? fetchMyGeo(userId).catch(() => null) : Promise.resolve(null),
       ]);
-      setRows(overall);
-      // One batched request to sign all the photo avatars for the board.
-      avatarSignedUrls(overall.map((r) => r.avatar_path)).then(setAvatarUrls).catch(() => {});
       setGyms(gymRanks);
       setJuniors(juniorList);
       setMyGeo(geo);
@@ -68,6 +64,21 @@ export default function LeaderboardScreen() {
   }, [userId]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  // The overall board ranks WITHIN the selected scope on the server, so it
+  // re-fetches whenever the scope changes (like the kids board below).
+  const loadOverall = useCallback(async () => {
+    try {
+      const overall = await fetchLeaderboard(scope);
+      setRows(overall);
+      // One batched request to sign all the photo avatars for the board.
+      avatarSignedUrls(overall.map((r) => r.avatar_path)).then(setAvatarUrls).catch(() => {});
+    } catch (e) {
+      console.warn('overall board', e);
+    }
+  }, [scope]);
+
+  useEffect(() => { loadOverall(); }, [loadOverall]);
 
   // Default the weight filter to the member's own class once their profile loads,
   // unless they've already picked one.
@@ -95,18 +106,16 @@ export default function LeaderboardScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await load();
+    await Promise.all([load(), loadOverall()]);
     if (canSeeKids) await fetchKidsLeaderboard(kidsLevel).then(setKids).catch(() => {});
     setRefreshing(false);
-  }, [load, canSeeKids, kidsLevel]);
+  }, [load, loadOverall, canSeeKids, kidsLevel]);
 
+  // Scope is now applied server-side (geo_leaderboard), so only the weight-class
+  // filter remains client-side.
   const overallFiltered = useMemo(
-    () =>
-      rows
-        .filter((r) => scopeMatches(myGeo, profile?.gym_id ?? null, r.geo, r.gym_id, scope))
-        .filter((r) => inWeightClass(r.weight_lbs, weightFilter))
-        .slice(0, 100),
-    [rows, myGeo, scope, weightFilter, profile?.gym_id],
+    () => rows.filter((r) => inWeightClass(r.weight_lbs, weightFilter)).slice(0, 100),
+    [rows, weightFilter],
   );
 
   // Scope options exclude Gym on the kids board (no server gym filter for juniors).
