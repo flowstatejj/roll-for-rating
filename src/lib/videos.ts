@@ -3,9 +3,19 @@ import type { MatchVideo } from './types';
 
 const BUCKET = 'match-videos';
 
-/** Public playback URL for a stored video path. */
-export function videoPublicUrl(path: string): string {
-  return supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+/**
+ * Time-limited SIGNED playback URL for a stored video path. The match-videos
+ * bucket is PRIVATE (a match video can show a minor), so there is no public URL.
+ * Supabase only issues the signed URL if the caller may read the object per the
+ * bucket's RLS (a participant, or the match is public). Returns null on failure.
+ */
+export async function videoSignedUrl(path: string): Promise<string | null> {
+  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 3600);
+  if (error) {
+    console.warn('Failed to sign video url', error.message);
+    return null;
+  }
+  return data?.signedUrl ?? null;
 }
 
 /** All videos attached to a match, oldest first. */

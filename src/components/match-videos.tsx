@@ -10,7 +10,7 @@ import { Button, Card } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useTranslation } from '@/lib/i18n';
-import { deleteMatchVideo, fetchMatchVideos, uploadMatchVideo, videoPublicUrl } from '@/lib/videos';
+import { deleteMatchVideo, fetchMatchVideos, uploadMatchVideo, videoSignedUrl } from '@/lib/videos';
 import type { MatchVideo } from '@/lib/types';
 
 export function MatchVideos({
@@ -25,12 +25,19 @@ export function MatchVideos({
   const theme = useTheme();
   const { t } = useTranslation();
   const [videos, setVideos] = useState<MatchVideo[]>([]);
+  // Signed playback URLs by video id (the bucket is private — no public URL).
+  const [urls, setUrls] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
-      setVideos(await fetchMatchVideos(matchId));
+      const vids = await fetchMatchVideos(matchId);
+      setVideos(vids);
+      const entries = await Promise.all(
+        vids.map(async (v) => [v.id, await videoSignedUrl(v.path)] as const),
+      );
+      setUrls(Object.fromEntries(entries.filter((e): e is [string, string] => !!e[1])));
     } catch (e) {
       console.warn('Failed to load videos', e);
     }
@@ -74,9 +81,10 @@ export function MatchVideos({
   // Download the match video and open the OS share sheet so a participant can
   // keep it (Save Video) or use it (send / post). Public URL works everywhere.
   async function saveVideo(v: MatchVideo) {
-    const url = videoPublicUrl(v.path);
     try {
       setSavingId(v.id);
+      const url = urls[v.id] ?? (await videoSignedUrl(v.path));
+      if (!url) throw new Error(t('mv.saveFail'));
       if (Platform.OS === 'web') {
         await Share.share({ message: url });
         return;
@@ -122,7 +130,13 @@ export function MatchVideos({
 
       {videos.map((v) => (
         <View key={v.id} style={{ gap: Spacing.one }}>
-          <VideoPlayerItem url={videoPublicUrl(v.path)} />
+          {urls[v.id] ? (
+            <VideoPlayerItem url={urls[v.id]} />
+          ) : (
+            <View style={[styles.video, styles.videoLoading]}>
+              <ActivityIndicator color={theme.accent} />
+            </View>
+          )}
           {isParticipant && (
             <View style={styles.actionsRow}>
               <Pressable onPress={() => saveVideo(v)} disabled={savingId === v.id} style={styles.deleteRow}>
@@ -173,6 +187,7 @@ function VideoPlayerItem({ url }: { url: string }) {
 const styles = StyleSheet.create({
   label: { fontSize: 18, fontWeight: '800' },
   video: { width: '100%', aspectRatio: 16 / 9, borderRadius: 12, backgroundColor: '#000' },
+  videoLoading: { alignItems: 'center', justifyContent: 'center' },
   deleteRow: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 2 },
   actionsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: Spacing.three },
 });
