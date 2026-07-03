@@ -585,6 +585,10 @@ declare b public.tournament_bouts; mid uuid; wid uuid; ref uuid; is_team boolean
 begin
   select * into b from public.tournament_bouts where id = p_bout for update;
   if not found then raise exception 'Bout not found'; end if;
+  -- Guard against a double-record (same as record_subbout): without it, a second
+  -- call creates a second match and settles Elo again. The `for update` lock
+  -- above serialises concurrent calls so the second sees status='done' here.
+  if b.status = 'done' then raise exception 'Bout already finished'; end if;
   if not public._may_record(b) then raise exception 'Only the assigned referee or host can record this bout'; end if;
   if b.a_team is not null or b.b_team is not null then raise exception 'Use record_subbout for team bouts'; end if;
   if b.a_entrant is null or b.b_entrant is null then raise exception 'Both competitors are required'; end if;

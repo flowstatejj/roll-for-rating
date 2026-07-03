@@ -10,9 +10,17 @@
 -- time-limited signed URLs, gated by the RLS read policy below. (do update so
 -- re-running flips an existing public bucket to private.)
 -- ---------------------------------------------------------------------------
-insert into storage.buckets (id, name, public)
-values ('match-videos', 'match-videos', false)
-on conflict (id) do update set public = false;
+-- Also cap size + restrict to video MIME types so the bucket can't be used to
+-- store arbitrary/huge files (a cost + abuse vector at scale). 'video/*' allows
+-- any device's video container without rejecting legitimate uploads; the 500MB
+-- cap blocks egregious uploads while leaving room for a full HD clip. (The real
+-- cost lever is the client's 10-min videoMaxDuration — a separate product call.)
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('match-videos', 'match-videos', false, 524288000, array['video/*'])
+on conflict (id) do update
+  set public = false,
+      file_size_limit = excluded.file_size_limit,
+      allowed_mime_types = excluded.allowed_mime_types;
 
 -- Only participants of a match may UPLOAD into that match's folder.
 -- Files live at:  match-videos/<match_id>/<filename>
