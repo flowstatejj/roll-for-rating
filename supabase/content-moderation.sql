@@ -152,6 +152,13 @@ begin
   -- Eject the reported user.
   if p_action = 'ban' and r.reported_user_id is not null then
     update public.profiles set banned = true where id = r.reported_user_id;
+    -- Ban the AUTH user too: GoTrue then refuses token refresh and re-login, so
+    -- the ban actually revokes API access (the current access token still
+    -- expires within ~1h). Without this, banned=true only blocks the three
+    -- insert triggers below and the client-side sign-out — a banned user could
+    -- keep using a valid JWT, or just sign back in, and retain full API access.
+    update auth.users set banned_until = now() + interval '100 years'
+      where id = r.reported_user_id;
     update public.matches set is_public = false
       where is_public and (challenger_id = r.reported_user_id or opponent_id = r.reported_user_id);
     update public.user_reports set status = 'actioned'
