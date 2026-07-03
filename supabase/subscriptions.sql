@@ -109,7 +109,13 @@ language sql security definer set search_path = public as $$
   values (p_user, coalesce(p_note, 'comp'), 'comp', 'active', null)
   on conflict (user_id) do update
     set source = 'comp', status = 'active', expires_at = null,
-        product_id = excluded.product_id, updated_at = now();
+        product_id = excluded.product_id, updated_at = now()
+    -- Don't clobber an ACTIVE paying (Apple/Google) subscription with a comp row:
+    -- they already have access, and overwriting loses the real store state until
+    -- the next renewal re-validates. Only comp when there's no live store sub.
+    where entitlements.source not in ('apple','google')
+       or entitlements.status not in ('active','grace')
+       or (entitlements.expires_at is not null and entitlements.expires_at <= now());
 $$;
 
 -- SECURITY: Postgres grants EXECUTE to PUBLIC on new functions by default, and

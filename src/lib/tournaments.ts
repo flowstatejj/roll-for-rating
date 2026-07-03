@@ -31,7 +31,9 @@ export async function fetchGymPowerRanking(): Promise<GymPower[]> {
 // Tournaments
 // ---------------------------------------------------------------------------
 export async function fetchTournaments(opts: { city?: string } = {}): Promise<Tournament[]> {
-  let q = supabase.from('tournaments').select('*').order('starts_at', { ascending: false });
+  // Cap the browse list (newest first) so it can't download every tournament
+  // ever created at scale; add paging later if needed.
+  let q = supabase.from('tournaments').select('*').order('starts_at', { ascending: false }).limit(100);
   if (opts.city?.trim()) q = q.ilike('city', `%${opts.city.trim()}%`);
   const { data, error } = await q;
   if (error) throw error;
