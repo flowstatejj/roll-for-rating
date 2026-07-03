@@ -23,3 +23,20 @@ create index if not exists idx_profiles_managed_by
 -- Unread-count badge: notifications filtered by (user_id, read).
 create index if not exists idx_notifications_user_read
   on public.notifications (user_id, read);
+
+-- Quest / submission RPCs and FK checks filter matches by winner_id.
+create index if not exists idx_matches_winner
+  on public.matches (winner_id) where winner_id is not null;
+
+-- notifications.match_id FK: match deletion + account deletion cascade-scan this
+-- per match row without an index.
+create index if not exists idx_notifications_match_id
+  on public.notifications (match_id) where match_id is not null;
+
+-- Season standings: ORDER BY points within a season (PK is season_id,user_id).
+create index if not exists idx_season_scores_standings
+  on public.season_scores (season_id, points desc);
+
+-- Age-scoped leaderboards (e.g. the 13-and-under board): filter age_tier, sort rating.
+create index if not exists idx_profiles_age_tier_rating
+  on public.profiles (age_tier, rating desc);
