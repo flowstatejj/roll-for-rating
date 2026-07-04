@@ -116,7 +116,7 @@ export function MatchTimer({ matchId, canControl }: { matchId: string; canContro
         <ThemedText type="small" themeColor="textSecondary">{t('tm.title')}</ThemedText>
       </View>
 
-      <ThemedText style={{ fontWeight: '900', fontSize: 56, letterSpacing: 2, fontVariant: ['tabular-nums'], color: atZero ? theme.danger : theme.text }}>
+      <ThemedText style={{ fontWeight: '900', fontSize: 56, lineHeight: 64, letterSpacing: 2, fontVariant: ['tabular-nums'], color: atZero ? theme.danger : theme.text }}>
         {fmt(display)}
       </ThemedText>
 
