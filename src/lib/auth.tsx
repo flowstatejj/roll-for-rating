@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { Alert } from 'react-native';
 
+import { PENDING_ELITE_INVITE_KEY, redeemEliteInviteCode } from './elite';
 import { PENDING_REFERRAL_KEY, redeemReferralCode } from './referrals';
 import { supabase } from './supabase';
 import type { BeltRank, Profile } from './types';
@@ -99,6 +100,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // If an elite invite code was captured at signup, redeem it once a session
+  // exists (grants the new member elite access). Cleared on a definitive outcome.
+  const redeemPendingEliteInvite = useCallback(async () => {
+    try {
+      const code = await AsyncStorage.getItem(PENDING_ELITE_INVITE_KEY);
+      if (!code) return;
+      const res = await redeemEliteInviteCode(code);
+      if (res.ok || res.reason) await AsyncStorage.removeItem(PENDING_ELITE_INVITE_KEY);
+    } catch {
+      /* best-effort */
+    }
+  }, []);
+
   // On launch: restore any saved session, then subscribe to auth changes.
   useEffect(() => {
     let active = true;
@@ -110,6 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await loadProfile(data.session.user.id);
         loadOnboarded(data.session.user.id);
         redeemPendingReferral();
+        redeemPendingEliteInvite();
       }
       setInitializing(false);
     });
@@ -120,6 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loadProfile(newSession.user.id);
         loadOnboarded(newSession.user.id);
         redeemPendingReferral();
+        redeemPendingEliteInvite();
       } else {
         setProfile(null);
         setOnboarded(null);
@@ -130,7 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       active = false;
       sub.subscription.unsubscribe();
     };
-  }, [loadProfile, loadOnboarded, redeemPendingReferral]);
+  }, [loadProfile, loadOnboarded, redeemPendingReferral, redeemPendingEliteInvite]);
 
   const markOnboarded = useCallback(async () => {
     if (session?.user) await AsyncStorage.setItem(onboardKey(session.user.id), '1');

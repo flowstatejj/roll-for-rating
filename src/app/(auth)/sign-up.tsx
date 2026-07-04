@@ -4,6 +4,7 @@ import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
 
+import { PENDING_ELITE_INVITE_KEY } from '@/lib/elite';
 import { PENDING_REFERRAL_KEY } from '@/lib/referrals';
 
 const TERMS_URL = 'https://rfr-site.onrender.com/terms.html';
@@ -35,23 +36,29 @@ export default function SignUpScreen() {
   const [dobY, setDobY] = useState('');
   const [parentEmail, setParentEmail] = useState('');
   const [refCode, setRefCode] = useState('');
+  const [eliteCode, setEliteCode] = useState('');
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   // 'compete' = a grappler; 'guardian' = a non-participating parent who manages children.
   const [mode, setMode] = useState<'compete' | 'guardian'>('compete');
   const isGuardian = mode === 'guardian';
 
-  // Prefill a referral code from a ?ref= route param or the opening deep link.
-  const params = useLocalSearchParams<{ ref?: string }>();
+  // Prefill a referral (?ref=) and/or elite invite (?elite=) code from a route
+  // param or the opening deep link.
+  const params = useLocalSearchParams<{ ref?: string; elite?: string }>();
   useEffect(() => {
-    if (params.ref) { setRefCode(String(params.ref).toUpperCase()); return; }
+    if (params.ref) setRefCode(String(params.ref).toUpperCase());
+    if (params.elite) setEliteCode(String(params.elite).toUpperCase());
+    if (params.ref || params.elite) return;
     Linking.getInitialURL()
       .then((url) => {
-        const m = url?.match(/[?&]ref=([^&]+)/i);
-        if (m) setRefCode(decodeURIComponent(m[1]).toUpperCase());
+        const ref = url?.match(/[?&]ref=([^&]+)/i);
+        if (ref) setRefCode(decodeURIComponent(ref[1]).toUpperCase());
+        const elite = url?.match(/[?&]elite=([^&]+)/i);
+        if (elite) setEliteCode(decodeURIComponent(elite[1]).toUpperCase());
       })
       .catch(() => {});
-  }, [params.ref]);
+  }, [params.ref, params.elite]);
 
   const dob = parseDob(dobM, dobD, dobY);
   const isMinor = dob !== null && dob.age < 18;
@@ -104,6 +111,7 @@ export default function SignUpScreen() {
       });
       // Captured here, attached on first sign-in (see AuthProvider).
       if (refCode.trim()) await AsyncStorage.setItem(PENDING_REFERRAL_KEY, refCode.trim().toUpperCase());
+      if (eliteCode.trim()) await AsyncStorage.setItem(PENDING_ELITE_INVITE_KEY, eliteCode.trim().toUpperCase());
       Alert.alert(
         t('su.createdTitle'),
         isMinor ? t('su.createdMinor') : t('su.createdAdult'),
