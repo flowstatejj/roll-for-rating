@@ -13,18 +13,20 @@ export type UploadResult =
   | { status: 'queued'; item: PendingVideo };
 
 /**
- * Time-limited SIGNED playback URL for a stored video path. The match-videos
- * bucket is PRIVATE (a match video can show a minor), so there is no public URL.
- * Supabase only issues the signed URL if the caller may read the object per the
- * bucket's RLS (a participant, or the match is public). Returns null on failure.
+ * Time-limited SIGNED playback URL for a stored video path. Videos live in
+ * Cloudflare R2 (free egress); the video-url edge function checks the caller may
+ * view (a participant, or the match is public) and returns a presigned R2 GET
+ * URL. Returns null on failure.
  */
 export async function videoSignedUrl(path: string): Promise<string | null> {
-  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 3600);
-  if (error) {
-    console.warn('Failed to sign video url', error.message);
+  const { data, error } = await supabase.functions.invoke('video-url', {
+    body: { op: 'play', path },
+  });
+  if (error || !data?.url) {
+    console.warn('Failed to sign video url', error?.message);
     return null;
   }
-  return data?.signedUrl ?? null;
+  return data.url as string;
 }
 
 /** All videos attached to a match, oldest first. */
@@ -91,9 +93,10 @@ export async function uploadMatchVideo(
   }
 }
 
-/** Remove a video (storage file + row). */
+/** Remove a video (R2 file via the edge function + the DB row). */
 export async function deleteMatchVideo(video: MatchVideo): Promise<void> {
-  await supabase.storage.from(BUCKET).remove([video.path]);
+  // Best-effort R2 delete (edge fn checks participation); always remove the row.
+  await supabase.functions.invoke('video-url', { body: { op: 'delete', path: video.path } }).catch(() => {});
   const { error } = await supabase.from('match_videos').delete().eq('id', video.id);
   if (error) throw error;
 }
