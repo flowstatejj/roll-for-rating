@@ -1,7 +1,33 @@
 // Hand-written types that mirror supabase/schema.sql.
 // Keep these in sync with the schema (or later generate them with the Supabase CLI).
 
-export type BeltRank = 'white' | 'blue' | 'purple' | 'brown' | 'black';
+export type BeltRank =
+  // adult belts
+  | 'white' | 'blue' | 'purple' | 'brown' | 'black'
+  // IBJJF youth belts: gray/yellow/orange/green each solid, white-stripe, black-stripe
+  | 'gray_white' | 'gray' | 'gray_black'
+  | 'yellow_white' | 'yellow' | 'yellow_black'
+  | 'orange_white' | 'orange' | 'orange_black'
+  | 'green_white' | 'green' | 'green_black';
+
+/** Adult belts (shown at self sign-up). */
+export const ADULT_BELTS: BeltRank[] = ['white', 'blue', 'purple', 'brown', 'black'];
+
+/** Youth belts (shown when creating a minor), in progression order. */
+export const YOUTH_BELTS: BeltRank[] = [
+  'white',
+  'gray_white', 'gray', 'gray_black',
+  'yellow_white', 'yellow', 'yellow_black',
+  'orange_white', 'orange', 'orange_black',
+  'green_white', 'green', 'green_black',
+];
+
+/** The stripe overlay on a youth belt, if any. */
+export function beltStripe(belt: BeltRank): 'white' | 'black' | null {
+  if (belt.endsWith('_white')) return 'white';
+  if (belt.endsWith('_black')) return 'black';
+  return null;
+}
 
 /** Age tier, computed server-side from the member's birthdate. */
 export type AgeTier = 'adult' | 'teen' | 'kid';
@@ -497,15 +523,30 @@ export const BELT_LABELS: Record<BeltRank, string> = {
   purple: 'Purple',
   brown: 'Brown',
   black: 'Black',
+  gray_white: 'Gray/White', gray: 'Gray', gray_black: 'Gray/Black',
+  yellow_white: 'Yellow/White', yellow: 'Yellow', yellow_black: 'Yellow/Black',
+  orange_white: 'Orange/White', orange: 'Orange', orange_black: 'Orange/Black',
+  green_white: 'Green/White', green: 'Green', green_black: 'Green/Black',
 };
 
+// Youth stripe variants share their base color; the white/black stripe is drawn
+// separately (see BeltChip + beltStripe).
 export const BELT_COLORS: Record<BeltRank, string> = {
   white: '#D6D6DB',
   blue: '#2E6BE6',
   purple: '#8B5CF6',
   brown: '#7C4A1E',
   black: '#111111',
+  gray_white: '#9AA0A6', gray: '#9AA0A6', gray_black: '#9AA0A6',
+  yellow_white: '#F2C200', yellow: '#F2C200', yellow_black: '#F2C200',
+  orange_white: '#E8781E', orange: '#E8781E', orange_black: '#E8781E',
+  green_white: '#2F9E44', green: '#2F9E44', green_black: '#2F9E44',
 };
+
+/** Belts whose base color is light, so they need dark text/border on a chip. */
+export function beltNeedsDarkText(belt: BeltRank): boolean {
+  return belt === 'white' || belt.startsWith('gray') || belt.startsWith('yellow');
+}
 
 export const RESULT_LABELS: Record<ResultType, string> = {
   submission: 'Submission',

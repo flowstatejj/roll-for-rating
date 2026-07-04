@@ -22,7 +22,7 @@ import { isWarrior } from '@/lib/warriors';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useTranslation } from '@/lib/i18n';
-import { BELT_COLORS, type BeltRank } from '@/lib/types';
+import { BELT_COLORS, beltNeedsDarkText, beltStripe, type BeltRank } from '@/lib/types';
 
 // ---------------------------------------------------------------------------
 // Button
@@ -149,6 +149,8 @@ TextField.displayName = 'TextField';
 export function BeltChip({ belt, size = 'md' }: { belt: BeltRank; size?: 'sm' | 'md' }) {
   const color = BELT_COLORS[belt];
   const small = size === 'sm';
+  const dark = beltNeedsDarkText(belt);
+  const stripe = beltStripe(belt);
   const { t } = useTranslation();
   return (
     <View
@@ -156,14 +158,27 @@ export function BeltChip({ belt, size = 'md' }: { belt: BeltRank; size?: 'sm' | 
         styles.beltChip,
         {
           backgroundColor: color,
-          borderColor: belt === 'white' ? '#9A9AA0' : color,
+          borderColor: dark ? '#9A9AA0' : color,
           paddingVertical: small ? 1 : 3,
           paddingHorizontal: small ? 6 : 8,
         },
       ]}>
+      {/* Youth belt stripe: a thin white or black bar along the bottom edge. */}
+      {stripe ? (
+        <View
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: small ? 2 : 3,
+            backgroundColor: stripe === 'white' ? '#FFFFFF' : '#111111',
+          }}
+        />
+      ) : null}
       <ThemedText
         style={{
-          color: belt === 'white' ? '#222' : '#fff',
+          color: dark ? '#222' : '#fff',
           fontWeight: '700',
           fontSize: small ? 10 : 12,
         }}>

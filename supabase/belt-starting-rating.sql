@@ -11,11 +11,25 @@
 create or replace function public.starting_rating(p_belt belt_rank)
 returns integer language sql immutable as $$
   select case p_belt
+    -- adult
     when 'black'  then 2000
     when 'brown'  then 1600
     when 'purple' then 1200
     when 'blue'   then 800
     when 'white'  then 400
+    -- youth (kids only match kids; ascending from the white entry belt)
+    when 'gray_white'   then 440
+    when 'gray'         then 460
+    when 'gray_black'   then 480
+    when 'yellow_white' then 500
+    when 'yellow'       then 520
+    when 'yellow_black' then 540
+    when 'orange_white' then 560
+    when 'orange'       then 580
+    when 'orange_black' then 600
+    when 'green_white'  then 620
+    when 'green'        then 640
+    when 'green_black'  then 660
     else 400
   end;
 $$;

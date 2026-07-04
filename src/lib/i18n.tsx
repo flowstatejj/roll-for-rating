@@ -59,6 +59,10 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'matches.emptySub': 'Matches you compete in or referee will show up here.',
 
     'belt.white': 'White', 'belt.blue': 'Blue', 'belt.purple': 'Purple', 'belt.brown': 'Brown', 'belt.black': 'Black',
+    'belt.gray_white': 'Gray/White', 'belt.gray': 'Gray', 'belt.gray_black': 'Gray/Black',
+    'belt.yellow_white': 'Yellow/White', 'belt.yellow': 'Yellow', 'belt.yellow_black': 'Yellow/Black',
+    'belt.orange_white': 'Orange/White', 'belt.orange': 'Orange', 'belt.orange_black': 'Orange/Black',
+    'belt.green_white': 'Green/White', 'belt.green': 'Green', 'belt.green_black': 'Green/Black',
 
     'nav.match': 'Match', 'nav.puzzle': 'Puzzle', 'nav.competitionRecord': 'Competition Record',
     'nav.gyms': 'Gyms', 'nav.gym': 'Gym', 'nav.findRoll': 'Find a Roll', 'nav.openMats': 'Open Mats',
