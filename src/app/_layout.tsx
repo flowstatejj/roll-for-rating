@@ -9,6 +9,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/theme';
 import { Loading } from '@/components/ui/kit';
 import { usePush } from '@/hooks/use-push';
+import { useUploadQueue } from '@/hooks/use-upload-queue';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { I18nProvider, useTranslation } from '@/lib/i18n';
 import { initSentry, wrapWithSentry } from '@/lib/sentry';
@@ -61,6 +62,8 @@ function RootNavigator() {
 
   // Device push registration + notification-tap routing.
   usePush();
+  // Retry any offline-queued match-video uploads on launch + foreground.
+  useUploadQueue();
 
   useEffect(() => {
     if (initializing) return;
