@@ -34,14 +34,17 @@ begin
   if not public.is_admin() then raise exception 'Admins only'; end if;
   update public.profiles set is_founding_member = p_on where id = p_user;
   if p_on then
+    -- The '...-family' suffix makes the comp product_id match the `%family%`
+    -- pattern my_subscription()/has_active_family() use, so founders get the
+    -- FAMILY tier free (unlimited managed juniors), not just individual.
     insert into public.entitlements (user_id, product_id, source, status, expires_at)
-    values (p_user, 'comp:founding-member', 'comp', 'active', null)
+    values (p_user, 'comp:founding-member-family', 'comp', 'active', null)
     on conflict (user_id) do update
       set source='comp', status='active', expires_at=null,
-          product_id='comp:founding-member', updated_at=now();
+          product_id='comp:founding-member-family', updated_at=now();
   else
     delete from public.entitlements
-      where user_id = p_user and source = 'comp' and product_id = 'comp:founding-member';
+      where user_id = p_user and source = 'comp' and product_id like 'comp:founding-member%';
   end if;
 end; $$;
 grant execute on function public.admin_set_founding_member(uuid, boolean) to authenticated;
@@ -73,3 +76,9 @@ language sql stable security definer set search_path = public as $$
   order by p.display_name;
 $$;
 grant execute on function public.admin_list_founders() to authenticated;
+
+-- One-time upgrade: bump existing founders' comp entitlement to the family tier
+-- so they get unlimited managed juniors without being re-flagged. Idempotent.
+update public.entitlements
+  set product_id = 'comp:founding-member-family', updated_at = now()
+  where source = 'comp' and product_id = 'comp:founding-member';
