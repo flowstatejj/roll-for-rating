@@ -12,13 +12,37 @@ export type UploadResult =
   | { status: 'uploaded'; video: MatchVideo | null }
   | { status: 'queued'; item: PendingVideo };
 
+const VIDEO_WORKER_URL = process.env.EXPO_PUBLIC_VIDEO_WORKER_URL ?? '';
+
 /**
  * Time-limited SIGNED playback URL for a stored video path. Videos live in
- * Cloudflare R2 (free egress); the video-url edge function checks the caller may
- * view (a participant, or the match is public) and returns a presigned R2 GET
- * URL. Returns null on failure.
+ * Cloudflare R2 (free egress); access (participant, or public match) is checked
+ * before returning a presigned R2 GET URL. Presigning runs on the Cloudflare
+ * Worker when EXPO_PUBLIC_VIDEO_WORKER_URL is set (far cheaper per view at
+ * scale), and falls back to the Supabase video-url edge function otherwise.
+ * Returns null on failure.
  */
 export async function videoSignedUrl(path: string): Promise<string | null> {
+  if (VIDEO_WORKER_URL) {
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      if (token) {
+        const res = await fetch(VIDEO_WORKER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ path }),
+        });
+        if (res.ok) {
+          const j = (await res.json()) as { url?: string };
+          if (j?.url) return j.url;
+        }
+      }
+    } catch {
+      /* fall back to the edge function below */
+    }
+  }
+
   const { data, error } = await supabase.functions.invoke('video-url', {
     body: { op: 'play', path },
   });

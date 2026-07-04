@@ -20,6 +20,7 @@
   "exclude": [
     "node_modules",
     "supabase/functions",
+    "cloudflare",
     "web-console",
     "dist",
     "dist-web"

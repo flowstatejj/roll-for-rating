@@ -1,0 +1,10 @@
+name = "video-url"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+
+# Non-secret vars. Set the secrets (R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY,
+# SUPABASE_ANON_KEY) with `wrangler secret put <NAME>` before/after deploy.
+[vars]
+R2_ACCOUNT_ID = "f25307fffbac00c87dcac487bc9621bd"
+R2_BUCKET = "match-videos"
+SUPABASE_URL = "https://vrpmqwkpsrftjokwzwsi.supabase.co"
