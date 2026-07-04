@@ -12,9 +12,10 @@ import { parseDob } from '@/lib/dob';
 import { useTranslation } from '@/lib/i18n';
 import { addJunior, fetchJuniors, removeJunior } from '@/lib/juniors';
 import { useSubscription } from '@/lib/subscription';
-import { type BeltRank, type Profile } from '@/lib/types';
+import { YOUTH_BELTS, type BeltRank, type Profile } from '@/lib/types';
 
-const BELTS: BeltRank[] = ['white', 'blue', 'purple', 'brown', 'black'];
+// Minors use the IBJJF youth belt system (gray/yellow/orange/green + stripes).
+const BELTS: BeltRank[] = YOUTH_BELTS;
 
 export default function JuniorsScreen() {
   const { profile } = useAuth();
