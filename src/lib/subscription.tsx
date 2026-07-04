@@ -86,7 +86,7 @@ interface SubscriptionContextValue {
 const SubscriptionContext = createContext<SubscriptionContextValue | undefined>(undefined);
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
-  const { session } = useAuth();
+  const { session, initializing } = useAuth();
   const [ready, setReady] = useState(false);
   const [info, setInfo] = useState<SubInfo | null>(null);
   const [product, setProduct] = useState<ProductSubscription | null>(null);
@@ -165,10 +165,19 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   // Initialise IAP, fetch the product, and wire purchase listeners (native only).
   useEffect(() => {
-    if (!IAP_AVAILABLE) {
-      refresh();
-      return;
-    }
+    // Wait for auth to settle before deciding access, or we'd read "no session"
+    // and set ready+inactive, flashing the paywall until the real check lands.
+    // A (new) user starts unready so we re-check from scratch on account change.
+    if (initializing) return;
+    setReady(false);
+
+    // Decide access FIRST via the fast entitlement RPC; the StoreKit product
+    // load below is only needed once the paywall is actually shown, so let it lag
+    // (this also gets the user into the app quicker on launch).
+    refresh();
+
+    if (!IAP_AVAILABLE) return;
+
     let purchaseSub: { remove: () => void } | undefined;
     let errorSub: { remove: () => void } | undefined;
 
@@ -176,7 +185,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       try {
         await initConnection();
       } catch {
-        // IAP unavailable; the entitlement RPC below still drives access.
+        // IAP unavailable; the entitlement RPC above still drives access.
       }
       await loadProducts();
 
@@ -198,8 +207,6 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         purchasingRef.current = false;
         setPurchasing(false);
       });
-
-      await refresh();
     })();
 
     return () => {
@@ -208,7 +215,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       endConnection().catch(() => {});
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.user?.id]);
+  }, [session?.user?.id, initializing]);
 
   const purchase = useCallback(async (plan: Plan = 'individual') => {
     if (!IAP_AVAILABLE) throw new Error('Subscriptions are only available in the mobile app.');
