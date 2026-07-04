@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, Share, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { BeltChip, Button, Card, EmptyState, FOUNDER_GOLD, Loading, Screen, TextField } from '@/components/ui/kit';
@@ -9,7 +9,17 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
-import { fetchMyEliteGrants, grantElite, revokeElite, type EliteGrants, type EliteMember } from '@/lib/elite';
+import {
+  eliteInviteLink,
+  fetchMyEliteGrants,
+  fetchMyEliteInvites,
+  grantElite,
+  mintEliteInviteCode,
+  revokeElite,
+  type EliteGrants,
+  type EliteMember,
+  type MyEliteInvites,
+} from '@/lib/elite';
 import type { BeltRank } from '@/lib/types';
 
 export default function EliteScreen() {
@@ -19,18 +29,45 @@ export default function EliteScreen() {
 
   const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);
+  const [minting, setMinting] = useState(false);
   const [grants, setGrants] = useState<EliteGrants>({ quota: 10, used: 0, members: [] });
+  const [invites, setInvites] = useState<MyEliteInvites>({ slots_left: 0, codes: [] });
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     try {
-      setGrants(await fetchMyEliteGrants());
+      const [g, inv] = await Promise.all([fetchMyEliteGrants(), fetchMyEliteInvites()]);
+      setGrants(g);
+      setInvites(inv);
     } catch (e) {
       console.warn('elite grants failed', e);
     } finally {
       setLoading(false);
     }
   }, []);
+
+  async function shareCode(code: string) {
+    try {
+      await Share.share({
+        message: t('elite.shareMsg').replace('{link}', eliteInviteLink(code)).replace('{code}', code),
+      });
+    } catch {
+      /* share cancelled */
+    }
+  }
+
+  async function createLink() {
+    setMinting(true);
+    try {
+      const code = await mintEliteInviteCode();
+      await load();
+      await shareCode(code);
+    } catch (e: any) {
+      Alert.alert(t('elite.error'), e.message ?? t('md.tryAgain'));
+    } finally {
+      setMinting(false);
+    }
+  }
 
   useEffect(() => { load(); }, [load]);
 
@@ -88,7 +125,9 @@ export default function EliteScreen() {
 
   if (loading) return <Loading />;
 
-  const remaining = Math.max(0, grants.quota - grants.used);
+  // Slots left accounts for granted members AND outstanding (reserved) codes.
+  const remaining = Math.max(0, invites.slots_left);
+  const outstanding = invites.codes.filter((c) => !c.claimed);
 
   return (
     <Screen>
@@ -111,6 +150,23 @@ export default function EliteScreen() {
           keyboardType="email-address"
         />
         <Button label={t('elite.grant')} icon="ribbon" onPress={add} loading={busy} disabled={remaining <= 0} />
+      </Card>
+
+      {/* Shareable invite link — text/email it to a friend to give them elite. */}
+      <Card style={{ gap: Spacing.three }}>
+        <ThemedText type="small" themeColor="textSecondary">{t('elite.linkHint')}</ThemedText>
+        <Button label={t('elite.createLink')} icon="share-social" variant="secondary" onPress={createLink} loading={minting} disabled={remaining <= 0} />
+        {outstanding.length > 0 && (
+          <View style={{ gap: Spacing.two }}>
+            <ThemedText type="small" themeColor="textSecondary">{t('elite.outstanding')} · {outstanding.length}</ThemedText>
+            {outstanding.map((c) => (
+              <Pressable key={c.id} onPress={() => shareCode(c.code)} style={styles.codeRow}>
+                <ThemedText style={{ fontFamily: 'monospace', fontWeight: '800', fontSize: 16, letterSpacing: 2 }}>{c.code}</ThemedText>
+                <Ionicons name="share-social-outline" size={18} color={theme.accent} />
+              </Pressable>
+            ))}
+          </View>
+        )}
       </Card>
 
       <ThemedText style={{ fontWeight: '800', fontSize: 18, marginTop: Spacing.one }}>
@@ -147,5 +203,6 @@ export default function EliteScreen() {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.two, paddingHorizontal: Spacing.two },
+  codeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: Spacing.one },
   divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.two },
 });
