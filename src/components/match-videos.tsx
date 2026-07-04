@@ -55,7 +55,14 @@ export function MatchVideos({
         }
       }
       const result = fromCamera
-        ? await ImagePicker.launchCameraAsync({ mediaTypes: ['videos'], videoMaxDuration: 600 })
+        ? await ImagePicker.launchCameraAsync({
+            mediaTypes: ['videos'],
+            videoMaxDuration: 600,
+            // Record compressed H.264 (not full-res) so a long match is a
+            // manageable upload rather than a multi-GB file.
+            videoQuality: ImagePicker.UIImagePickerControllerQualityType.Medium,
+            videoExportPreset: ImagePicker.VideoExportPreset.MediumQuality,
+          })
         : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['videos'] });
 
       if (result.canceled || !result.assets?.length) return;
