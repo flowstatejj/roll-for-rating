@@ -267,6 +267,10 @@ export function MatchVideos({
         // Record films live and auto-posts to the match - no separate upload step.
         <Button label={t('mv.record')} icon="videocam" variant="secondary" loading={busy} onPress={() => addVideo(true)} />
       )}
+
+      <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center' }}>
+        Videos are kept for 2 weeks, then automatically deleted.
+      </ThemedText>
     </View>
   );
 }
