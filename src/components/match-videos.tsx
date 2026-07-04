@@ -58,10 +58,12 @@ export function MatchVideos({
         ? await ImagePicker.launchCameraAsync({
             mediaTypes: ['videos'],
             videoMaxDuration: 600,
-            // Record compressed H.264 (not full-res) so a long match is a
-            // manageable upload rather than a multi-GB file.
-            videoQuality: ImagePicker.UIImagePickerControllerQualityType.Medium,
-            videoExportPreset: ImagePicker.VideoExportPreset.MediumQuality,
+            // Pin to a FIXED 720p H.264 (capture + export) so a match is never
+            // recorded in 4K/1080p - keeps files a manageable upload size while
+            // staying sharp enough to review technique. (iOS options; Android
+            // captures at the device default.)
+            videoQuality: ImagePicker.UIImagePickerControllerQualityType.IFrame1280x720,
+            videoExportPreset: ImagePicker.VideoExportPreset.H264_1280x720,
           })
         : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['videos'] });
 
