@@ -48,6 +48,9 @@ export default function WatchScreen() {
         {t('nav.watch')}
       </ThemedText>
       <ThemedText themeColor="textSecondary">{t('watch.intro')}</ThemedText>
+      <ThemedText type="small" themeColor="textSecondary">
+        Match videos are automatically removed 2 weeks after they are posted.
+      </ThemedText>
 
       {matches.length === 0 ? (
         <EmptyState
