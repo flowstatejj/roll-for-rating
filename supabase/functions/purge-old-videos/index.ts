@@ -8,9 +8,17 @@
 // Recommended: set a PURGE_SECRET function secret and pass it as the
 // `x-purge-secret` header from the cron job (this function enforces it when set).
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { AwsClient } from 'https://esm.sh/aws4fetch@1.0.20';
 
 const RETENTION_DAYS = 14;
-const BUCKET = 'match-videos';
+const R2_ENDPOINT = `https://${Deno.env.get('R2_ACCOUNT_ID')}.r2.cloudflarestorage.com`;
+const R2_BUCKET = Deno.env.get('R2_BUCKET') ?? 'match-videos';
+const r2 = new AwsClient({
+  accessKeyId: Deno.env.get('R2_ACCESS_KEY_ID')!,
+  secretAccessKey: Deno.env.get('R2_SECRET_ACCESS_KEY')!,
+  service: 's3',
+  region: 'auto',
+});
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -44,9 +52,13 @@ Deno.serve(async (req) => {
       if (error) return json({ error: error.message, deleted }, 500);
       if (!old?.length) break;
 
-      // Remove the storage files first (best-effort), then the DB rows, so a
-      // failure never leaves a row pointing at a deleted file.
-      await admin.storage.from(BUCKET).remove(old.map((v: { path: string }) => v.path));
+      // Remove the R2 files first (best-effort, in parallel), then the DB rows,
+      // so a failure never leaves a row pointing at a deleted file.
+      await Promise.all(
+        old.map((v: { path: string }) =>
+          r2.fetch(`${R2_ENDPOINT}/${R2_BUCKET}/${v.path}`, { method: 'DELETE' }).catch(() => {}),
+        ),
+      );
       const { error: delErr } = await admin
         .from('match_videos')
         .delete()

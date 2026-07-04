@@ -13,9 +13,6 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { supabase } from './supabase';
 import type { MatchVideo } from './types';
 
-const BUCKET = 'match-videos';
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
-const ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 const QUEUE_KEY = 'pending_video_uploads_v1';
 const PENDING_DIR = `${FileSystem.documentDirectory ?? ''}pending-videos/`;
 
@@ -95,24 +92,23 @@ export async function uploadPending(
   item: PendingVideo,
   onProgress?: (fraction: number) => void,
 ): Promise<MatchVideo | null> {
-  const { data: sess } = await supabase.auth.getSession();
-  const token = sess.session?.access_token;
-  if (!token) throw new Error('You are signed out - sign in and try again.');
+  // Ask the edge function for a presigned R2 upload URL (it verifies the caller
+  // is a participant of the match), then PUT the file straight to R2 (free
+  // egress). The signature is in the URL, so no auth headers are needed.
+  const ext = item.path.split('.').pop() ?? 'mp4';
+  const { data: signed, error: sErr } = await supabase.functions.invoke('video-url', {
+    body: { op: 'upload', matchId: item.matchId, stamp: item.id, ext },
+  });
+  if (sErr || !signed?.url) throw new Error(sErr?.message ?? 'Could not get an upload URL.');
+  const path = (signed.path as string) ?? item.path;
 
   const task = FileSystem.createUploadTask(
-    `${SUPABASE_URL}/storage/v1/object/${BUCKET}/${item.path}`,
+    signed.url as string,
     item.localUri,
     {
-      httpMethod: 'POST',
+      httpMethod: 'PUT',
       uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        apikey: ANON_KEY,
-        'Content-Type': item.contentType,
-        // Upsert so a retry to the same path (after a partial attempt) succeeds.
-        'x-upsert': 'true',
-        'cache-control': '3600',
-      },
+      headers: { 'Content-Type': item.contentType },
     },
     (p) => {
       if (onProgress && p.totalBytesExpectedToSend > 0) {
@@ -122,20 +118,13 @@ export async function uploadPending(
   );
 
   const result = await task.uploadAsync();
-  if (!result || result.status !== 200) {
-    let msg = `Upload failed (${result?.status ?? 'no response'}).`;
-    try {
-      const b = JSON.parse(result?.body ?? '');
-      if (b?.message) msg = b.message;
-    } catch {
-      if (result?.body) msg = result.body.slice(0, 200);
-    }
-    throw new Error(msg);
+  if (!result || result.status < 200 || result.status >= 300) {
+    throw new Error(`Upload failed (${result?.status ?? 'no response'}).`);
   }
 
   const { data, error } = await supabase
     .from('match_videos')
-    .insert({ match_id: item.matchId, uploader_id: item.uploaderId, path: item.path })
+    .insert({ match_id: item.matchId, uploader_id: item.uploaderId, path })
     .select('*')
     .single();
   // A duplicate means a prior attempt inserted the row but failed to dequeue -
