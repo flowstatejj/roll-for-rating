@@ -14,7 +14,7 @@ import { useTranslation } from '@/lib/i18n';
 import { searchPublicMatches } from '@/lib/matches';
 import { ADULT_BELTS, SUBMISSIONS, type BeltRank, type MatchWithPeople } from '@/lib/types';
 
-type Menu = null | 'level' | 'belt' | 'rating' | 'sub';
+type Menu = null | 'level' | 'belt' | 'rating' | 'sub' | 'sort';
 
 const RATING_BANDS: { label: string; min: number | null; max: number | null }[] = [
   { label: 'Any rating', min: null, max: null },
@@ -23,6 +23,13 @@ const RATING_BANDS: { label: string; min: number | null; max: number | null }[] 
   { label: '1200 - 1599', min: 1200, max: 1599 },
   { label: '1600 - 1999', min: 1600, max: 1999 },
   { label: '2000+', min: 2000, max: null },
+];
+
+const SORTS: { key: string; label: string }[] = [
+  { key: 'recent', label: 'Most recent' },
+  { key: 'views', label: 'Most viewed' },
+  { key: 'reactions', label: 'Most reactions' },
+  { key: 'wager', label: 'Biggest pot' },
 ];
 
 export default function WatchScreen() {
@@ -36,6 +43,7 @@ export default function WatchScreen() {
   const [belt, setBelt] = useState<BeltRank | null>(null);
   const [band, setBand] = useState(0);
   const [submission, setSubmission] = useState<string | null>(null);
+  const [sort, setSort] = useState('recent');
   const [menu, setMenu] = useState<Menu>(null);
 
   const [matches, setMatches] = useState<MatchWithPeople[]>([]);
@@ -46,14 +54,14 @@ export default function WatchScreen() {
     try {
       const b = RATING_BANDS[band];
       setMatches(
-        await searchPublicMatches({ search, level, belt, minRating: b.min, maxRating: b.max, submission }),
+        await searchPublicMatches({ search, level, belt, minRating: b.min, maxRating: b.max, submission, sort }),
       );
     } catch (e) {
       console.warn('watch load failed', e);
     } finally {
       setLoading(false);
     }
-  }, [search, level, belt, band, submission]);
+  }, [search, level, belt, band, submission, sort]);
 
   // Debounced so typing in the search box doesn't fire a query per keystroke.
   useEffect(() => {
@@ -114,6 +122,14 @@ export default function WatchScreen() {
           onPress={() => toggle('sub')}
         />
       </View>
+      <View style={dropdownStyles.controls}>
+        <DropField
+          icon="swap-vertical-outline"
+          text={SORTS.find((s) => s.key === sort)?.label ?? 'Most recent'}
+          open={menu === 'sort'}
+          onPress={() => toggle('sort')}
+        />
+      </View>
 
       {menu ? (
         <Card style={dropdownStyles.menu}>
@@ -142,6 +158,10 @@ export default function WatchScreen() {
           {menu === 'rating' &&
             RATING_BANDS.map((r, i) => (
               <OptionRow key={r.label} label={r.label} selected={band === i} onPress={() => { setBand(i); setMenu(null); }} />
+            ))}
+          {menu === 'sort' &&
+            SORTS.map((s) => (
+              <OptionRow key={s.key} label={s.label} selected={sort === s.key} onPress={() => { setSort(s.key); setMenu(null); }} />
             ))}
           {menu === 'sub' && (
             <ScrollView style={{ maxHeight: 300 }} nestedScrollEnabled keyboardShouldPersistTaps="handled">
