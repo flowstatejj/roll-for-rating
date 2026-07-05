@@ -144,9 +144,19 @@ export default function LeaderboardScreen() {
 
   return (
     <Screen refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.text} />}>
-      <ThemedText type="subtitle" style={{ fontSize: 28 }}>
-        {t('lb.title')}
-      </ThemedText>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <Pressable
+          onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))}
+          hitSlop={12}
+          style={{ marginLeft: -4 }}
+          accessibilityRole="button"
+          accessibilityLabel="Back">
+          <Ionicons name="chevron-back" size={28} color={theme.accent} />
+        </Pressable>
+        <ThemedText type="subtitle" style={{ fontSize: 28 }}>
+          {t('lb.title')}
+        </ThemedText>
+      </View>
 
       <View style={styles.segment}>
         <Seg label={t('lb.overall')} active={tab === 'overall'} onPress={() => selectTab('overall')} />
