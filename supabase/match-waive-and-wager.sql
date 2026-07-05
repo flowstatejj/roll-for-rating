@@ -35,6 +35,13 @@ alter table public.matches add constraint referee_mode
 -- 2. _settle_match — the scoring engine (Elo + wager + complete). Shared by the
 --    referee path and the waived-confirm path. Callers do their own auth first.
 -- ---------------------------------------------------------------------------
+-- NOTE (2026-07-04): this 5-arg overload used to carry a SEPARATE classic-Elo
+-- copy (full K=32, NO gap damping) -- the reason regular + dispute matches still
+-- swung big (a 400 upsetting a 2000 moved +/-32 here even after the 6-arg was
+-- made symmetric). It now delegates to the SINGLE authoritative symmetric engine
+-- (the 6-arg _settle_match), so every settlement path -- referee, waived-confirm,
+-- and dispute (which call this 5-arg form) -- uses the same symmetric stake:
+-- winner +T / loser -T, T = K*E(underdog), never more for the higher-rated side.
 create or replace function public._settle_match(
   p_match_id uuid, p_winner_id uuid, p_result result_type,
   p_method text, p_notes text
@@ -42,65 +49,8 @@ create or replace function public._settle_match(
 returns public.matches
 language plpgsql security definer set search_path = public
 as $$
-declare
-  m public.matches; k constant integer := 32;
-  c_rating integer; o_rating integer;
-  c_score double precision; o_score double precision;
-  c_expected double precision; o_expected double precision;
-  c_new integer; o_new integer;
 begin
-  select * into m from public.matches where id = p_match_id for update;
-
-  select rating into c_rating from public.profiles where id = m.challenger_id for update;
-  select rating into o_rating from public.profiles where id = m.opponent_id  for update;
-
-  if p_result = 'draw' then
-    c_score := 0.0; o_score := 0.0;            -- draw penalised like a loss for both
-  elsif p_winner_id = m.challenger_id then
-    c_score := 1.0; o_score := 0.0;
-  else
-    c_score := 0.0; o_score := 1.0;
-  end if;
-
-  c_expected := public.elo_expected(c_rating, o_rating);
-  o_expected := public.elo_expected(o_rating, c_rating);
-  c_new := round(c_rating + k * (c_score - c_expected));
-  o_new := round(o_rating + k * (o_score - o_expected));
-
-  if p_result <> 'draw' and coalesce(m.wager, 0) > 0 then
-    if p_winner_id = m.challenger_id then
-      c_new := c_new + m.wager; o_new := o_new - m.wager;
-    else
-      o_new := o_new + m.wager; c_new := c_new - m.wager;
-    end if;
-  end if;
-
-  c_new := greatest(100, c_new);
-  o_new := greatest(100, o_new);
-
-  update public.profiles
-     set rating = c_new,
-         wins   = wins   + (case when p_result <> 'draw' and p_winner_id = m.challenger_id then 1 else 0 end),
-         losses = losses + (case when p_result <> 'draw' and p_winner_id = m.opponent_id  then 1 else 0 end),
-         draws  = draws  + (case when p_result = 'draw' then 1 else 0 end)
-   where id = m.challenger_id;
-
-  update public.profiles
-     set rating = o_new,
-         wins   = wins   + (case when p_result <> 'draw' and p_winner_id = m.opponent_id  then 1 else 0 end),
-         losses = losses + (case when p_result <> 'draw' and p_winner_id = m.challenger_id then 1 else 0 end),
-         draws  = draws  + (case when p_result = 'draw' then 1 else 0 end)
-   where id = m.opponent_id;
-
-  update public.matches
-     set status = 'completed', winner_id = p_winner_id, result = p_result,
-         method = p_method, notes = coalesce(p_notes, notes), result_proposed_by = null,
-         challenger_rating_before = c_rating, opponent_rating_before = o_rating,
-         challenger_rating_after = c_new, opponent_rating_after = o_new,
-         completed_at = now()
-   where id = p_match_id
-   returning * into m;
-  return m;
+  return public._settle_match(p_match_id, p_winner_id, p_result, p_method, p_notes, null::text);
 end; $$;
 
 -- SECURITY: _settle_match applies the Elo swing + wager transfer and marks the
