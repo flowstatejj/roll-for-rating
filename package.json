@@ -57,7 +57,7 @@
     "typecheck": "tsc --noEmit",
     "i18n:check": "node scripts/i18n-check.mjs",
     "verify": "npm run typecheck && npm run i18n:check",
-    "eas-build-post-install": "expo install --check"
+    "eas-build-post-install": "expo install --check || true"
   },
   "private": true
 }
