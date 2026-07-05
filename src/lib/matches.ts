@@ -37,6 +37,48 @@ export async function fetchPublicMatches(): Promise<MatchWithPeople[]> {
   ) as unknown as MatchWithPeople[];
 }
 
+/** Filters for the Watch feed search. */
+export interface WatchFilters {
+  search?: string;
+  level?: string; // gym | city | state | country | continent | world
+  belt?: BeltRank | null;
+  minRating?: number | null;
+  maxRating?: number | null;
+  submission?: string | null;
+}
+
+/**
+ * Search + filter public completed matches. The RPC does the filtering (name
+ * search on either competitor, geo scope viewer-relative, belt, rating band,
+ * submission) and returns ordered ids; we fetch the full cards for them, hide
+ * blocked users, and preserve the RPC's newest-first order.
+ */
+export async function searchPublicMatches(filters: WatchFilters = {}): Promise<MatchWithPeople[]> {
+  const { data: idRows, error } = await supabase.rpc('search_public_match_ids', {
+    p_search: filters.search?.trim() || null,
+    p_level: filters.level || 'world',
+    p_belt: filters.belt || null,
+    p_min_rating: filters.minRating ?? null,
+    p_max_rating: filters.maxRating ?? null,
+    p_submission: filters.submission || null,
+    p_limit: 50,
+  });
+  if (error) throw error;
+  const ids = ((idRows ?? []) as { id: string }[]).map((r) => r.id);
+  if (ids.length === 0) return [];
+
+  const [{ data, error: mErr }, blocked] = await Promise.all([
+    supabase.from('matches').select(MATCH_WITH_PEOPLE).in('id', ids),
+    fetchBlockedIds(),
+  ]);
+  if (mErr) throw mErr;
+  const order = new Map(ids.map((id, i) => [id, i]));
+  const hide = new Set(blocked);
+  return (data ?? [])
+    .filter((m: any) => !hide.has(m.challenger_id) && !hide.has(m.opponent_id))
+    .sort((a: any, b: any) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0)) as unknown as MatchWithPeople[];
+}
+
 /** Record one unique view (no-op if this viewer already viewed). */
 export async function recordMatchView(matchId: string, viewerId: string) {
   await supabase
