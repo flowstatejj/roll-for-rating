@@ -45,6 +45,7 @@ export interface WatchFilters {
   minRating?: number | null;
   maxRating?: number | null;
   submission?: string | null;
+  sort?: string; // recent | views | reactions | wager
 }
 
 /**
@@ -61,6 +62,7 @@ export async function searchPublicMatches(filters: WatchFilters = {}): Promise<M
     p_min_rating: filters.minRating ?? null,
     p_max_rating: filters.maxRating ?? null,
     p_submission: filters.submission || null,
+    p_sort: filters.sort || 'recent',
     p_limit: 50,
   });
   if (error) throw error;

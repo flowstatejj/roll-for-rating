@@ -7,6 +7,9 @@
 -- these ids. Run after quests-kingslayer.sql / geo helpers (uses resolved_geo +
 -- continent_for_country). Safe to re-run.
 -- ============================================================================
+-- Drop the older (pre-sort) signature if it exists so re-running is clean.
+drop function if exists public.search_public_match_ids(text, text, text, int, int, text, int);
+
 create or replace function public.search_public_match_ids(
   p_search     text default null,
   p_level      text default 'world',
@@ -14,6 +17,7 @@ create or replace function public.search_public_match_ids(
   p_min_rating int  default null,
   p_max_rating int  default null,
   p_submission text default null,
+  p_sort       text default 'recent',   -- recent | views | reactions | wager
   p_limit      int  default 50
 )
 returns table (id uuid)
@@ -34,7 +38,10 @@ language sql stable security definer set search_path = public as $$
       coalesce(nullif(btrim(po.city),''),    go.city)    o_city,
       coalesce(nullif(btrim(po.state),''),   go.state)   o_state,
       coalesce(nullif(btrim(po.country),''), go.country) o_country,
-      coalesce(public.continent_for_country(coalesce(nullif(btrim(po.country),''), go.country)), go.continent) o_cont
+      coalesce(public.continent_for_country(coalesce(nullif(btrim(po.country),''), go.country)), go.continent) o_cont,
+      coalesce(mt.wager, 0) as wager,
+      (select count(*) from public.match_views mv where mv.match_id = mt.id) as views,
+      (select count(*) from public.match_reactions mr where mr.match_id = mt.id) as reactions
     from public.matches mt
     join public.profiles pc on pc.id = mt.challenger_id
     left join public.gyms gc on gc.id = pc.gym_id
@@ -63,10 +70,14 @@ language sql stable security definer set search_path = public as $$
       or (p_level = 'country'   and v.country   is not null and (lower(m.c_country) = lower(v.country)   or lower(m.o_country) = lower(v.country)))
       or (p_level = 'continent' and v.continent is not null and (lower(m.c_cont)    = lower(v.continent) or lower(m.o_cont)    = lower(v.continent)))
     )
-  order by m.completed_at desc
+  order by
+    case when p_sort = 'views'     then m.views     end desc nulls last,
+    case when p_sort = 'reactions' then m.reactions end desc nulls last,
+    case when p_sort = 'wager'     then m.wager     end desc nulls last,
+    m.completed_at desc
   limit greatest(1, least(p_limit, 100));
 $$;
-grant execute on function public.search_public_match_ids(text, text, text, int, int, text, int) to authenticated;
+grant execute on function public.search_public_match_ids(text, text, text, int, int, text, text, int) to authenticated;
 
 notify pgrst, 'reload schema';
 select 'watch-search installed' as ok;
