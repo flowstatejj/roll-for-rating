@@ -2,6 +2,11 @@
 -- Roll for Rating — Mismatch damping on ROR changes
 -- Run after match-waive-and-wager.sql. Safe to re-run.
 --
+-- NOTE (2026-07-04): the _settle_match body here (mismatch-damped classic Elo) is
+-- SUPERSEDED by the symmetric-stake engine in ror-symmetric-stake.sql (run LAST).
+-- Do NOT re-run this file standalone after it, or you will revert the symmetric
+-- stake. Kept for history and the mismatch-damping reference used by the draw path.
+--
 -- The bigger the rating gap between the two competitors, the less ROR is risked
 -- OR gained — so a strong player can't stack rating by farming much weaker
 -- opponents (and also doesn't risk much against them). The wager transfer is

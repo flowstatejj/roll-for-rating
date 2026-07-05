@@ -1,28 +1,31 @@
 -- ============================================================================
--- Roll for Rating — Symmetric "smaller ROR" stake
--- Run AFTER tournaments-pro.sql (this recreates the same 6-arg _settle_match).
--- Safe to re-run.
+-- Roll for Rating -- Symmetric "smaller ROR" stake (AUTHORITATIVE settlement)
+-- Run LAST, after every other file that (re)defines _settle_match:
+--   schema.sql, ror-mismatch-scaling.sql, leagues.sql, match-waive-and-wager.sql,
+--   tournaments-pro.sql. Safe to re-run.
 --
--- WHY: with classic Elo, an upset is worth a lot. If a strong player loses to a
--- much weaker one they shed a big chunk of ROR, but only gain a sliver for
--- winning -- so there's no reason for the higher-rated player to ever roll a
--- lower-rated one. That kills cross-rating matchups.
+-- This is the single source of truth for how a decisive match moves ROR. Its
+-- 6-arg body is kept byte-identical to the one in tournaments-pro.sql on purpose:
+-- no matter which redefining migration is applied last, the result is the same
+-- symmetric stake. The 5-arg overload (referee / waived-confirm / dispute path)
+-- delegates to the 6-arg here, so EVERY settlement path settles identically.
 --
--- FIX: a decisive match now exchanges only the SMALLER ROR swing -- the amount
--- that would change hands if the higher-rated player won. least(c_expected,
--- o_expected) is the underdog's expected score, so the stake is K * E_underdog.
--- It is applied SYMMETRICALLY: the winner gains it, the loser loses the same.
---   * Even match  -> stake = K*0.5 = 16  (unchanged from before)
---   * 400 gap     -> stake ~= 3          (was: underdog +17 / favorite -17)
---   * 700+ gap    -> stake  = 1  (floor)
--- So both players can only ever win the smaller ROR or lose the smaller ROR:
--- the favorite no longer hemorrhages rating to an upset, and an upset no longer
--- pays a windfall. No disincentive to play down, no farming by playing down.
+-- WHY: with classic Elo an upset is worth a lot -- a strong player who loses to a
+-- much weaker one sheds a big chunk of ROR but only gains a sliver for winning,
+-- so there's no reason to ever roll a lower-rated opponent. That kills
+-- cross-rating matchups. (It was also split across two overloads that had
+-- drifted: the 5-arg regular/dispute path was still full-K classic Elo.)
 --
+-- FIX: a decisive match exchanges only the SMALLER swing -- ONE symmetric
+-- transfer T = K * E(underdog) (+ wager), clamped to what the loser can actually
+-- pay down to the 100 floor. Winner +T, loser -T, so the higher-rated player
+-- NEVER gains or loses more than the lower-rated opponent, even at the floor.
+--   * Even match -> stake = K*0.5 = 16
+--   * 400 gap    -> stake ~= 3
+--   * 1000+ gap  -> stake  = 1  (floor)
 -- Draws are unchanged (still damped toward the loss side, to discourage
--- stalling). Wagers, the league/tournament CASUAL fork, the W/L record, the
--- 100-point floor, and the every-decisive-result-moves-at-least-1 rule all
--- behave exactly as before.
+-- stalling). The league/tournament CASUAL fork, the W/L record, and the
+-- 100-point floor behave as before.
 -- ============================================================================
 
 create or replace function public._settle_match(
@@ -38,7 +41,7 @@ declare
   c_score double precision; o_score double precision;
   c_expected double precision; o_expected double precision;
   c_new integer; o_new integer; c_delta integer; o_delta integer;
-  mismatch double precision; is_casual boolean; stake integer;
+  mismatch double precision; is_casual boolean; stake integer; transfer integer;
 begin
   select * into m from public.matches where id = p_match_id for update;
 
@@ -62,34 +65,27 @@ begin
   mismatch := greatest(0.0, 1 - abs(c_rating - o_rating) / 1000.0);
 
   if p_result = 'draw' then
-    -- Draw: keep damping both toward the loss side (discourages stalling).
+    -- Draw: damp both toward the loss side (discourages stalling). Unchanged.
     c_delta := round(k * (c_score - c_expected) * mismatch);
     o_delta := round(k * (o_score - o_expected) * mismatch);
+    c_new := greatest(100, c_rating + c_delta);
+    o_new := greatest(100, o_rating + o_delta);
   else
-    -- Decisive: both players stake only the SMALLER ROR swing. least(expected)
-    -- is the underdog's expected score -> K * E_underdog. Symmetric: winner
-    -- gains the stake, loser loses the same stake (always >= 1).
+    -- Decisive: ONE symmetric transfer T = K*E(underdog) + wager, clamped to what
+    -- the loser can actually pay down to the 100 floor. Winner +T, loser -T, so the
+    -- higher-rated player NEVER gains or loses more than the lower-rated opponent.
     stake := greatest(1, round(k * least(c_expected, o_expected)));
+    transfer := stake + (case when coalesce(m.wager, 0) > 0 then m.wager else 0 end);
     if p_winner_id = m.challenger_id then
-      c_delta := stake; o_delta := -stake;
+      transfer := least(transfer, greatest(0, o_rating - 100));  -- loser = opponent
+      c_new := c_rating + transfer;
+      o_new := o_rating - transfer;
     else
-      o_delta := stake; c_delta := -stake;
+      transfer := least(transfer, greatest(0, c_rating - 100));  -- loser = challenger
+      o_new := o_rating + transfer;
+      c_new := c_rating - transfer;
     end if;
   end if;
-
-  c_new := c_rating + c_delta;
-  o_new := o_rating + o_delta;
-
-  if p_result <> 'draw' and coalesce(m.wager, 0) > 0 then
-    if p_winner_id = m.challenger_id then
-      c_new := c_new + m.wager; o_new := o_new - m.wager;
-    else
-      o_new := o_new + m.wager; c_new := c_new - m.wager;
-    end if;
-  end if;
-
-  c_new := greatest(100, c_new);
-  o_new := greatest(100, o_new);
 
   if is_casual then
     c_new := c_rating; o_new := o_rating;
@@ -120,5 +116,22 @@ begin
   return m;
 end; $$;
 
+-- The 5-arg overload (referee / waived-confirm / dispute path) delegates to the
+-- 6-arg above, so the regular record/confirm and dispute paths settle identically.
+create or replace function public._settle_match(
+  p_match_id uuid, p_winner_id uuid, p_result result_type,
+  p_method text, p_notes text
+)
+returns public.matches
+language plpgsql security definer set search_path = public
+as $$
+begin
+  return public._settle_match(p_match_id, p_winner_id, p_result, p_method, p_notes, null::text);
+end; $$;
+
+-- Internal-only helper: never client-callable (its callers authorize first).
+revoke execute on function public._settle_match(uuid, uuid, result_type, text, text) from public, anon, authenticated;
+revoke execute on function public._settle_match(uuid, uuid, result_type, text, text, text) from public, anon, authenticated;
+
 notify pgrst, 'reload schema';
-select 'ror-symmetric-stake installed' as ok;
+select 'ror-symmetric-stake (unified, transfer-floor) installed' as ok;

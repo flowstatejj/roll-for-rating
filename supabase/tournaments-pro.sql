@@ -179,7 +179,7 @@ declare
   c_score double precision; o_score double precision;
   c_expected double precision; o_expected double precision;
   c_new integer; o_new integer; c_delta integer; o_delta integer;
-  mismatch double precision; is_casual boolean;
+  mismatch double precision; is_casual boolean; stake integer; transfer integer;
 begin
   select * into m from public.matches where id = p_match_id for update;
 
@@ -201,30 +201,31 @@ begin
   c_expected := public.elo_expected(c_rating, o_rating);
   o_expected := public.elo_expected(o_rating, c_rating);
   mismatch := greatest(0.0, 1 - abs(c_rating - o_rating) / 1000.0);
-  c_delta := round(k * (c_score - c_expected) * mismatch);
-  o_delta := round(k * (o_score - o_expected) * mismatch);
 
-  if p_result <> 'draw' then
+  if p_result = 'draw' then
+    -- Draw: damp both toward the loss side (discourages stalling). Unchanged.
+    c_delta := round(k * (c_score - c_expected) * mismatch);
+    o_delta := round(k * (o_score - o_expected) * mismatch);
+    c_new := greatest(100, c_rating + c_delta);
+    o_new := greatest(100, o_rating + o_delta);
+  else
+    -- Decisive: ONE symmetric transfer T = K*E(underdog) + wager, clamped to what
+    -- the loser can actually pay down to the 100 floor. Winner +T, loser -T, so the
+    -- higher-rated player NEVER gains or loses more than the lower-rated opponent
+    -- (even at the floor). least(c_expected,o_expected) = the underdog's expected
+    -- score, so the stake shrinks with the gap: even = 16, 400 gap ~ 3, 1000+ = 1.
+    stake := greatest(1, round(k * least(c_expected, o_expected)));
+    transfer := stake + (case when coalesce(m.wager, 0) > 0 then m.wager else 0 end);
     if p_winner_id = m.challenger_id then
-      c_delta := greatest(1, c_delta); o_delta := least(-1, o_delta);
+      transfer := least(transfer, greatest(0, o_rating - 100));  -- loser = opponent
+      c_new := c_rating + transfer;
+      o_new := o_rating - transfer;
     else
-      o_delta := greatest(1, o_delta); c_delta := least(-1, c_delta);
+      transfer := least(transfer, greatest(0, c_rating - 100));  -- loser = challenger
+      o_new := o_rating + transfer;
+      c_new := c_rating - transfer;
     end if;
   end if;
-
-  c_new := c_rating + c_delta;
-  o_new := o_rating + o_delta;
-
-  if p_result <> 'draw' and coalesce(m.wager, 0) > 0 then
-    if p_winner_id = m.challenger_id then
-      c_new := c_new + m.wager; o_new := o_new - m.wager;
-    else
-      o_new := o_new + m.wager; c_new := c_new - m.wager;
-    end if;
-  end if;
-
-  c_new := greatest(100, c_new);
-  o_new := greatest(100, o_new);
 
   if is_casual then
     c_new := c_rating; o_new := o_rating;

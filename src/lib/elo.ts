@@ -1,37 +1,38 @@
-// Client-side mirror of the server Elo math (schema.sql / challenges.sql /
-// match-waive-and-wager.sql) so the app can preview swings before a match.
-// Keep K / FLOOR / MISMATCH_* in sync with the DB (_settle_match).
+// Client-side mirror of the server settlement math (supabase _settle_match,
+// unified on the symmetric smaller-swing stake) so the app can preview swings
+// before a match. Keep K / FLOOR / MIN_DECISIVE and the stake formula in sync
+// with the DB _settle_match (the decisive branch).
 const K = 32;
 const FLOOR = 100;
-// Mismatch damping: the bigger the rating gap, the less ROR is risked or gained,
-// so strong players can't farm rating off much weaker ones. Tunable.
-const MISMATCH_SCALE = 1000; // gap (in points) over which the factor falls to 0
 const MIN_DECISIVE = 1; // a decisive result always moves ROR by at least this many points
 
 export function expectedScore(rating: number, opponent: number): number {
   return 1 / (1 + 10 ** ((opponent - rating) / 400));
 }
 
-/** 1.0 for an even match, tapering linearly to 0 as the rating gap reaches MISMATCH_SCALE. */
-export function mismatchFactor(rating: number, opponent: number): number {
-  return Math.max(0, 1 - Math.abs(rating - opponent) / MISMATCH_SCALE);
+/**
+ * Symmetric decisive stake: K * E(underdog). Both players risk/earn only the
+ * SMALLER swing, so the higher-rated player never gains or loses more than the
+ * lower-rated opponent. min(e, 1 - e) is the underdog's expected score.
+ *   even match -> 16, 400 gap -> ~3, 1000+ gap -> 1 (floor).
+ */
+export function decisiveStake(rating: number, opponent: number): number {
+  const e = expectedScore(rating, opponent);
+  return Math.max(MIN_DECISIVE, Math.round(K * Math.min(e, 1 - e)));
 }
 
 /**
- * Projected rating change for `rating` vs `opponent` on a win or a loss,
- * including the mismatch damping, a ±1 floor on decisive results, the wager
- * transfer, and the rating floor.
+ * Projected rating change for `rating` vs `opponent` on a win or a loss. The
+ * match is a SINGLE transfer T = stake + wager (winner +T, loser -T), clamped to
+ * what the loser can actually pay down to the 100 floor -- so neither side ever
+ * moves more than the other, even at the floor. On a win the loser is `opponent`;
+ * on a loss the loser is us. Mirrors the server _settle_match decisive branch.
  */
 export function projectSwing(rating: number, opponent: number, wager = 0): { win: number; loss: number } {
-  const e = expectedScore(rating, opponent);
-  const m = mismatchFactor(rating, opponent);
-  const winDelta = Math.max(MIN_DECISIVE, Math.round(K * (1 - e) * m));
-  const lossDelta = Math.min(-MIN_DECISIVE, Math.round(K * (0 - e) * m));
-  const winRaw = rating + winDelta + wager;
-  const lossRaw = rating + lossDelta - wager;
+  const t = decisiveStake(rating, opponent) + wager;
   return {
-    win: Math.max(FLOOR, winRaw) - rating,
-    loss: Math.max(FLOOR, lossRaw) - rating,
+    win: Math.min(t, Math.max(0, opponent - FLOOR)),
+    loss: -Math.min(t, Math.max(0, rating - FLOOR)),
   };
 }
 

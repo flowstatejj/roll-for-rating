@@ -3,6 +3,11 @@
 -- Run in the Supabase SQL editor AFTER schema.sql, match-waive-and-wager.sql,
 -- ror-mismatch-scaling.sql, seasons.sql. Safe to re-run.
 --
+-- NOTE (2026-07-04): the _settle_match body defined below is HISTORICAL. The
+-- authoritative rating settlement is the symmetric-stake engine in
+-- ror-symmetric-stake.sql (run LAST). Do NOT re-run this file standalone after
+-- it, or you will revert the symmetric stake for the 6-arg path.
+--
 -- A league is a local club (beer league, kids league, …) that meets on a set
 -- weekday/time/place, runs a multi-week season, auto-pairs members each week,
 -- and keeps W/L/D standings. A league is either:
