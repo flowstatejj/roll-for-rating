@@ -14,33 +14,55 @@
 -- to show a clean "that username is taken" message before submitting.
 -- ============================================================================
 
+-- AUTHORITATIVE handle_new_user: this is the single definition that supersedes
+-- the ones in schema.sql / belt-starting-rating.sql / minors.sql / family-plan.sql.
+-- It unions ALL of their behavior so nothing regresses regardless of run order:
+--   * username uniquify (so a collision never surfaces the opaque signup error),
+--   * belt-based starting rating,
+--   * birthdate + participating,
+--   * parent-consent seeding for a self-registered minor.
+-- Run this LAST (after minors.sql + family-plan.sql + belt-starting-rating.sql).
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
 security definer set search_path = public
 as $$
 declare
-  base  text;
-  uname text;
-  n     int := 0;
+  base   text := coalesce(nullif(btrim(new.raw_user_meta_data ->> 'username'), ''),
+                          'user_' || left(new.id::text, 8));
+  uname  text := base;
+  n      int := 0;
+  bd     date      := nullif(new.raw_user_meta_data ->> 'birthdate', '')::date;
+  v_belt belt_rank := coalesce((new.raw_user_meta_data ->> 'belt_rank')::belt_rank, 'white');
+  v_part boolean   := coalesce((new.raw_user_meta_data ->> 'participating')::boolean, true);
 begin
-  base := coalesce(nullif(btrim(new.raw_user_meta_data ->> 'username'), ''),
-                   'user_' || left(new.id::text, 8));
-  uname := base;
   -- Never raise on a duplicate username (GoTrue would show the opaque
   -- "Database error saving new user"); append a suffix until it's unique.
-  while exists (select 1 from public.profiles where username = uname) loop
+  while exists (select 1 from public.profiles where lower(username) = lower(uname)) loop
     n := n + 1;
     uname := base || n::text;
   end loop;
 
-  insert into public.profiles (id, username, display_name, belt_rank)
+  insert into public.profiles (id, username, display_name, belt_rank, rating, birthdate, participating)
   values (
     new.id,
     uname,
-    coalesce(new.raw_user_meta_data ->> 'display_name', new.raw_user_meta_data ->> 'username', 'New Grappler'),
-    coalesce((new.raw_user_meta_data ->> 'belt_rank')::belt_rank, 'white')
+    coalesce(nullif(btrim(new.raw_user_meta_data ->> 'display_name'), ''), base, 'New Grappler'),
+    v_belt,
+    public.starting_rating(v_belt),
+    bd,
+    v_part
   );
+
+  -- Self-registered minor (teen) with a parent email → seed the consent row.
+  -- (A separate profiles trigger fills in age_tier / is_minor / consent_status.)
+  if public.tier_for(bd) <> 'adult'
+     and nullif(new.raw_user_meta_data ->> 'parent_email', '') is not null then
+    insert into public.parent_consents (user_id, parent_email)
+    values (new.id, new.raw_user_meta_data ->> 'parent_email')
+    on conflict (user_id) do nothing;
+  end if;
+
   return new;
 end;
 $$;
