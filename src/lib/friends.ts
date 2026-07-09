@@ -47,6 +47,20 @@ export async function fetchMyFriendRequests(): Promise<FriendProfile[]> {
   return (data ?? []) as FriendProfile[];
 }
 
+/** User ids I have sent a still-pending friend request to (for "Pending" UI). */
+export async function fetchMyPendingSentIds(): Promise<string[]> {
+  const { data: auth } = await supabase.auth.getUser();
+  const me = auth.user?.id;
+  if (!me) return [];
+  const { data, error } = await supabase
+    .from('friendships')
+    .select('addressee')
+    .eq('requester', me)
+    .eq('status', 'pending');
+  if (error) throw error;
+  return (data ?? []).map((r) => r.addressee as string);
+}
+
 /** Relationship between the signed-in user and another user. */
 export async function fetchFriendshipStatus(userId: string): Promise<FriendStatus> {
   const { data, error } = await supabase.rpc('friendship_status', { p_user: userId });

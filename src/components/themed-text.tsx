@@ -13,6 +13,10 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
 
   return (
     <Text
+      // Cap OS accessibility font scaling: huge Android font sizes otherwise
+      // blow up fixed layouts (buttons wrapping mid-word, cards overflowing).
+      // Callers can still override via their own maxFontSizeMultiplier prop.
+      maxFontSizeMultiplier={1.2}
       style={[
         { color: theme[themeColor ?? 'text'] },
         type === 'default' && styles.default,
