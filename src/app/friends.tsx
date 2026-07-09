@@ -11,6 +11,7 @@ import { useTranslation } from '@/lib/i18n';
 import {
   fetchMyFriendRequests,
   fetchMyFriends,
+  fetchMyPendingSentIds,
   removeFriend,
   respondFriendRequest,
   sendFriendRequest,
@@ -39,9 +40,16 @@ export default function FriendsScreen() {
 
   const load = useCallback(async () => {
     try {
-      const [f, r] = await Promise.all([fetchMyFriends(), fetchMyFriendRequests()]);
+      const [f, r, sent] = await Promise.all([
+        fetchMyFriends(),
+        fetchMyFriendRequests(),
+        fetchMyPendingSentIds().catch(() => [] as string[]),
+      ]);
       setFriends(f);
       setRequests(r);
+      // Seed with requests already pending from previous sessions so the Find
+      // tab shows "Pending" instead of offering to add the same person again.
+      setRequested((s) => new Set([...s, ...sent]));
     } catch (e) {
       console.warn('friends load failed', e);
     } finally {
@@ -174,8 +182,8 @@ export default function FriendsScreen() {
                   </Pressable>
                   {sent ? (
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: Spacing.two }}>
-                      <Ionicons name="checkmark" size={16} color={theme.success} />
-                      <ThemedText type="small" themeColor="textSecondary">{t('frn.sent')}</ThemedText>
+                      <Ionicons name="time-outline" size={16} color={theme.textSecondary} />
+                      <ThemedText type="small" themeColor="textSecondary">{t('frn.pending')}</ThemedText>
                     </View>
                   ) : (
                     <Button label={t('frn.add')} icon="person-add" variant="secondary" onPress={() => addFriend(p)} />

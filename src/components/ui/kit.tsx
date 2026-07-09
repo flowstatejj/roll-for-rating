@@ -88,7 +88,10 @@ export function Button({
       ) : (
         <View style={styles.buttonInner}>
           {icon && <Ionicons name={icon} size={18} color={fg} />}
-          <ThemedText style={{ color: fg, fontWeight: '800', fontSize: 16, letterSpacing: 0.2 }}>
+          <ThemedText
+            numberOfLines={1}
+            maxFontSizeMultiplier={1.1}
+            style={{ color: fg, fontWeight: '800', fontSize: 16, letterSpacing: 0.2, flexShrink: 1 }}>
             {label}
           </ThemedText>
         </View>
@@ -130,6 +133,7 @@ export const TextField = forwardRef<TextInput, TextInputProps & { label?: string
         <TextInput
           ref={ref}
           placeholderTextColor={theme.textSecondary}
+          maxFontSizeMultiplier={1.2}
           style={[
             styles.input,
             { color: theme.text, backgroundColor: theme.backgroundElement, borderColor: theme.border },
