@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { getCachedUser, supabase } from './supabase';
 
 // A friend (or pending requester) with the profile fields the UI shows.
 export interface FriendProfile {
@@ -49,8 +49,8 @@ export async function fetchMyFriendRequests(): Promise<FriendProfile[]> {
 
 /** User ids I have sent a still-pending friend request to (for "Pending" UI). */
 export async function fetchMyPendingSentIds(): Promise<string[]> {
-  const { data: auth } = await supabase.auth.getUser();
-  const me = auth.user?.id;
+  const user = await getCachedUser();
+  const me = user?.id;
   if (!me) return [];
   const { data, error } = await supabase
     .from('friendships')

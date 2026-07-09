@@ -1,6 +1,6 @@
 import { resolveGeo, type Geo } from './geo';
 import { fetchBlockedIds } from './safety';
-import { supabase } from './supabase';
+import { getCachedUser, supabase } from './supabase';
 import type { BeltRank, MatchWithPeople, Profile, ResultType } from './types';
 
 export interface WagerLeader {
@@ -488,8 +488,9 @@ export async function searchProfiles(query: string, excludeIds: string[]): Promi
   if (q.length > 0) {
     req = req.or(`username.ilike.%${q}%,display_name.ilike.%${q}%`);
   }
-  const [{ data, error }, blocked] = await Promise.all([req, fetchBlockedIds()]);
+  const [{ data, error }, blocked, me] = await Promise.all([req, fetchBlockedIds(), getCachedUser()]);
   if (error) throw error;
   const hide = new Set([...excludeIds, ...blocked]);
+  if (me) hide.add(me.id); // you should never find yourself (friends, opponents, invites)
   return (data ?? []).filter((p) => !hide.has(p.id));
 }
