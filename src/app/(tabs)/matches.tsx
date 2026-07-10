@@ -20,16 +20,19 @@ const FILTERS: { key: Filter; tkey: string }[] = [
   { key: 'completed', tkey: 'matches.filterCompleted' },
 ];
 
+const HISTORY_STATUSES = new Set(['completed', 'declined', 'cancelled']);
+
 export default function MatchesScreen() {
   const { session } = useAuth();
   const theme = useTheme();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const userId = session?.user.id;
   const [matches, setMatches] = useState<MatchWithPeople[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<Filter>('all');
+  const [showOlder, setShowOlder] = useState(false);
 
   const load = useCallback(async () => {
     if (!userId) return;
@@ -67,11 +70,65 @@ export default function MatchesScreen() {
 
   if (loading) return <Loading />;
 
-  const filtered = matches.filter((m) => {
-    if (filter === 'active') return m.status === 'pending_opponent' || m.status === 'pending_referee';
-    if (filter === 'completed') return m.status === 'completed';
-    return true;
-  });
+  // Is the next move on the current user? (Juniors' matches never are — the
+  // guardian isn't a participant, so they land in "In progress" instead.)
+  function needsMe(m: MatchWithPeople): boolean {
+    if (m.status === 'pending_opponent') return m.opponent_id === userId;
+    if (m.status === 'pending_referee') return m.referee_id === userId;
+    if (m.status === 'pending_confirmation')
+      return (m.challenger_id === userId || m.opponent_id === userId) && m.result_proposed_by !== userId;
+    return false;
+  }
+
+  const action: MatchWithPeople[] = [];
+  const inProgress: MatchWithPeople[] = [];
+  const history: MatchWithPeople[] = [];
+  for (const m of matches) {
+    if (HISTORY_STATUSES.has(m.status)) {
+      if (filter === 'active') continue;
+      if (filter === 'completed' && m.status !== 'completed') continue;
+      history.push(m);
+    } else {
+      if (filter === 'completed') continue;
+      (needsMe(m) ? action : inProgress).push(m);
+    }
+  }
+
+  // History grouped by month, newest first. Sort by the date shown in the
+  // group (completion when there is one) so groups stay contiguous.
+  const when = (m: MatchWithPeople) => new Date(m.completed_at ?? m.created_at);
+  history.sort((a, b) => when(b).getTime() - when(a).getTime());
+  const months: { title: string; items: MatchWithPeople[] }[] = [];
+  for (const m of history) {
+    const raw = when(m).toLocaleDateString(lang, { month: 'long', year: 'numeric' });
+    const title = raw.charAt(0).toUpperCase() + raw.slice(1); // es/pt/fr months are lowercase
+    const last = months[months.length - 1];
+    if (last && last.title === title) last.items.push(m);
+    else months.push({ title, items: [m] });
+  }
+  const visibleMonths = showOlder ? months : months.slice(0, 2);
+  const hiddenOlder = showOlder ? 0 : months.slice(2).reduce((s, g) => s + g.items.length, 0);
+
+  function section(key: string, header: string, headerColor: string | undefined, items: MatchWithPeople[]) {
+    if (items.length === 0) return null;
+    return (
+      <View key={key} style={{ gap: Spacing.one }}>
+        <ThemedText type="smallBold" themeColor={headerColor ? undefined : 'textSecondary'} style={headerColor ? { color: headerColor } : undefined}>
+          {header}
+        </ThemedText>
+        <Card style={{ paddingVertical: Spacing.one }}>
+          {items.map((m, i) => (
+            <View key={m.id}>
+              {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
+              <MatchRow match={m} currentUserId={userId!} />
+            </View>
+          ))}
+        </Card>
+      </View>
+    );
+  }
+
+  const empty = action.length + inProgress.length + history.length === 0;
 
   return (
     <Screen refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.text} />}>
@@ -103,17 +160,21 @@ export default function MatchesScreen() {
 
       {error ? (
         <ErrorState onRetry={load} />
-      ) : filtered.length === 0 ? (
+      ) : empty ? (
         <EmptyState icon="list-outline" title={t('matches.emptyTitle')} subtitle={t('matches.emptySub')} />
       ) : (
-        <Card style={{ paddingVertical: Spacing.one }}>
-          {filtered.map((m, i) => (
-            <View key={m.id}>
-              {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
-              <MatchRow match={m} currentUserId={userId!} />
-            </View>
-          ))}
-        </Card>
+        <View style={{ gap: Spacing.three }}>
+          {section('action', t('matches.needsAction'), theme.accent, action)}
+          {section('progress', t('matches.inProgress'), undefined, inProgress)}
+          {visibleMonths.map((g) => section(g.title, g.title, undefined, g.items))}
+          {hiddenOlder > 0 && (
+            <Pressable
+              onPress={() => setShowOlder(true)}
+              style={[styles.older, { borderColor: theme.tileBorder }]}>
+              <ThemedText type="smallBold" themeColor="textSecondary">{t('matches.showOlder')}</ThemedText>
+            </Pressable>
+          )}
+        </View>
       )}
     </Screen>
   );
@@ -123,4 +184,5 @@ const styles = StyleSheet.create({
   filters: { flexDirection: 'row', gap: Spacing.two },
   chip: { paddingVertical: Spacing.two, paddingHorizontal: Spacing.three, borderRadius: 999, borderWidth: 1 },
   divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.one },
+  older: { alignSelf: 'center', paddingVertical: Spacing.two, paddingHorizontal: Spacing.four, borderRadius: 999, borderWidth: 1 },
 });
