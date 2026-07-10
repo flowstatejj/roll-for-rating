@@ -97,8 +97,13 @@ export default function NewMatchScreen() {
   ].filter(Boolean) as string[];
 
   const runSearch = useCallback(async () => {
+    // Show no one until the user searches; then only the 5 best matches.
+    if (!query.trim()) {
+      setResults([]);
+      return;
+    }
     try {
-      setResults(await searchProfiles(query, excludeIds));
+      setResults((await searchProfiles(query, excludeIds)).slice(0, 5));
     } catch (e) {
       console.warn('search failed', e);
     }
@@ -295,7 +300,7 @@ export default function NewMatchScreen() {
         ))}
         {results.length === 0 && (
           <ThemedText themeColor="textSecondary" style={{ textAlign: 'center', paddingVertical: Spacing.three }}>
-            {t('mn.noMatches')}
+            {query.trim() ? t('mn.noMatches') : t('mn.typeToSearch')}
           </ThemedText>
         )}
       </View>
