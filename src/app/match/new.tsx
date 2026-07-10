@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Switch, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, Keyboard, Pressable, StyleSheet, Switch, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Avatar, BeltChip, Button, Card, Screen, TextField } from '@/components/ui/kit';
@@ -41,6 +41,7 @@ export default function NewMatchScreen() {
   const [opponent, setOpponent] = useState<Profile | null>(null);
   const [referee, setReferee] = useState<Profile | null>(null);
   const [active, setActive] = useState<Slot>('opponent');
+  const searchRef = useRef<TextInput>(null);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Profile[]>([]);
   const [wager, setWager] = useState('');
@@ -121,15 +122,28 @@ export default function NewMatchScreen() {
     if (opponent && !opponentInBand && wager) setWager('');
   }, [opponent, opponentInBand, wager]);
 
+  // Tapping a slot bubble both selects it and pulls up the keyboard so the
+  // user can start typing immediately (the search field sits right below the
+  // bubbles, so they stay in view above the keyboard).
+  function focusSlot(slot: Slot) {
+    setActive(slot);
+    searchRef.current?.focus();
+  }
+
   function choose(p: Profile) {
+    let done: boolean;
     if (active === 'opponent') {
       setOpponent(p);
-      if (!referee) setActive('referee');
+      done = !!referee || waiveRef;
+      if (!done) setActive('referee');
     } else {
       setReferee(p);
-      if (!opponent) setActive('opponent');
+      done = !!opponent;
+      if (!done) setActive('opponent');
     }
     setQuery('');
+    // Both slots filled — drop the keyboard so the rest of the form shows.
+    if (done) Keyboard.dismiss();
   }
 
   async function create() {
@@ -218,7 +232,7 @@ export default function NewMatchScreen() {
           label={t('mn.opponent')}
           person={opponent}
           active={active === 'opponent'}
-          onPress={() => setActive('opponent')}
+          onPress={() => focusSlot('opponent')}
           onClear={() => setOpponent(null)}
         />
         {!waiveRef && (
@@ -226,9 +240,45 @@ export default function NewMatchScreen() {
             label={t('mn.referee')}
             person={referee}
             active={active === 'referee'}
-            onPress={() => setActive('referee')}
+            onPress={() => focusSlot('referee')}
             onClear={() => setReferee(null)}
           />
+        )}
+      </View>
+
+      {/* Search lives directly under the bubbles so both stay visible above
+          the keyboard when a slot is tapped. */}
+      <TextField
+        ref={searchRef}
+        label={active === 'opponent' ? t('mn.searchOpponent') : t('mn.searchReferee')}
+        value={query}
+        onChangeText={setQuery}
+        autoCapitalize="none"
+        placeholder={t('mn.searchPlaceholder')}
+      />
+
+      <View style={{ gap: Spacing.two }}>
+        {results.map((p) => (
+          <Pressable key={p.id} onPress={() => choose(p)}>
+            <Card style={styles.resultRow}>
+              <Avatar name={p.display_name} size={40} />
+              <View style={{ flex: 1, gap: 2 }}>
+                <ThemedText style={{ fontWeight: '700' }}>{p.display_name}</ThemedText>
+                <View style={{ flexDirection: 'row', gap: Spacing.two, alignItems: 'center' }}>
+                  <BeltChip belt={p.belt_rank} size="sm" />
+                  <ThemedText type="small" themeColor="textSecondary">
+                    @{p.username} · {p.rating}
+                  </ThemedText>
+                </View>
+              </View>
+              <Ionicons name="add-circle-outline" size={24} color={theme.accent} />
+            </Card>
+          </Pressable>
+        ))}
+        {results.length === 0 && (
+          <ThemedText themeColor="textSecondary" style={{ textAlign: 'center', paddingVertical: Spacing.three }}>
+            {query.trim() ? t('mn.noMatches') : t('mn.typeToSearch')}
+          </ThemedText>
         )}
       </View>
 
@@ -271,39 +321,6 @@ export default function NewMatchScreen() {
           )}
         </Card>
       )}
-
-      <TextField
-        label={active === 'opponent' ? t('mn.searchOpponent') : t('mn.searchReferee')}
-        value={query}
-        onChangeText={setQuery}
-        autoCapitalize="none"
-        placeholder={t('mn.searchPlaceholder')}
-      />
-
-      <View style={{ gap: Spacing.two }}>
-        {results.map((p) => (
-          <Pressable key={p.id} onPress={() => choose(p)}>
-            <Card style={styles.resultRow}>
-              <Avatar name={p.display_name} size={40} />
-              <View style={{ flex: 1, gap: 2 }}>
-                <ThemedText style={{ fontWeight: '700' }}>{p.display_name}</ThemedText>
-                <View style={{ flexDirection: 'row', gap: Spacing.two, alignItems: 'center' }}>
-                  <BeltChip belt={p.belt_rank} size="sm" />
-                  <ThemedText type="small" themeColor="textSecondary">
-                    @{p.username} · {p.rating}
-                  </ThemedText>
-                </View>
-              </View>
-              <Ionicons name="add-circle-outline" size={24} color={theme.accent} />
-            </Card>
-          </Pressable>
-        ))}
-        {results.length === 0 && (
-          <ThemedText themeColor="textSecondary" style={{ textAlign: 'center', paddingVertical: Spacing.three }}>
-            {query.trim() ? t('mn.noMatches') : t('mn.typeToSearch')}
-          </ThemedText>
-        )}
-      </View>
 
       {/* Wagering is adults-only (hidden for every minor, when a junior competes, and in leagues) */}
       {!profile?.is_minor && !competingAsJunior && !inLeague && (
