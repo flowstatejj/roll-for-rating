@@ -111,7 +111,76 @@ export default function NotificationsScreen() {
     return m;
   }, [items]);
 
+  const totalUnread = unreadByTab.challenges + unreadByTab.messages + unreadByTab.friends + unreadByTab.cancelled;
+
+  function markAllRead() {
+    const unread = itemsRef.current.filter((n) => !n.read);
+    if (unread.length === 0) return;
+    setItems((prev) => prev.map((n) => (n.read ? n : { ...n, read: true })));
+    markRead(userId, unread.map((n) => n.id)).catch(() => {});
+  }
+
   const visible = useMemo(() => items.filter((n) => tabFor(n.type) === tab), [items, tab]);
+
+  // Spammy per-event types collapse into one row per conversation/match; the
+  // row shows the newest item and how many it stands for.
+  type Row = { key: string; latest: AppNotification; count: number; unread: boolean };
+  const rows = useMemo(() => {
+    const groupable = new Set(['reaction', 'message', 'league_message']);
+    const byKey = new Map<string, Row>();
+    const out: Row[] = [];
+    for (const n of visible) {
+      const key = groupable.has(n.type) ? `${n.type}:${n.match_id ?? n.data?.lid ?? 'x'}` : n.id;
+      const existing = byKey.get(key);
+      if (existing) {
+        existing.count += 1;
+        existing.unread = existing.unread || !n.read;
+      } else {
+        const row: Row = { key, latest: n, count: 1, unread: !n.read };
+        byKey.set(key, row);
+        out.push(row); // `visible` is newest-first, so `latest` is the newest
+      }
+    }
+    return out;
+  }, [visible]);
+
+  // Day sections, with anything older than two weeks behind "Show older".
+  const [showOlder, setShowOlder] = useState(false);
+  const sections = useMemo(() => {
+    const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    const today = startOfDay(new Date());
+    const yesterday = today - 86400000;
+    const cutoff = today - 14 * 86400000;
+    const buckets: { titleKey: string; rows: Row[] }[] = [
+      { titleKey: 'notif.today', rows: [] },
+      { titleKey: 'notif.yesterday', rows: [] },
+      { titleKey: 'notif.earlier', rows: [] },
+    ];
+    let hiddenOlder = 0;
+    for (const r of rows) {
+      const ts = new Date(r.latest.created_at).getTime();
+      if (ts >= today) buckets[0].rows.push(r);
+      else if (ts >= yesterday) buckets[1].rows.push(r);
+      else if (ts >= cutoff || showOlder) buckets[2].rows.push(r);
+      else hiddenOlder += 1;
+    }
+    return { buckets: buckets.filter((b) => b.rows.length > 0), hiddenOlder };
+  }, [rows, showOlder]);
+
+  // Title/body for a row; grouped rows get their own honest phrasing.
+  function rowText(row: Row): { title: string; body: string | null } {
+    const { title, body } = localizeNotification(row.latest, t);
+    if (row.count <= 1) return { title, body };
+    if (row.latest.type === 'reaction') {
+      return {
+        title: t('notif.gReactions')
+          .replace('{name}', row.latest.data?.name ?? '')
+          .replace('{n}', String(row.count - 1)),
+        body: null,
+      };
+    }
+    return { title, body: t('notif.gMessages').replace('{n}', String(row.count)) };
+  }
 
   function open(n: AppNotification) {
     if (n.match_id) router.push(`/match/${n.match_id}`);
@@ -159,43 +228,64 @@ export default function NotificationsScreen() {
         })}
       </ScrollView>
 
-      {visible.length === 0 ? (
+      {totalUnread > 0 && (
+        <Pressable onPress={markAllRead} hitSlop={8} style={{ alignSelf: 'flex-end', paddingVertical: Spacing.one }}>
+          <ThemedText type="smallBold" style={{ color: theme.accent }}>{t('notif.markAllRead')}</ThemedText>
+        </Pressable>
+      )}
+
+      {rows.length === 0 ? (
         <EmptyState icon="notifications-outline" title={t('notif.emptyTitle')} subtitle={t('notif.emptySub')} />
       ) : (
-        <View style={{ gap: Spacing.two }}>
-          {visible.map((n) => {
-            const { title, body } = localizeNotification(n, t);
-            return (
-              <Pressable key={n.id} onPress={() => open(n)}>
-                <Card style={[styles.row, !n.read && { borderColor: theme.accent, borderWidth: 1 }]}>
-                  <View style={[styles.icon, { backgroundColor: n.read ? theme.backgroundSelected : theme.accent }]}>
-                    <Ionicons name={iconFor(n.type)} size={18} color={n.read ? theme.text : theme.accentText} />
-                  </View>
-                  <View style={{ flex: 1, gap: 2 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
-                      <ThemedText style={{ fontWeight: '800', flex: 1 }} numberOfLines={1}>
-                        {title}
-                      </ThemedText>
-                      <ThemedText type="small" themeColor="textSecondary">
-                        {relative(n.created_at, t)}
-                      </ThemedText>
-                    </View>
-                    {body ? (
-                      <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
-                        {body}
-                      </ThemedText>
-                    ) : null}
-                  </View>
-                  {(n.match_id || n.type === 'gym_request' || n.type === 'friend_request'
+        <View style={{ gap: Spacing.three }}>
+          {sections.buckets.map((b) => (
+            <View key={b.titleKey} style={{ gap: Spacing.one }}>
+              <ThemedText type="smallBold" themeColor="textSecondary">{t(b.titleKey)}</ThemedText>
+              <Card style={{ padding: 0, gap: 0 }}>
+                {b.rows.map((r, i) => {
+                  const n = r.latest;
+                  const { title, body } = rowText(r);
+                  const hasTarget = !!(n.match_id || n.type === 'gym_request' || n.type === 'friend_request'
                     || (n.type === 'tournament_invite' && n.data?.tid)
                     || (n.type === 'league_invite' && n.data?.lid)
-                    || (n.type === 'friend_accepted' && n.data?.fid)) && (
-                    <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />
-                  )}
-                </Card>
-              </Pressable>
-            );
-          })}
+                    || (n.type === 'friend_accepted' && n.data?.fid));
+                  return (
+                    <Pressable key={r.key} onPress={() => open(n)}>
+                      <View style={[styles.row, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.tileBorder }]}>
+                        <View style={[styles.dot, r.unread && { backgroundColor: theme.accent }]} />
+                        <View style={[styles.icon, { backgroundColor: theme.backgroundSelected }]}>
+                          <Ionicons name={iconFor(n.type)} size={16} color={r.unread ? theme.accent : theme.textSecondary} />
+                        </View>
+                        <View style={{ flex: 1, gap: 1 }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+                            <ThemedText style={{ fontWeight: r.unread ? '800' : '600', flex: 1 }} numberOfLines={1}>
+                              {title}
+                            </ThemedText>
+                            <ThemedText type="small" themeColor="textSecondary">
+                              {relative(n.created_at, t)}
+                            </ThemedText>
+                          </View>
+                          {body ? (
+                            <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+                              {body}
+                            </ThemedText>
+                          ) : null}
+                        </View>
+                        {hasTarget && <Ionicons name="chevron-forward" size={14} color={theme.textSecondary} />}
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </Card>
+            </View>
+          ))}
+          {sections.hiddenOlder > 0 && !showOlder && (
+            <Pressable
+              onPress={() => setShowOlder(true)}
+              style={[styles.older, { borderColor: theme.tileBorder }]}>
+              <ThemedText type="smallBold" themeColor="textSecondary">{t('notif.showOlder')}</ThemedText>
+            </Pressable>
+          )}
         </View>
       )}
     </Screen>
@@ -206,6 +296,8 @@ const styles = StyleSheet.create({
   tabs: { flexDirection: 'row', gap: Spacing.two, paddingVertical: Spacing.one, paddingRight: Spacing.three },
   tab: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.two, paddingHorizontal: Spacing.three, borderRadius: 999, borderWidth: 1 },
   badge: { minWidth: 16, height: 16, borderRadius: 8, paddingHorizontal: 3, alignItems: 'center', justifyContent: 'center' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  icon: { width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.two, paddingHorizontal: Spacing.two },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'transparent' },
+  icon: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  older: { alignSelf: 'center', paddingVertical: Spacing.two, paddingHorizontal: Spacing.four, borderRadius: 999, borderWidth: 1 },
 });
