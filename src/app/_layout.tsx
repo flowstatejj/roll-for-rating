@@ -109,6 +109,7 @@ function RootNavigator() {
       <Stack.Screen name="onboarding" />
       <Stack.Screen name="paywall" options={{ headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="support" options={{ headerShown: true, title: t('nav.support') }} />
+      <Stack.Screen name="tutorials" options={{ headerShown: true, title: t('tut.title') }} />
       <Stack.Screen
         name="match/new"
         options={{ presentation: 'modal', headerShown: true, title: t('home.newChallenge') }}
