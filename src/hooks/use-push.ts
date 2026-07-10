@@ -48,7 +48,18 @@ export function usePush() {
     if (readyRef.current && pendingRoute.current) {
       const route = pendingRoute.current;
       pendingRoute.current = null;
-      router.push(route as never);
+      // Defer past the navigator's own initial-route settlement: pushing in the
+      // same tick the root Stack mounts can race its first navigation (and the
+      // root layout's auth/paywall replaces) and corrupt the stack on some
+      // devices, leaving a black screen. If the push still fails, fall back to
+      // Home so the user is never stranded on a dead navigator.
+      setTimeout(() => {
+        try {
+          router.push(route as never);
+        } catch {
+          try { router.replace('/(tabs)' as never); } catch { /* nothing left to try */ }
+        }
+      }, 80);
     }
   }, [router]);
 
@@ -73,7 +84,12 @@ export function usePush() {
     });
     // Cold start: app opened by tapping a notification.
     Notifications.getLastNotificationResponseAsync().then((resp) => {
-      if (resp) handle(resp.notification.request.content.data);
+      if (resp) {
+        handle(resp.notification.request.content.data);
+        // Consume it so a re-mount (or a warm start reusing the activity, as
+        // Samsung launchers do) can't replay the same tap into a second push.
+        Notifications.clearLastNotificationResponseAsync?.().catch(() => {});
+      }
     });
     return () => sub.remove();
   }, [handle]);
