@@ -76,6 +76,10 @@ export interface Profile {
   banned: boolean;
   /** Founding member: gold badge everywhere + free access (comp entitlement). */
   is_founding_member: boolean;
+  /** Gym account: free organizer account - never competes or ranks. */
+  is_gym_account: boolean;
+  /** Gym account passed the owner's verification (unlocks Elite grants etc.). */
+  gym_verified: boolean;
   birthdate: string | null;
   age_tier: AgeTier;
   consent_status: ConsentStatus;
@@ -484,6 +488,8 @@ export interface NotificationData {
   tid?: string; // tournament id (tournament.invite)
   lid?: string; // league id (league.invite)
   fid?: string; // friend id (friend.request / friend.accepted)
+  amt?: string; // formatted dollar amount (affiliate.statement)
+  n?: string; // count (affiliate.statement)
 }
 
 export interface AppNotification {

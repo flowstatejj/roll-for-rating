@@ -10,13 +10,14 @@ import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
 import {
-  dollars, fetchFounderReferrals, fetchReferralOwed, myReferralCode, recordReferralPayout, referralLink,
-  type FounderReferrals, type OwedRow,
+  dollars, fetchAdminStatements, fetchAffiliateLeaderboard, fetchFounderReferrals, fetchFounderStatements,
+  fetchReferralOwed, generateStatements, markStatementPaid, myReferralCode, recordReferralPayout, referralLink,
+  type AdminStatementRow, type FounderReferrals, type FounderStatement, type LeaderboardRow, type OwedRow,
 } from '@/lib/referrals';
 
 export default function AffiliateScreen() {
   const theme = useTheme();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { profile } = useAuth();
   const isFounder = !!profile?.is_founding_member;
   const isAdmin = !!profile?.is_admin;
@@ -24,18 +25,37 @@ export default function AffiliateScreen() {
   const [code, setCode] = useState<string | null>(null);
   const [data, setData] = useState<FounderReferrals | null>(null);
   const [owed, setOwed] = useState<OwedRow[]>([]);
+  const [stmts, setStmts] = useState<FounderStatement[]>([]);
+  const [board, setBoard] = useState<LeaderboardRow[]>([]);
+  const [adminStmts, setAdminStmts] = useState<{ month: string | null; rows: AdminStatementRow[] }>({ month: null, rows: [] });
+  const [generating, setGenerating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showAllMembers, setShowAllMembers] = useState(false);
   const [showAllOwed, setShowAllOwed] = useState(false);
+  const [showAllStmts, setShowAllStmts] = useState(false);
 
   const load = useCallback(async () => {
     try {
       if (isFounder) {
-        const [c, d] = await Promise.all([myReferralCode().catch(() => ''), fetchFounderReferrals()]);
+        const [c, d, s, b] = await Promise.all([
+          myReferralCode().catch(() => ''),
+          fetchFounderReferrals(),
+          fetchFounderStatements().catch(() => []),
+          fetchAffiliateLeaderboard().catch(() => []),
+        ]);
         setCode(c || d.code);
         setData(d);
+        setStmts(s);
+        setBoard(b);
       }
-      if (isAdmin) setOwed(await fetchReferralOwed().catch(() => []));
+      if (isAdmin) {
+        const [o, a] = await Promise.all([
+          fetchReferralOwed().catch(() => []),
+          fetchAdminStatements().catch(() => ({ month: null, rows: [] })),
+        ]);
+        setOwed(o);
+        setAdminStmts(a);
+      }
     } catch (e) {
       console.warn('affiliate load failed', e);
     } finally {
@@ -50,6 +70,47 @@ export default function AffiliateScreen() {
     try {
       await Share.share({ message: t('af.shareMsg').replace('{code}', code).replace('{link}', referralLink(code)) });
     } catch { /* cancelled */ }
+  }
+
+  // "June 2026" in the member's language; s.month arrives as YYYY-MM-DD.
+  function monthName(iso: string): string {
+    const d = new Date(`${iso.slice(0, 10)}T00:00:00`);
+    const s = d.toLocaleDateString(lang, { month: 'long', year: 'numeric' });
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  function payStatement(row: AdminStatementRow) {
+    Alert.alert(
+      t('af.markPaid'),
+      t('af.payConfirm').replace('{amount}', dollars(row.share_cents)).replace('{name}', row.name),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('af.markPaid'),
+          onPress: async () => {
+            try {
+              await markStatementPaid(row.id);
+              await load();
+            } catch (e: any) {
+              Alert.alert(t('af.error'), e.message ?? t('md.tryAgain'));
+            }
+          },
+        },
+      ],
+    );
+  }
+
+  async function generateNow() {
+    setGenerating(true);
+    try {
+      await generateStatements();
+      await load();
+      Alert.alert(t('af.title'), t('af.generated'));
+    } catch (e: any) {
+      Alert.alert(t('af.error'), e.message ?? t('md.tryAgain'));
+    } finally {
+      setGenerating(false);
+    }
   }
 
   function payOut(o: OwedRow) {
@@ -123,6 +184,79 @@ export default function AffiliateScreen() {
             <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center' }}>{t('af.estNote')}</ThemedText>
           </Card>
 
+          {/* Monthly statements (frozen ledger) */}
+          <ThemedText type="smallBold" themeColor="textSecondary" style={styles.section}>{t('af.statements')}</ThemedText>
+          {stmts.length === 0 ? (
+            <ThemedText type="small" themeColor="textSecondary">{t('af.stNone')}</ThemedText>
+          ) : (
+            <>
+              <Card style={{ paddingVertical: Spacing.one }}>
+                {(showAllStmts ? stmts : stmts.slice(0, 6)).map((s, i) => (
+                  <View key={s.id}>
+                    {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
+                    <View style={styles.row}>
+                      <View style={{ flex: 1 }}>
+                        <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>{monthName(s.month)}</ThemedText>
+                        <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+                          {t('af.stLine')
+                            .replace('{a}', String(s.apple_active))
+                            .replace('{g}', String(s.google_active))
+                            .replace('{s}', String(s.signups))}
+                        </ThemedText>
+                      </View>
+                      <View style={{ alignItems: 'flex-end', gap: 2 }}>
+                        <ThemedText style={{ fontWeight: '800', color: s.status === 'paid' ? theme.success : theme.accent }}>
+                          {dollars(s.share_cents)}
+                        </ThemedText>
+                        <ThemedText type="small" themeColor="textSecondary">
+                          {s.status === 'paid' ? t('af.paid') : t('af.pending')}
+                        </ThemedText>
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </Card>
+              {stmts.length > 6 && !showAllStmts && (
+                <Pressable onPress={() => setShowAllStmts(true)} style={[styles.older, { borderColor: theme.tileBorder }]}>
+                  <ThemedText type="smallBold" themeColor="textSecondary">{t('ui.showOlder')}</ThemedText>
+                </Pressable>
+              )}
+            </>
+          )}
+
+          {/* Founder leaderboard */}
+          {board.length > 0 && (
+            <>
+              <ThemedText type="smallBold" themeColor="textSecondary" style={styles.section}>{t('af.leaderboard')}</ThemedText>
+              <Card style={{ paddingVertical: Spacing.one }}>
+                {board.slice(0, 10).map((b, i) => {
+                  const me = b.founder_id === profile?.id;
+                  return (
+                    <View key={b.founder_id}>
+                      {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
+                      <View style={styles.row}>
+                        <ThemedText style={{ fontWeight: '900', width: 26, color: me ? theme.accent : theme.textSecondary }}>
+                          {i + 1}
+                        </ThemedText>
+                        <View style={{ flex: 1 }}>
+                          <ThemedText style={{ fontWeight: '700', color: me ? theme.accent : theme.text }} numberOfLines={1}>
+                            {b.name}
+                          </ThemedText>
+                          <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+                            {t('af.lbLine').replace('{a}', String(b.active)).replace('{r}', String(b.referred))}
+                          </ThemedText>
+                        </View>
+                        <ThemedText type="small" style={{ fontWeight: '800', color: theme.success }}>
+                          {dollars(b.lifetime_cents)}
+                        </ThemedText>
+                      </View>
+                    </View>
+                  );
+                })}
+              </Card>
+            </>
+          )}
+
           {/* Referred members */}
           <ThemedText type="smallBold" themeColor="textSecondary" style={styles.section}>{t('af.members')}</ThemedText>
           {members.length === 0 ? (
@@ -158,9 +292,48 @@ export default function AffiliateScreen() {
         </>
       )}
 
-      {/* Owner: payouts owed to founders */}
+      {/* Owner: monthly statements to pay */}
       {isAdmin && (
         <>
+          <ThemedText type="smallBold" themeColor="textSecondary" style={styles.section}>
+            {t('af.statements')}{adminStmts.month ? ` · ${monthName(adminStmts.month)}` : ''}
+          </ThemedText>
+          {adminStmts.rows.length === 0 ? (
+            <ThemedText type="small" themeColor="textSecondary">{t('af.stNone')}</ThemedText>
+          ) : (
+            <Card style={{ paddingVertical: Spacing.one }}>
+              {adminStmts.rows.map((s, i) => (
+                <View key={s.id}>
+                  {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
+                  <View style={styles.row}>
+                    <View style={{ flex: 1 }}>
+                      <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>{s.name}</ThemedText>
+                      <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+                        {t('af.stLine')
+                          .replace('{a}', String(s.apple_active))
+                          .replace('{g}', String(s.google_active))
+                          .replace('{s}', String(s.signups))}
+                      </ThemedText>
+                    </View>
+                    <View style={{ alignItems: 'flex-end', gap: 2 }}>
+                      <ThemedText style={{ fontWeight: '800', color: s.status === 'paid' ? theme.success : theme.accent }}>
+                        {dollars(s.share_cents)}
+                      </ThemedText>
+                      {s.status === 'paid' ? (
+                        <ThemedText type="small" themeColor="textSecondary">{t('af.paid')}</ThemedText>
+                      ) : (
+                        <Pressable onPress={() => payStatement(s)} hitSlop={8}>
+                          <ThemedText type="small" style={{ color: theme.accent, fontWeight: '700' }}>{t('af.markPaid')}</ThemedText>
+                        </Pressable>
+                      )}
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </Card>
+          )}
+          <Button label={t('af.generate')} icon="refresh" variant="secondary" onPress={generateNow} loading={generating} />
+
           <ThemedText type="smallBold" themeColor="textSecondary" style={styles.section}>{t('af.ownerTitle')}</ThemedText>
           {owed.length === 0 ? (
             <EmptyState icon="cash-outline" title={t('af.ownerNone')} subtitle={t('af.ownerNoneSub')} />

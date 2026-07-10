@@ -185,6 +185,19 @@ export default function NewMatchScreen() {
     }
   }
 
+  // Gym accounts organize; they never compete (the DB blocks it too).
+  if (profile?.is_gym_account) {
+    return (
+      <Screen>
+        <Card style={{ alignItems: 'center', gap: Spacing.two }}>
+          <Ionicons name="business" size={28} color={theme.accent} />
+          <ThemedText style={{ fontWeight: '800', textAlign: 'center' }}>{t('gy.noChallengeTitle')}</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center' }}>{t('gy.noChallengeBody')}</ThemedText>
+        </Card>
+      </Screen>
+    );
+  }
+
   return (
     <Screen>
       {inLeague && (

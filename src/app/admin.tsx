@@ -1,13 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { BeltChip, Button, Card, EmptyState, FOUNDER_GOLD, Screen, TextField } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { listFounders, makeFoundingByEmail, setFoundingById, type Founder } from '@/lib/admin';
+import { decideGymApplication, fetchGymApplications, type AdminGymApplication } from '@/lib/gym-account';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
 import { fetchDisputes, resolveDispute, type DisputeReport, type MatchDispute } from '@/lib/matches';
@@ -28,12 +29,19 @@ export default function AdminScreen() {
   const [reports, setReports] = useState<UserReport[]>([]);
   const [actingReportId, setActingReportId] = useState<string | null>(null);
   const [showAllFounders, setShowAllFounders] = useState(false);
+  const [gymApps, setGymApps] = useState<AdminGymApplication[]>([]);
+  const [decidingGymId, setDecidingGymId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
       setFounders(await listFounders());
     } catch (e) {
       console.warn('Failed to load founders', e);
+    }
+    try {
+      setGymApps(await fetchGymApplications());
+    } catch (e) {
+      console.warn('Failed to load gym applications', e);
     }
     try {
       setDisputes(await fetchDisputes());
@@ -73,6 +81,28 @@ export default function AdminScreen() {
   useEffect(() => {
     load();
   }, [load]);
+
+  function decideGym(app: AdminGymApplication, approve: boolean) {
+    const label = approve ? t('gy.approve') : t('gy.deny');
+    Alert.alert(label, t(approve ? 'gy.approveConfirm' : 'gy.denyConfirm').replace('{gym}', app.gym_name), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: label,
+        style: approve ? 'default' : 'destructive',
+        onPress: async () => {
+          setDecidingGymId(app.id);
+          try {
+            await decideGymApplication(app.id, approve);
+            await load();
+          } catch (e: any) {
+            Alert.alert(t('admin.error'), e.message ?? t('md.tryAgain'));
+          } finally {
+            setDecidingGymId(null);
+          }
+        },
+      },
+    ]);
+  }
 
   async function resolve(d: MatchDispute, r: DisputeReport) {
     setResolvingId(d.match_id);
@@ -220,6 +250,39 @@ export default function AdminScreen() {
                 ) : null}
                 <Pressable onPress={() => actOnReport(rep, 'ban')} disabled={actingReportId === rep.id} hitSlop={8}>
                   <ThemedText type="smallBold" style={{ color: theme.danger, opacity: actingReportId === rep.id ? 0.5 : 1 }}>{t('admin.repBan')}</ThemedText>
+                </Pressable>
+              </View>
+            </Card>
+          ))}
+        </>
+      )}
+
+      {/* Gym account applications awaiting verification */}
+      {gymApps.length > 0 && (
+        <>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two, marginBottom: Spacing.one }}>
+            <Ionicons name="business" size={20} color={theme.accent} />
+            <ThemedText style={{ fontWeight: '800', fontSize: 18 }}>{t('gy.adminTitle')} · {gymApps.length}</ThemedText>
+          </View>
+          {gymApps.map((a) => (
+            <Card key={a.id} style={{ gap: Spacing.two }}>
+              <ThemedText style={{ fontWeight: '800' }} numberOfLines={1}>{a.gym_name}</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
+                {a.owner_name} · @{a.account_username} · {a.address}
+              </ThemedText>
+              <Pressable onPress={() => Linking.openURL(a.link.startsWith('http') ? a.link : `https://${a.link}`)} hitSlop={8}>
+                <ThemedText type="small" style={{ color: theme.accent }} numberOfLines={1}>{a.link}</ThemedText>
+              </Pressable>
+              <ThemedText type="small" themeColor="textSecondary">
+                {t('gy.vouch').replace('{n}', String(a.vouch))}
+              </ThemedText>
+              <View style={styles.reportActions}>
+                <View style={{ flex: 1 }} />
+                <Pressable onPress={() => decideGym(a, false)} disabled={decidingGymId === a.id} hitSlop={8}>
+                  <ThemedText type="smallBold" style={{ color: theme.danger, opacity: decidingGymId === a.id ? 0.5 : 1 }}>{t('gy.deny')}</ThemedText>
+                </Pressable>
+                <Pressable onPress={() => decideGym(a, true)} disabled={decidingGymId === a.id} hitSlop={8}>
+                  <ThemedText type="smallBold" style={{ color: theme.accent, opacity: decidingGymId === a.id ? 0.5 : 1 }}>{t('gy.approve')}</ThemedText>
                 </Pressable>
               </View>
             </Card>

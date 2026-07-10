@@ -270,7 +270,7 @@ export default function ProfileScreen() {
   // Role-gated manage rows - same visibility conditions as the old buttons.
   const manageItems: MenuItem[] = [];
   if (profile.is_admin) manageItems.push({ icon: 'shield-checkmark-outline', label: t('profile.admin'), onPress: () => router.push('/admin') });
-  if (profile.is_founding_member) manageItems.push({ icon: 'ribbon-outline', label: t('profile.elite'), onPress: () => router.push('/elite') });
+  if (profile.is_founding_member || (profile.is_gym_account && profile.gym_verified)) manageItems.push({ icon: 'ribbon-outline', label: t('profile.elite'), onPress: () => router.push('/elite') });
   if (profile.is_founding_member || profile.is_admin) manageItems.push({ icon: 'cash-outline', label: t('profile.affiliate'), onPress: () => router.push('/affiliate') });
 
   return (
@@ -340,13 +340,18 @@ export default function ProfileScreen() {
         </View>
       )}
 
-      {/* Guardian (non-participating): no rating/competition surfaces. */}
+      {/* Non-participating accounts: no rating/competition surfaces. Gym
+          accounts get their own card; guardians keep the family copy. */}
       {!profile.participating && (
         <Card style={styles.openRow}>
-          <Ionicons name="people" size={22} color={theme.accent} />
+          <Ionicons name={profile.is_gym_account ? 'business' : 'people'} size={22} color={theme.accent} />
           <View style={{ flex: 1 }}>
-            <ThemedText style={{ fontWeight: '800' }}>{t('pf.guardianTitle')}</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">{t('pf.guardianBody')}</ThemedText>
+            <ThemedText style={{ fontWeight: '800' }}>
+              {profile.is_gym_account ? t('pf.gymTitle') : t('pf.guardianTitle')}
+            </ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              {profile.is_gym_account ? t('pf.gymBody') : t('pf.guardianBody')}
+            </ThemedText>
           </View>
         </Card>
       )}
