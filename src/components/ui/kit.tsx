@@ -73,6 +73,12 @@ export function Button({
     <Pressable
       onPress={onPress}
       disabled={isDisabled}
+      // Keep a started press alive through small finger movement and layout
+      // shifts (keyboard insets settling, list re-rendering after a debounced
+      // search). Without this, taps fired right after typing can get cancelled
+      // mid-press and silently do nothing ("have to tap twice" reports).
+      pressRetentionOffset={{ top: 24, left: 24, bottom: 24, right: 24 }}
+      hitSlop={4}
       style={({ pressed }) => [
         styles.button,
         { backgroundColor: bg, opacity: isDisabled ? 0.5 : 1 },
