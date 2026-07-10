@@ -7,6 +7,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Avatar, BeltChip, Button, Card, EmptyState, Loading, Screen, TextField } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
 import {
   fetchMyFriendRequests,
@@ -26,6 +27,7 @@ export default function FriendsScreen() {
   const theme = useTheme();
   const router = useRouter();
   const { t } = useTranslation();
+  const { profile } = useAuth();
 
   const [tab, setTab] = useState<Tab>('friends');
   const [friends, setFriends] = useState<FriendProfile[]>([]);
@@ -64,11 +66,17 @@ export default function FriendsScreen() {
     const h = setTimeout(async () => {
       try {
         const exclude = friends.map((f) => f.id);
-        setResults(await searchProfiles(q, exclude));
+        if (q.trim()) {
+          // Searching: the 5 best matches, anywhere.
+          setResults(await searchProfiles(q, exclude, { limit: 5 }));
+        } else {
+          // Default: people from your gym (nobody if you haven't joined one).
+          setResults(profile?.gym_id ? await searchProfiles('', exclude, { gymId: profile.gym_id }) : []);
+        }
       } catch { /* ignore */ }
     }, 250);
     return () => clearTimeout(h);
-  }, [q, tab, friends]);
+  }, [q, tab, friends, profile?.gym_id]);
 
   async function act(fn: () => Promise<unknown>) {
     setBusy(true);
@@ -83,6 +91,18 @@ export default function FriendsScreen() {
       await sendFriendRequest(p.id);
     } catch (e: any) {
       setRequested((s) => { const n = new Set(s); n.delete(p.id); return n; });
+      Alert.alert(t('md.error'), e.message ?? t('md.tryAgain'));
+    }
+  }
+
+  // Tap the "Pending" chip to withdraw a request you sent (same RPC the
+  // profile screen uses for its "Request sent" button).
+  async function cancelRequest(p: Profile) {
+    setRequested((s) => { const n = new Set(s); n.delete(p.id); return n; });
+    try {
+      await removeFriend(p.id);
+    } catch (e: any) {
+      setRequested((s) => new Set(s).add(p.id));
       Alert.alert(t('md.error'), e.message ?? t('md.tryAgain'));
     }
   }
@@ -163,6 +183,9 @@ export default function FriendsScreen() {
       {tab === 'find' && (
         <View style={{ gap: Spacing.two }}>
           <TextField value={q} onChangeText={setQ} placeholder={t('frn.searchPh')} autoCapitalize="none" autoCorrect={false} />
+          {!q.trim() && results.length > 0 && (
+            <ThemedText type="smallBold" themeColor="textSecondary">{t('frn.fromYourGym')}</ThemedText>
+          )}
           {results.length === 0 ? (
             <EmptyState icon="search-outline" title={t('frn.findTitle')} subtitle={t('frn.findSub')} />
           ) : (
@@ -181,10 +204,16 @@ export default function FriendsScreen() {
                     </View>
                   </Pressable>
                   {sent ? (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: Spacing.two }}>
+                    <Pressable
+                      onPress={() => cancelRequest(p)}
+                      hitSlop={8}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('frn.cancelRequest')}
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: Spacing.two, paddingVertical: Spacing.one }}>
                       <Ionicons name="time-outline" size={16} color={theme.textSecondary} />
                       <ThemedText type="small" themeColor="textSecondary">{t('frn.pending')}</ThemedText>
-                    </View>
+                      <Ionicons name="close-circle" size={16} color={theme.textSecondary} />
+                    </Pressable>
                   ) : (
                     <Button label={t('frn.add')} icon="person-add" variant="secondary" onPress={() => addFriend(p)} />
                   )}

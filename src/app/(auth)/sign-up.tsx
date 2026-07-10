@@ -15,6 +15,7 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
 import { parseDob } from '@/lib/dob';
+import { supabase } from '@/lib/supabase';
 import { useTranslation } from '@/lib/i18n';
 import { BELT_COLORS, type BeltRank } from '@/lib/types';
 
@@ -99,6 +100,16 @@ export default function SignUpScreen() {
     }
     setLoading(true);
     try {
+      // Friendly pre-check: without it a taken @username gets silently
+      // suffixed by the signup trigger (john -> john1) instead of telling
+      // the user. Usernames are unique (case-insensitive) in the DB.
+      const { data: available, error: availErr } = await supabase.rpc('username_available', {
+        p_username: username.trim(),
+      });
+      if (!availErr && available === false) {
+        Alert.alert(t('su.usernameTakenTitle'), t('su.usernameTakenBody'));
+        return;
+      }
       await signUp({
         email: email.trim(),
         password,
