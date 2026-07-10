@@ -475,14 +475,19 @@ export async function fetchKidsLeaderboard(
 }
 
 /** Search people by username / display name, excluding the given ids. */
-export async function searchProfiles(query: string, excludeIds: string[]): Promise<Profile[]> {
+export async function searchProfiles(
+  query: string,
+  excludeIds: string[],
+  opts?: { gymId?: string; limit?: number },
+): Promise<Profile[]> {
   let req = supabase
     .from('profiles')
     .select('*')
     .neq('age_tier', 'kid') // under-14 juniors are never searchable
     .eq('participating', true) // guardians (non-participating) aren't opponents/invitees
     .order('rating', { ascending: false })
-    .limit(25);
+    .limit(opts?.limit ?? 25);
+  if (opts?.gymId) req = req.eq('gym_id', opts.gymId);
 
   const q = query.trim();
   if (q.length > 0) {
