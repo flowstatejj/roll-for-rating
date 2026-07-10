@@ -19,19 +19,26 @@ import { Button, Card, Loading, TextField } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { useTranslation } from '@/lib/i18n';
 import { fetchMatch, fetchMatchMessages, sendMatchMessage, setMatchPlan } from '@/lib/matches';
 import { supabase } from '@/lib/supabase';
 import type { MatchMessage, MatchWithPeople } from '@/lib/types';
+
+// Matches fetchMatchMessages' default page size.
+const PAGE = 50;
 
 export default function MatchChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useAuth();
   const theme = useTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const userId = session!.user.id;
 
   const [match, setMatch] = useState<MatchWithPeople | null>(null);
   const [messages, setMessages] = useState<MatchMessage[]>([]);
+  const [hasOlder, setHasOlder] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -55,14 +62,55 @@ export default function MatchChatScreen() {
     });
   }, [headerH]);
 
+  // Skip the scroll-to-end triggered by prepending an older page; it would
+  // yank the reader back to the bottom.
+  const skipAutoScroll = useRef(false);
+
   const loadMessages = useCallback(async () => {
     if (!id) return;
     try {
-      setMessages(await fetchMatchMessages(id));
+      const page = await fetchMatchMessages(id);
+      setMessages(page);
+      setHasOlder(page.length === PAGE);
     } catch (e) {
       console.warn('load messages failed', e);
     }
   }, [id]);
+
+  async function loadOlder() {
+    const oldest = messages[0];
+    if (!oldest || loadingOlder) return;
+    setLoadingOlder(true);
+    try {
+      const page = await fetchMatchMessages(id!, { before: oldest.created_at });
+      skipAutoScroll.current = true;
+      setMessages((prev) => {
+        const seen = new Set(prev.map((m) => m.id));
+        return [...page.filter((m) => !seen.has(m.id)), ...prev];
+      });
+      setHasOlder(page.length === PAGE);
+    } catch (e) {
+      console.warn('load older messages failed', e);
+    } finally {
+      setLoadingOlder(false);
+    }
+  }
+
+  // Merge one realtime row instead of refetching the whole history. The
+  // payload has no joined sender, so look the name up; dedupe by id so our
+  // own just-sent message doesn't double.
+  const appendMessage = useCallback(async (row: MatchMessage) => {
+    let msg = row;
+    if (!msg.sender) {
+      try {
+        const { data } = await supabase.from('profiles').select('display_name').eq('id', row.sender_id).single();
+        if (data) msg = { ...row, sender: { display_name: data.display_name } };
+      } catch {
+        /* name falls back to 'Member' */
+      }
+    }
+    setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+  }, []);
 
   const loadMatch = useCallback(async () => {
     if (!id) return;
@@ -88,12 +136,14 @@ export default function MatchChatScreen() {
     if (!id) return;
     const channel = supabase
       .channel(`chat-${id}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'match_messages', filter: `match_id=eq.${id}` }, () => loadMessages())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'match_messages', filter: `match_id=eq.${id}` }, (payload) => {
+        appendMessage(payload.new as MatchMessage);
+      })
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [id, loadMessages]);
+  }, [id, appendMessage]);
 
   async function send() {
     const body = text.trim();
@@ -191,7 +241,21 @@ export default function MatchChatScreen() {
             ref={scrollRef}
             style={{ flex: 1 }}
             contentContainerStyle={{ padding: Spacing.three, gap: Spacing.two }}
-            onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}>
+            onContentSizeChange={() => {
+              if (skipAutoScroll.current) {
+                skipAutoScroll.current = false;
+                return;
+              }
+              scrollRef.current?.scrollToEnd({ animated: true });
+            }}>
+            {hasOlder && (
+              <Pressable
+                onPress={loadOlder}
+                disabled={loadingOlder}
+                style={{ alignSelf: 'center', paddingVertical: Spacing.two, paddingHorizontal: Spacing.four, borderRadius: 999, borderWidth: 1, borderColor: theme.tileBorder, opacity: loadingOlder ? 0.5 : 1 }}>
+                <ThemedText type="smallBold" themeColor="textSecondary">{t('ui.showOlder')}</ThemedText>
+              </Pressable>
+            )}
             {messages.length === 0 && (
               <ThemedText themeColor="textSecondary" style={{ textAlign: 'center', paddingVertical: Spacing.four }}>
                 No messages yet. Say hi and lock in the details.
@@ -202,7 +266,7 @@ export default function MatchChatScreen() {
               return (
                 <View key={m.id} style={{ alignItems: mine ? 'flex-end' : 'flex-start' }}>
                   {!mine && (
-                    <ThemedText type="small" themeColor="textSecondary" style={{ marginLeft: Spacing.two, marginBottom: 2 }}>
+                    <ThemedText type="small" themeColor="textSecondary" numberOfLines={1} style={{ marginLeft: Spacing.two, marginBottom: 2 }}>
                       {m.sender?.display_name ?? 'Member'}
                     </ThemedText>
                   )}
@@ -229,6 +293,7 @@ export default function MatchChatScreen() {
               placeholderTextColor={theme.textSecondary}
               style={[styles.input, { color: theme.text, backgroundColor: theme.backgroundElement, borderColor: theme.border }]}
               multiline
+              maxFontSizeMultiplier={1.2}
               onSubmitEditing={send}
             />
             <Pressable onPress={send} disabled={sending || !text.trim()} style={[styles.send, { backgroundColor: theme.accent, opacity: !text.trim() ? 0.5 : 1 }]}>

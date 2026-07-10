@@ -272,7 +272,9 @@ export default function MatchDetailScreen() {
 
       <StatusBanner match={match} />
 
-      {match.status !== 'completed' && (
+      {/* Only for matches that can still be fought; cancelled/declined/disputed
+          ones would just show a dead timer button. */}
+      {(match.status === 'pending_opponent' || match.status === 'pending_referee' || match.status === 'pending_confirmation') && (
         <MatchTimer matchId={id} canControl={amCompetitor || amReferee} />
       )}
 

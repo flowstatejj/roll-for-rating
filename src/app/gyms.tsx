@@ -29,8 +29,13 @@ export default function GymsScreen() {
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
+    const q = query.trim();
+    if (!q) {
+      setGyms([]);
+      return;
+    }
     try {
-      setGyms(await fetchGyms(query));
+      setGyms(await fetchGyms(q, 5));
     } catch (e) {
       console.warn('load gyms failed', e);
     }
@@ -90,42 +95,49 @@ export default function GymsScreen() {
         placeholder={t('gym.searchPlaceholder')}
       />
 
-      <View style={{ gap: Spacing.two }}>
-        {gyms.map((g) => {
-          const mine = profile?.gym_id === g.id;
-          return (
-            <Pressable key={g.id} onPress={() => router.push(`/gym/${g.id}`)}>
-              <Card style={styles.row}>
-                <View style={[styles.icon, { backgroundColor: theme.backgroundSelected }]}>
-                  <Ionicons name="barbell" size={20} color={theme.text} />
-                </View>
-                <View style={{ flex: 1, gap: 2 }}>
-                  <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>
-                    {g.name}
-                    {mine ? ` (${t('gym.yourGymSuffix')})` : ''}
-                  </ThemedText>
-                  {g.city ? (
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {g.city}
+      {query.trim() === '' ? (
+        <ThemedText themeColor="textSecondary" style={{ textAlign: 'center', paddingVertical: Spacing.three }}>
+          {t('gym.typeToSearch')}
+        </ThemedText>
+      ) : gyms.length === 0 ? (
+        <ThemedText themeColor="textSecondary" style={{ textAlign: 'center', paddingVertical: Spacing.three }}>
+          {t('gym.none')}
+        </ThemedText>
+      ) : (
+        <Card style={{ paddingVertical: Spacing.one }}>
+          {gyms.map((g, i) => {
+            const mine = profile?.gym_id === g.id;
+            return (
+              <View key={g.id}>
+                {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
+                <Pressable onPress={() => router.push(`/gym/${g.id}`)} style={styles.row}>
+                  <View style={[styles.icon, { backgroundColor: theme.backgroundSelected }]}>
+                    <Ionicons name="barbell" size={20} color={theme.text} />
+                  </View>
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>
+                      {g.name}
+                      {mine ? ` (${t('gym.yourGymSuffix')})` : ''}
                     </ThemedText>
-                  ) : null}
-                </View>
-                <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
-              </Card>
-            </Pressable>
-          );
-        })}
-        {gyms.length === 0 && (
-          <ThemedText themeColor="textSecondary" style={{ textAlign: 'center', paddingVertical: Spacing.three }}>
-            {t('gym.none')}
-          </ThemedText>
-        )}
-      </View>
+                    {g.city ? (
+                      <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+                        {g.city}
+                      </ThemedText>
+                    ) : null}
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
+                </Pressable>
+              </View>
+            );
+          })}
+        </Card>
+      )}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.two, paddingHorizontal: Spacing.two },
   icon: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.one },
 });

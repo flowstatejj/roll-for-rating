@@ -7,8 +7,8 @@ import type { BeltRank, Gym, GymFriend, GymWithMeta, OpenMat, Profile } from './
 // ---------------------------------------------------------------------------
 // Gyms
 // ---------------------------------------------------------------------------
-export async function fetchGyms(query = ''): Promise<Gym[]> {
-  let req = supabase.from('gyms').select('*').order('name').limit(50);
+export async function fetchGyms(query = '', limit = 50): Promise<Gym[]> {
+  let req = supabase.from('gyms').select('*').order('name').limit(limit);
   const q = query.trim();
   if (q) req = req.or(`name.ilike.%${q}%,city.ilike.%${q}%`);
   const { data, error } = await req;
@@ -42,7 +42,8 @@ export async function fetchGymMembers(gymId: string): Promise<GymMember[]> {
     .from('profiles')
     .select('id,display_name,belt_rank,rating')
     .eq('gym_id', gymId)
-    .order('rating', { ascending: false });
+    .order('rating', { ascending: false })
+    .limit(100);
   if (error) throw error;
   return (data ?? []) as GymMember[];
 }
@@ -151,7 +152,10 @@ export async function fetchFriendlyOpponents(userId: string, myGymId: string): P
     .select('*')
     .in('gym_id', gymIds)
     .neq('id', userId)
-    .order('rating', { ascending: false });
+    .order('rating', { ascending: false })
+    // Safety valve only: network mode has no search, so a tight cap would make
+    // lower-rated gym-mates unreachable. The UI gates rendering at 20 rows.
+    .limit(200);
   if (pErr) throw pErr;
   return (data ?? []) as Profile[];
 }

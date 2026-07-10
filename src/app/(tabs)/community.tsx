@@ -87,100 +87,64 @@ export default function CommunityScreen() {
         </Card>
       )}
 
-      {/* Actions */}
-      <ActionRow
-        icon="flame"
-        title={t('nav.findRoll')}
-        subtitle={t('comm.findRollSub')}
-        onPress={() => router.push('/find')}
+      {/* Compete */}
+      <LinkSection
+        title={t('comm.compete')}
+        links={[
+          { icon: 'flame', label: t('nav.findRoll'), onPress: () => router.push('/find') },
+          { icon: 'people-circle', label: t('nav.leagues'), onPress: () => router.push('/leagues') },
+          { icon: 'trophy', label: t('nav.tournaments'), onPress: () => router.push('/tournaments') },
+          { icon: 'lock-open', label: t('nav.submissionHunt'), onPress: () => router.push('/submission-hunt') },
+          { icon: 'checkbox', label: t('nav.quests'), onPress: () => router.push('/quests') },
+        ]}
       />
-      <ActionRow
-        icon="podium"
-        title={t('lb.title')}
-        subtitle={t('comm.rankingsSub')}
-        onPress={() => router.push('/(tabs)/leaderboard')}
-      />
-      <ActionRow
-        icon="calendar"
-        title={t('nav.openMats')}
-        subtitle={t('comm.openMatsSub')}
-        onPress={() => router.push('/open-mats')}
-      />
-      <ActionRow
-        icon="people-circle"
-        title={t('nav.leagues')}
-        subtitle={t('comm.leaguesSub')}
-        onPress={() => router.push('/leagues')}
-      />
-      <ActionRow
-        icon="trophy"
-        title={t('nav.tournaments')}
-        subtitle={t('comm.tournamentsSub')}
-        onPress={() => router.push('/tournaments')}
-      />
-      <ActionRow
-        icon="lock-open"
-        title={t('nav.submissionHunt')}
-        subtitle={t('comm.submissionHuntSub')}
-        onPress={() => router.push('/submission-hunt')}
-      />
-      <ActionRow
-        icon="checkbox"
-        title={t('nav.quests')}
-        subtitle={t('comm.questsSub')}
-        onPress={() => router.push('/quests')}
-      />
-      <ActionRow
-        icon="cash"
-        title={t('nav.biggestPots')}
-        subtitle={t('comm.biggestPotsSub')}
-        onPress={() => router.push('/high-rollers')}
-      />
-      <ActionRow
-        icon="play-circle"
-        title={t('nav.watch')}
-        subtitle={t('comm.watchSub')}
-        onPress={() => router.push('/watch')}
+
+      {/* Explore */}
+      <LinkSection
+        title={t('comm.explore')}
+        links={[
+          { icon: 'podium', label: t('lb.title'), onPress: () => router.push('/(tabs)/leaderboard') },
+          { icon: 'calendar', label: t('nav.openMats'), onPress: () => router.push('/open-mats') },
+          { icon: 'cash', label: t('nav.biggestPots'), onPress: () => router.push('/high-rollers') },
+          { icon: 'play-circle', label: t('nav.watch'), onPress: () => router.push('/watch') },
+        ]}
       />
     </Screen>
   );
 }
 
-function ActionRow({
-  icon,
-  title,
-  subtitle,
-  onPress,
-  disabled,
-}: {
+type LinkItem = {
   icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  subtitle: string;
+  label: string;
   onPress: () => void;
-  disabled?: boolean;
-}) {
+};
+
+function LinkSection({ title, links }: { title: string; links: LinkItem[] }) {
   const theme = useTheme();
   return (
-    <Pressable onPress={onPress} disabled={disabled} style={{ opacity: disabled ? 0.45 : 1 }}>
-      <Card style={styles.actionRow}>
-        <View style={[styles.actionIcon, { backgroundColor: theme.backgroundSelected }]}>
-          <Ionicons name={icon} size={22} color={theme.text} />
-        </View>
-        <View style={{ flex: 1, gap: 2 }}>
-          <ThemedText style={{ fontWeight: '800', fontSize: 16 }}>{title}</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            {subtitle}
-          </ThemedText>
-        </View>
-        <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
+    <View style={{ gap: Spacing.one }}>
+      <ThemedText type="smallBold" themeColor="textSecondary">{title}</ThemedText>
+      <Card style={{ paddingVertical: Spacing.one }}>
+        {links.map((l, i) => (
+          <View key={l.label}>
+            {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
+            <Pressable onPress={l.onPress} style={styles.linkRow}>
+              <Ionicons name={l.icon} size={20} color={theme.textSecondary} />
+              <ThemedText style={{ flex: 1, fontWeight: '600' }} numberOfLines={1}>
+                {l.label}
+              </ThemedText>
+              <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />
+            </Pressable>
+          </View>
+        ))}
       </Card>
-    </Pressable>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   gymCard: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   gymIcon: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  actionRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  actionIcon: { width: 44, height: 44, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  linkRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.two },
+  divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.one },
 });

@@ -39,6 +39,7 @@ export default function LeaguesScreen() {
   const [creating, setCreating] = useState(false);
   const [busy, setBusy] = useState(false);
   const [cityQ, setCityQ] = useState('');
+  const [browseExpanded, setBrowseExpanded] = useState(false);
   const cityRef = useRef('');
 
   // create form
@@ -144,6 +145,9 @@ export default function LeaguesScreen() {
   }
 
   const list = tab === 'mine' ? mine : browse;
+  // Browse can return up to 100 leagues; show the first 15 until expanded.
+  const visibleList = tab === 'browse' && !browseExpanded ? list.slice(0, 15) : list;
+  const hiddenCount = list.length - visibleList.length;
 
   return (
     <Screen>
@@ -151,25 +155,28 @@ export default function LeaguesScreen() {
 
       {/* Invitations from organizers */}
       {invites.length > 0 && (
-        <Card style={{ gap: Spacing.two, borderColor: theme.accent, borderWidth: 1 }}>
-          <ThemedText style={{ fontWeight: '800' }}>{t('le.invitedSection')}</ThemedText>
-          {invites.map((inv) => (
-            <View key={inv.league_id} style={{ gap: Spacing.two }}>
-              <View>
-                <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>{inv.name}</ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">{t('le.invitedBy').replace('{name}', inv.invited_by_name)}</ThemedText>
-              </View>
-              <View style={{ flexDirection: 'row', gap: Spacing.two }}>
-                <View style={{ flex: 1 }}>
-                  <Button label={t('le.acceptInvite')} icon="checkmark-circle" loading={busy} onPress={() => respondInvite(inv.league_id, true)} />
+        <View style={{ gap: Spacing.one }}>
+          <ThemedText type="smallBold" style={{ color: theme.accent }}>{t('le.invitedSection')}</ThemedText>
+          <Card style={{ gap: Spacing.two }}>
+            {invites.map((inv, i) => (
+              <View key={inv.league_id} style={{ gap: Spacing.two }}>
+                {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
+                <View>
+                  <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>{inv.name}</ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">{t('le.invitedBy').replace('{name}', inv.invited_by_name)}</ThemedText>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Button label={t('le.declineInvite')} variant="ghost" loading={busy} onPress={() => respondInvite(inv.league_id, false)} />
+                <View style={{ flexDirection: 'row', gap: Spacing.two }}>
+                  <View style={{ flex: 1 }}>
+                    <Button label={t('le.acceptInvite')} icon="checkmark-circle" loading={busy} onPress={() => respondInvite(inv.league_id, true)} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Button label={t('le.declineInvite')} variant="ghost" loading={busy} onPress={() => respondInvite(inv.league_id, false)} />
+                  </View>
                 </View>
               </View>
-            </View>
-          ))}
-        </Card>
+            ))}
+          </Card>
+        </View>
       )}
 
       <View style={styles.segment}>
@@ -279,28 +286,36 @@ export default function LeaguesScreen() {
           subtitle={tab === 'mine' ? t('le.noneMineSub') : (cityQ.trim() ? t('le.noneCitySub') : t('le.noneBrowseSub'))}
         />
       ) : (
-        <View style={{ gap: Spacing.two }}>
-          {list.map((l) => (
-            <Pressable key={l.id} onPress={() => router.push(`/league/${l.id}`)}>
-              <Card style={styles.row}>
-                <View style={[styles.icon, { backgroundColor: theme.backgroundSelected }]}>
-                  <Ionicons name={l.audience === 'kids' ? 'happy' : 'people-circle'} size={22} color={theme.text} />
-                </View>
-                <View style={{ flex: 1, gap: 3 }}>
-                  <ThemedText style={{ fontWeight: '800' }} numberOfLines={1}>{l.name}</ThemedText>
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: Spacing.one }}>
-                    <Tag text={l.ranked ? t('le.rankedChip') : t('le.casualChip')} tint={l.ranked ? theme.accent : theme.textSecondary} />
-                    {l.audience !== 'all' && <Tag text={t(`le.aud.${l.audience}`)} tint={theme.textSecondary} />}
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {t(`wd.${l.meet_day}`)}{l.meet_time ? ` · ${l.meet_time}` : ''}{l.city ? ` · ${l.city}` : ''}
-                    </ThemedText>
+        <>
+          <Card style={{ paddingVertical: Spacing.one }}>
+            {visibleList.map((l, i) => (
+              <View key={l.id}>
+                {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
+                <Pressable onPress={() => router.push(`/league/${l.id}`)} style={styles.row}>
+                  <View style={[styles.icon, { backgroundColor: theme.backgroundSelected }]}>
+                    <Ionicons name={l.audience === 'kids' ? 'happy' : 'people-circle'} size={18} color={theme.text} />
                   </View>
-                </View>
-                <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
-              </Card>
+                  <View style={{ flex: 1, gap: 3 }}>
+                    <ThemedText style={{ fontWeight: '800' }} numberOfLines={1}>{l.name}</ThemedText>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: Spacing.one }}>
+                      <Tag text={l.ranked ? t('le.rankedChip') : t('le.casualChip')} tint={l.ranked ? theme.accent : theme.textSecondary} />
+                      {l.audience !== 'all' && <Tag text={t(`le.aud.${l.audience}`)} tint={theme.textSecondary} />}
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {t(`wd.${l.meet_day}`)}{l.meet_time ? ` · ${l.meet_time}` : ''}{l.city ? ` · ${l.city}` : ''}
+                      </ThemedText>
+                    </View>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
+                </Pressable>
+              </View>
+            ))}
+          </Card>
+          {hiddenCount > 0 && (
+            <Pressable onPress={() => setBrowseExpanded(true)} style={[styles.morePill, { borderColor: theme.tileBorder }]}>
+              <ThemedText type="smallBold" themeColor="textSecondary">{t('ui.showMore')}</ThemedText>
             </Pressable>
-          ))}
-        </View>
+          )}
+        </>
       )}
     </Screen>
   );
@@ -349,7 +364,9 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   chip: { paddingVertical: Spacing.one, paddingHorizontal: Spacing.three, borderRadius: 999, borderWidth: 1 },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  icon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.two, paddingHorizontal: Spacing.two },
+  icon: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.one },
+  morePill: { alignSelf: 'center', paddingVertical: Spacing.two, paddingHorizontal: Spacing.four, borderRadius: 999, borderWidth: 1 },
   tag: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 1 },
 });

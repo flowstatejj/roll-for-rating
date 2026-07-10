@@ -25,6 +25,8 @@ export default function AffiliateScreen() {
   const [data, setData] = useState<FounderReferrals | null>(null);
   const [owed, setOwed] = useState<OwedRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAllMembers, setShowAllMembers] = useState(false);
+  const [showAllOwed, setShowAllOwed] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -86,6 +88,13 @@ export default function AffiliateScreen() {
 
   const owedTotal = data ? Math.max(0, data.est_total_cents - data.paid_cents) : 0;
 
+  // Newest referrals first, capped at 10 - both lists grow unbounded otherwise.
+  const members = [...(data?.members ?? [])].sort((a, b) => new Date(b.joined).getTime() - new Date(a.joined).getTime());
+  const visibleMembers = showAllMembers ? members : members.slice(0, 10);
+  const owedCentsFor = (o: OwedRow) => Math.max(0, o.est_total_cents - o.paid_cents);
+  const owedSorted = [...owed].sort((a, b) => owedCentsFor(b) - owedCentsFor(a));
+  const visibleOwed = showAllOwed ? owedSorted : owedSorted.slice(0, 10);
+
   return (
     <Screen>
       <Stack.Screen options={{ title: t('af.title') }} />
@@ -115,29 +124,36 @@ export default function AffiliateScreen() {
           </Card>
 
           {/* Referred members */}
-          <ThemedText style={styles.section}>{t('af.members')}</ThemedText>
-          {(data?.members.length ?? 0) === 0 ? (
+          <ThemedText type="smallBold" themeColor="textSecondary" style={styles.section}>{t('af.members')}</ThemedText>
+          {members.length === 0 ? (
             <EmptyState icon="people-outline" title={t('af.none')} subtitle={t('af.noneSub')} />
           ) : (
-            <Card style={{ paddingVertical: Spacing.one }}>
-              {data!.members.map((m, i) => (
-                <View key={m.id}>
-                  {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
-                  <View style={styles.row}>
-                    <Avatar name={m.display_name} size={36} />
-                    <View style={{ flex: 1 }}>
-                      <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>{m.display_name}</ThemedText>
-                      <ThemedText type="small" themeColor="textSecondary">
-                        @{m.username} · {m.active ? t('af.active') : t('af.inactive')}
+            <>
+              <Card style={{ paddingVertical: Spacing.one }}>
+                {visibleMembers.map((m, i) => (
+                  <View key={m.id}>
+                    {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
+                    <View style={styles.row}>
+                      <Avatar name={m.display_name} size={36} />
+                      <View style={{ flex: 1 }}>
+                        <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>{m.display_name}</ThemedText>
+                        <ThemedText type="small" themeColor="textSecondary">
+                          @{m.username} · {m.active ? t('af.active') : t('af.inactive')}
+                        </ThemedText>
+                      </View>
+                      <ThemedText style={{ fontWeight: '800', color: m.active ? theme.success : theme.textSecondary }}>
+                        {dollars(m.est_cents)}
                       </ThemedText>
                     </View>
-                    <ThemedText style={{ fontWeight: '800', color: m.active ? theme.success : theme.textSecondary }}>
-                      {dollars(m.est_cents)}
-                    </ThemedText>
                   </View>
-                </View>
-              ))}
-            </Card>
+                ))}
+              </Card>
+              {members.length > 10 && !showAllMembers && (
+                <Pressable onPress={() => setShowAllMembers(true)} style={[styles.older, { borderColor: theme.tileBorder }]}>
+                  <ThemedText type="smallBold" themeColor="textSecondary">{t('ui.showOlder')}</ThemedText>
+                </Pressable>
+              )}
+            </>
           )}
         </>
       )}
@@ -145,33 +161,40 @@ export default function AffiliateScreen() {
       {/* Owner: payouts owed to founders */}
       {isAdmin && (
         <>
-          <ThemedText style={styles.section}>{t('af.ownerTitle')}</ThemedText>
+          <ThemedText type="smallBold" themeColor="textSecondary" style={styles.section}>{t('af.ownerTitle')}</ThemedText>
           {owed.length === 0 ? (
             <EmptyState icon="cash-outline" title={t('af.ownerNone')} subtitle={t('af.ownerNoneSub')} />
           ) : (
-            <Card style={{ gap: Spacing.two }}>
-              {owed.map((o) => {
-                const owedCents = Math.max(0, o.est_total_cents - o.paid_cents);
-                return (
-                  <View key={o.founder_id} style={styles.owedRow}>
-                    <View style={{ flex: 1 }}>
-                      <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>{o.name}</ThemedText>
-                      <ThemedText type="small" themeColor="textSecondary">
-                        {o.referred} {t('af.referredLc')} · {t('af.paidLc')} {dollars(o.paid_cents)}
-                      </ThemedText>
+            <>
+              <Card style={{ gap: Spacing.two }}>
+                {visibleOwed.map((o) => {
+                  const owedCents = owedCentsFor(o);
+                  return (
+                    <View key={o.founder_id} style={styles.owedRow}>
+                      <View style={{ flex: 1 }}>
+                        <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>{o.name}</ThemedText>
+                        <ThemedText type="small" themeColor="textSecondary">
+                          {o.referred} {t('af.referredLc')} · {t('af.paidLc')} {dollars(o.paid_cents)}
+                        </ThemedText>
+                      </View>
+                      <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                        <ThemedText style={{ fontWeight: '800', color: theme.accent }}>{dollars(owedCents)}</ThemedText>
+                        {owedCents > 0 && (
+                          <Pressable onPress={() => payOut(o)}>
+                            <ThemedText type="small" style={{ color: theme.accent, fontWeight: '700' }}>{t('af.markPaid')}</ThemedText>
+                          </Pressable>
+                        )}
+                      </View>
                     </View>
-                    <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                      <ThemedText style={{ fontWeight: '800', color: theme.accent }}>{dollars(owedCents)}</ThemedText>
-                      {owedCents > 0 && (
-                        <Pressable onPress={() => payOut(o)}>
-                          <ThemedText type="small" style={{ color: theme.accent, fontWeight: '700' }}>{t('af.markPaid')}</ThemedText>
-                        </Pressable>
-                      )}
-                    </View>
-                  </View>
-                );
-              })}
-            </Card>
+                  );
+                })}
+              </Card>
+              {owed.length > 10 && !showAllOwed && (
+                <Pressable onPress={() => setShowAllOwed(true)} style={[styles.older, { borderColor: theme.tileBorder }]}>
+                  <ThemedText type="smallBold" themeColor="textSecondary">{t('ui.showOlder')}</ThemedText>
+                </Pressable>
+              )}
+            </>
           )}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
             <Ionicons name="information-circle-outline" size={14} color={theme.textSecondary} />
@@ -194,9 +217,10 @@ function Stat({ label, value, tint }: { label: string; value: string; tint?: str
 }
 
 const styles = StyleSheet.create({
-  section: { fontSize: 18, fontWeight: '800', marginTop: Spacing.one },
+  section: { marginTop: Spacing.one },
   stats: { flexDirection: 'row' },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.two, paddingHorizontal: Spacing.two },
   owedRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.one },
   divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.two },
+  older: { alignSelf: 'center', paddingVertical: Spacing.two, paddingHorizontal: Spacing.four, borderRadius: 999, borderWidth: 1 },
 });

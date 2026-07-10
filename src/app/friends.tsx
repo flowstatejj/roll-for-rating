@@ -33,7 +33,9 @@ export default function FriendsScreen() {
   const [friends, setFriends] = useState<FriendProfile[]>([]);
   const [requests, setRequests] = useState<FriendProfile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
+  // Which row's action is in flight - only that row spins; the others just disable.
+  const [actingId, setActingId] = useState<string | null>(null);
+  const [showAllFriends, setShowAllFriends] = useState(false);
 
   // Find tab
   const [q, setQ] = useState('');
@@ -78,11 +80,11 @@ export default function FriendsScreen() {
     return () => clearTimeout(h);
   }, [q, tab, friends, profile?.gym_id]);
 
-  async function act(fn: () => Promise<unknown>) {
-    setBusy(true);
+  async function act(id: string, fn: () => Promise<unknown>) {
+    setActingId(id);
     try { await fn(); await load(); }
     catch (e: any) { Alert.alert(t('md.error'), e.message ?? t('md.tryAgain')); }
-    finally { setBusy(false); }
+    finally { setActingId(null); }
   }
 
   async function addFriend(p: Profile) {
@@ -110,7 +112,7 @@ export default function FriendsScreen() {
   function confirmRemove(p: FriendProfile) {
     Alert.alert(t('frn.removeTitle'), t('frn.removeBody').replace('{name}', p.display_name), [
       { text: t('common.cancel'), style: 'cancel' },
-      { text: t('frn.remove'), style: 'destructive', onPress: () => act(() => removeFriend(p.id)) },
+      { text: t('frn.remove'), style: 'destructive', onPress: () => act(p.id, () => removeFriend(p.id)) },
     ]);
   }
 
@@ -131,23 +133,37 @@ export default function FriendsScreen() {
           <EmptyState icon="people-outline" title={t('frn.emptyTitle')} subtitle={t('frn.emptySub')} />
         ) : (
           <View style={{ gap: Spacing.two }}>
-            {friends.map((p) => (
-              <Card key={p.id} style={styles.row}>
-                <Pressable style={styles.rowMain} onPress={() => router.push(`/user/${p.id}`)}>
-                  <Avatar name={p.display_name} size={40} warrior={p.avatar_warrior ?? undefined} color={p.avatar_color ?? undefined} />
-                  <View style={{ flex: 1, gap: 2 }}>
-                    <ThemedText style={{ fontWeight: '800' }} numberOfLines={1}>{p.display_name}</ThemedText>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
-                      <BeltChip belt={p.belt_rank as any} size="sm" />
-                      <ThemedText type="small" themeColor="textSecondary">@{p.username}</ThemedText>
-                    </View>
+            <Card style={{ paddingVertical: Spacing.one }}>
+              {(showAllFriends ? friends : friends.slice(0, 20)).map((p, i) => (
+                <View key={p.id}>
+                  {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
+                  <View style={styles.friendRow}>
+                    <Pressable style={styles.rowMain} onPress={() => router.push(`/user/${p.id}`)}>
+                      <Avatar name={p.display_name} size={40} warrior={p.avatar_warrior ?? undefined} color={p.avatar_color ?? undefined} />
+                      <View style={{ flex: 1, gap: 2 }}>
+                        <ThemedText style={{ fontWeight: '800' }} numberOfLines={1}>{p.display_name}</ThemedText>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+                          <BeltChip belt={p.belt_rank as any} size="sm" />
+                          <ThemedText type="small" themeColor="textSecondary" numberOfLines={1} style={{ flexShrink: 1 }}>@{p.username}</ThemedText>
+                        </View>
+                      </View>
+                    </Pressable>
+                    <Pressable onPress={() => confirmRemove(p)} hitSlop={8} style={{ padding: Spacing.one }}>
+                      <Ionicons name="person-remove-outline" size={20} color={theme.textSecondary} />
+                    </Pressable>
                   </View>
-                </Pressable>
-                <Pressable onPress={() => confirmRemove(p)} hitSlop={8} style={{ padding: Spacing.one }}>
-                  <Ionicons name="person-remove-outline" size={20} color={theme.textSecondary} />
-                </Pressable>
-              </Card>
-            ))}
+                </View>
+              ))}
+            </Card>
+            {friends.length > 20 && !showAllFriends && (
+              <Pressable
+                onPress={() => setShowAllFriends(true)}
+                style={[styles.older, { borderColor: theme.tileBorder }]}>
+                <ThemedText type="smallBold" themeColor="textSecondary">
+                  {t('ui.showAll').replace('{n}', String(friends.length))}
+                </ThemedText>
+              </Pressable>
+            )}
           </View>
         )
       )}
@@ -168,10 +184,10 @@ export default function FriendsScreen() {
                 </Pressable>
                 <View style={{ flexDirection: 'row', gap: Spacing.two }}>
                   <View style={{ flex: 1 }}>
-                    <Button label={t('frn.accept')} icon="checkmark-circle" loading={busy} onPress={() => act(() => respondFriendRequest(p.id, true))} />
+                    <Button label={t('frn.accept')} icon="checkmark-circle" loading={actingId === p.id} disabled={actingId !== null && actingId !== p.id} onPress={() => act(p.id, () => respondFriendRequest(p.id, true))} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Button label={t('frn.decline')} variant="ghost" loading={busy} onPress={() => act(() => respondFriendRequest(p.id, false))} />
+                    <Button label={t('frn.decline')} variant="ghost" loading={actingId === p.id} disabled={actingId !== null && actingId !== p.id} onPress={() => act(p.id, () => respondFriendRequest(p.id, false))} />
                   </View>
                 </View>
               </Card>
@@ -243,4 +259,7 @@ const styles = StyleSheet.create({
   seg: { flex: 1, alignItems: 'center', paddingVertical: Spacing.two, borderRadius: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  friendRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.two, paddingHorizontal: Spacing.two },
+  divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.one },
+  older: { alignSelf: 'center', paddingVertical: Spacing.two, paddingHorizontal: Spacing.four, borderRadius: 999, borderWidth: 1 },
 });

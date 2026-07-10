@@ -34,6 +34,9 @@ export function MatchVideos({
   const [progress, setProgress] = useState<Record<string, number>>({});
   const [busy, setBusy] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
+  // Which clip has a live player mounted. Clips render as tap-to-play poster
+  // tiles so multiple players never run at once (tapping one swaps the active one).
+  const [playingId, setPlayingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -187,12 +190,16 @@ export function MatchVideos({
 
       {videos.map((v) => (
         <View key={v.id} style={{ gap: Spacing.one }}>
-          {urls[v.id] ? (
-            <VideoPlayerItem url={urls[v.id]} />
-          ) : (
+          {!urls[v.id] ? (
             <View style={[styles.video, styles.videoLoading]}>
               <ActivityIndicator color={theme.accent} />
             </View>
+          ) : playingId === v.id ? (
+            <VideoPlayerItem url={urls[v.id]} />
+          ) : (
+            <Pressable onPress={() => setPlayingId(v.id)} style={[styles.video, styles.videoLoading]}>
+              <Ionicons name="play-circle" size={56} color="rgba(255,255,255,0.9)" />
+            </Pressable>
           )}
           {isParticipant && (
             <View style={styles.actionsRow}>
@@ -278,6 +285,8 @@ export function MatchVideos({
 function VideoPlayerItem({ url }: { url: string }) {
   const player = useVideoPlayer(url, (p) => {
     p.loop = false;
+    // Mounted only after the user taps the poster tile, so start right away.
+    p.play();
   });
   return <VideoView style={styles.video} player={player} contentFit="contain" nativeControls />;
 }

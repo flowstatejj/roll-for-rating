@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Avatar, BeltChip, Button, Card, Loading, Screen } from '@/components/ui/kit';
@@ -34,6 +34,7 @@ export default function GymDetailScreen() {
   const [ownedGymId, setOwnedGymId] = useState<string | null>(null);
   const [friends, setFriends] = useState<GymFriend[]>([]);
   const [busy, setBusy] = useState(false);
+  const [showAllMembers, setShowAllMembers] = useState(false);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -71,6 +72,14 @@ export default function GymDetailScreen() {
   if (!gym) return <Loading />;
 
   const canRequestFriend = !gym.is_owner && !!ownedGymId && ownedGymId !== gym.id;
+
+  // Incoming pending requests first - they're the ones needing a response.
+  const sortedFriends = [...friends].sort((a, b) => {
+    const rank = (f: GymFriend) => (f.status === 'pending' && f.incoming ? 0 : 1);
+    return rank(a) - rank(b);
+  });
+
+  const visibleMembers = showAllMembers ? members : members.slice(0, 15);
 
   return (
     <Screen>
@@ -119,23 +128,32 @@ export default function GymDetailScreen() {
               <ThemedText themeColor="textSecondary">{t('gd.noFriends')}</ThemedText>
             </Card>
           ) : (
-            friends.map((f) => (
-              <Card key={f.friendship_id} style={styles.friendRow}>
-                <View style={{ flex: 1 }}>
-                  <ThemedText style={{ fontWeight: '700' }}>{f.gym.name}</ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {f.status === 'accepted' ? t('gd.friends') : f.incoming ? t('gd.wantsConnect') : t('gd.reqSent')}
-                  </ThemedText>
-                </View>
-                {f.status === 'pending' && f.incoming && (
-                  <View style={{ flexDirection: 'row', gap: Spacing.two }}>
-                    <Ionicons name="checkmark-circle" size={28} color={theme.success} onPress={() => act(() => respondGymFriendship(f.friendship_id, true))} />
-                    <Ionicons name="close-circle" size={28} color={theme.danger} onPress={() => act(() => respondGymFriendship(f.friendship_id, false))} />
+            <Card style={{ paddingVertical: Spacing.one }}>
+              {sortedFriends.map((f, i) => (
+                <View key={f.friendship_id}>
+                  {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
+                  <View style={styles.friendRow}>
+                    <View style={{ flex: 1 }}>
+                      <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>{f.gym.name}</ThemedText>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {f.status === 'accepted' ? t('gd.friends') : f.incoming ? t('gd.wantsConnect') : t('gd.reqSent')}
+                      </ThemedText>
+                    </View>
+                    {f.status === 'pending' && f.incoming && (
+                      <View style={{ flexDirection: 'row', gap: Spacing.two }}>
+                        <Pressable hitSlop={8} disabled={busy} onPress={() => act(() => respondGymFriendship(f.friendship_id, true))}>
+                          <Ionicons name="checkmark-circle" size={28} color={theme.success} />
+                        </Pressable>
+                        <Pressable hitSlop={8} disabled={busy} onPress={() => act(() => respondGymFriendship(f.friendship_id, false))}>
+                          <Ionicons name="close-circle" size={28} color={theme.danger} />
+                        </Pressable>
+                      </View>
+                    )}
+                    {f.status === 'accepted' && <Ionicons name="git-merge" size={20} color={theme.accent} />}
                   </View>
-                )}
-                {f.status === 'accepted' && <Ionicons name="git-merge" size={20} color={theme.accent} />}
-              </Card>
-            ))
+                </View>
+              ))}
+            </Card>
           )}
         </View>
       )}
@@ -148,7 +166,7 @@ export default function GymDetailScreen() {
         </Card>
       ) : (
         <Card style={{ paddingVertical: Spacing.one }}>
-          {members.map((p, i) => (
+          {visibleMembers.map((p, i) => (
             <View key={p.id}>
               {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
               <View style={styles.memberRow}>
@@ -166,6 +184,15 @@ export default function GymDetailScreen() {
           ))}
         </Card>
       )}
+      {members.length > 15 && !showAllMembers && (
+        <Pressable
+          onPress={() => setShowAllMembers(true)}
+          style={[styles.older, { borderColor: theme.tileBorder }]}>
+          <ThemedText type="smallBold" themeColor="textSecondary">
+            {t('ui.showAll').replace('{n}', String(members.length))}
+          </ThemedText>
+        </Pressable>
+      )}
     </Screen>
   );
 }
@@ -173,7 +200,8 @@ export default function GymDetailScreen() {
 const styles = StyleSheet.create({
   logo: { width: 56, height: 56, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   section: { fontSize: 18, fontWeight: '800', marginTop: Spacing.one },
-  friendRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  friendRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.two, paddingHorizontal: Spacing.two },
   memberRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.two, paddingHorizontal: Spacing.two },
   divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.one },
+  older: { alignSelf: 'center', paddingVertical: Spacing.two, paddingHorizontal: Spacing.four, borderRadius: 999, borderWidth: 1 },
 });

@@ -149,7 +149,7 @@ export default function JuniorsScreen() {
             <Card key={j.id} style={styles.row}>
               <BeltChip belt={j.belt_rank} />
               <View style={{ flex: 1 }}>
-                <ThemedText style={{ fontWeight: '800' }}>{j.display_name}</ThemedText>
+                <ThemedText style={{ fontWeight: '800' }} numberOfLines={1}>{j.display_name}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
                   {t(`belt.${j.belt_rank}`)} • {j.rating} • {j.wins}-{j.losses}-{j.draws}
                 </ThemedText>

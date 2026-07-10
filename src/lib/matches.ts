@@ -131,14 +131,21 @@ export async function setMatchReaction(matchId: string, userId: string, reaction
 // ---------------------------------------------------------------------------
 // Per-match chat + plan
 // ---------------------------------------------------------------------------
-export async function fetchMatchMessages(matchId: string) {
-  const { data, error } = await supabase
+/**
+ * Newest `limit` messages, returned oldest-first for rendering. Pass `before`
+ * (the created_at of the oldest loaded message) to page further back.
+ */
+export async function fetchMatchMessages(matchId: string, opts?: { limit?: number; before?: string }) {
+  let req = supabase
     .from('match_messages')
     .select('*, sender:profiles!match_messages_sender_id_fkey(display_name)')
     .eq('match_id', matchId)
-    .order('created_at', { ascending: true });
+    .order('created_at', { ascending: false })
+    .limit(opts?.limit ?? 50);
+  if (opts?.before) req = req.lt('created_at', opts.before);
+  const { data, error } = await req;
   if (error) throw error;
-  return (data ?? []) as unknown as import('./types').MatchMessage[];
+  return ((data ?? []) as unknown as import('./types').MatchMessage[]).reverse();
 }
 
 export async function sendMatchMessage(matchId: string, senderId: string, body: string) {
@@ -206,19 +213,25 @@ const MATCH_WITH_PEOPLE = `
  * Matches where the user (or a junior they manage) is a competitor or referee,
  * newest first — so a guardian sees and can act on their juniors' matches too.
  */
-export async function fetchMyMatches(userId: string): Promise<MatchWithPeople[]> {
+export async function fetchMyMatches(userId: string, limit = 100): Promise<MatchWithPeople[]> {
   const { data: juniors } = await supabase.from('profiles').select('id').eq('managed_by', userId);
   const ids = [userId, ...((juniors ?? []) as { id: string }[]).map((j) => j.id)];
   const orClause = ids
     .flatMap((id) => [`challenger_id.eq.${id}`, `opponent_id.eq.${id}`, `referee_id.eq.${id}`])
     .join(',');
-  const { data, error } = await supabase
-    .from('matches')
-    .select(MATCH_WITH_PEOPLE)
-    .or(orClause)
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as unknown as MatchWithPeople[];
+  // Recent history is capped; active matches are fetched separately without a
+  // cap so an old still-pending match can never fall off the end of the list.
+  const [recent, active] = await Promise.all([
+    supabase.from('matches').select(MATCH_WITH_PEOPLE).or(orClause).order('created_at', { ascending: false }).limit(limit),
+    supabase.from('matches').select(MATCH_WITH_PEOPLE).or(orClause)
+      .in('status', ['pending_opponent', 'pending_referee', 'pending_confirmation', 'disputed'])
+      .order('created_at', { ascending: false }),
+  ]);
+  if (recent.error) throw recent.error;
+  if (active.error) throw active.error;
+  const byId = new Map<string, MatchWithPeople>();
+  for (const m of [...(recent.data ?? []), ...(active.data ?? [])] as unknown as MatchWithPeople[]) byId.set(m.id, m);
+  return [...byId.values()].sort((a, b) => b.created_at.localeCompare(a.created_at));
 }
 
 /** A single match with all three people attached. */

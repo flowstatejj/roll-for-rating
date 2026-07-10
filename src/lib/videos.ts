@@ -53,15 +53,17 @@ export async function videoSignedUrl(path: string): Promise<string | null> {
   return data.url as string;
 }
 
-/** All videos attached to a match, oldest first. */
+/** The newest 10 videos attached to a match, oldest first. */
 export async function fetchMatchVideos(matchId: string): Promise<MatchVideo[]> {
   const { data, error } = await supabase
     .from('match_videos')
     .select('*')
     .eq('match_id', matchId)
-    .order('created_at', { ascending: true });
+    .order('created_at', { ascending: false })
+    .limit(10);
   if (error) throw error;
-  return (data ?? []) as MatchVideo[];
+  // Newest 10, shown oldest-first so a fresh upload always appears (at the end).
+  return ((data ?? []) as MatchVideo[]).reverse();
 }
 
 function extFor(mimeType?: string, fileName?: string): string {

@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { RefreshControl, ScrollView, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 
 import { DropField, OptionRow, dropdownStyles } from '@/components/dropdowns';
 import { MatchCard } from '@/components/match-card';
@@ -49,6 +49,12 @@ export default function WatchScreen() {
   const [matches, setMatches] = useState<MatchWithPeople[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showOlder, setShowOlder] = useState(false);
+
+  // Collapse back to the newest matches whenever the query changes.
+  useEffect(() => {
+    setShowOlder(false);
+  }, [search, level, belt, band, submission, sort]);
 
   const load = useCallback(async () => {
     try {
@@ -80,10 +86,8 @@ export default function WatchScreen() {
   return (
     <Screen refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.text} />}>
       <Stack.Screen options={{ title: t('nav.watch') }} />
-      <ThemedText type="subtitle" style={{ fontSize: 28 }}>{t('nav.watch')}</ThemedText>
-      <ThemedText themeColor="textSecondary">{t('watch.intro')}</ThemedText>
       <ThemedText type="small" themeColor="textSecondary">
-        Match videos are automatically removed 2 weeks after they are posted.
+        {t('watch.intro')} {t('watch.retention')}
       </ThemedText>
 
       <TextField
@@ -184,9 +188,16 @@ export default function WatchScreen() {
         <EmptyState icon="play-circle-outline" title={t('watch.emptyTitle')} subtitle={t('watch.emptySub')} />
       ) : (
         <View style={{ gap: Spacing.two }}>
-          {matches.map((m) => (
+          {(showOlder ? matches : matches.slice(0, 15)).map((m) => (
             <MatchCard key={m.id} match={m} currentUserId={userId} />
           ))}
+          {!showOlder && matches.length > 15 && (
+            <Pressable
+              onPress={() => setShowOlder(true)}
+              style={{ alignSelf: 'center', paddingVertical: Spacing.two, paddingHorizontal: Spacing.four, borderRadius: 999, borderWidth: 1, borderColor: theme.tileBorder }}>
+              <ThemedText type="smallBold" themeColor="textSecondary">{t('ui.showOlder')}</ThemedText>
+            </Pressable>
+          )}
         </View>
       )}
     </Screen>

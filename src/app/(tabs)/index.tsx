@@ -8,7 +8,7 @@ import { MatchCard } from '@/components/match-card';
 import { MatchRow } from '@/components/match-row';
 import { TatamiBackground } from '@/components/tatami-background';
 import { ThemedText } from '@/components/themed-text';
-import { Avatar, BeltChip, Button, Card, EmptyState, ErrorState, Loading } from '@/components/ui/kit';
+import { Avatar, BeltChip, Card, EmptyState, ErrorState, Loading } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useUnread } from '@/hooks/use-unread';
@@ -201,9 +201,16 @@ export default function HomeScreen() {
             <>
               <SectionLabel>{t('home.needsAttention')}</SectionLabel>
               <View style={{ gap: Spacing.two }}>
-                {needsMe.map((m) => (
+                {needsMe.slice(0, 3).map((m) => (
                   <MatchCard key={m.id} match={m} currentUserId={userId!} />
                 ))}
+                {needsMe.length > 3 && (
+                  <Pressable onPress={() => router.push('/(tabs)/matches')} style={styles.viewAll}>
+                    <ThemedText style={{ fontWeight: '700', color: theme.accent }}>
+                      {t('ui.viewAll').replace('{n}', String(needsMe.length))}
+                    </ThemedText>
+                  </Pressable>
+                )}
               </View>
             </>
           )}
@@ -233,11 +240,6 @@ export default function HomeScreen() {
             </Card>
           )}
         </ScrollView>
-
-        {/* Pinned action button */}
-        <View style={styles.pinned} pointerEvents="box-none">
-          <Button label={t('home.newChallenge')} icon="add-circle" onPress={() => router.push('/match/new')} />
-        </View>
       </SafeAreaView>
     </View>
   );
@@ -283,10 +285,10 @@ const styles = StyleSheet.create({
   brand: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   logoMark: { width: 26, height: 26, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
   brandText: { fontSize: 17, fontWeight: '800', letterSpacing: 0.2 },
-  scroll: { padding: Spacing.three, gap: Spacing.three, paddingBottom: 110 },
+  scroll: { padding: Spacing.three, gap: Spacing.three, paddingBottom: Spacing.four },
   heroRow: { gap: Spacing.two, alignSelf: 'center', width: '100%', maxWidth: 520 },
   hero: {
-    height: 150,
+    minHeight: 150,
     borderRadius: 14,
     padding: Spacing.three,
     justifyContent: 'space-between',
@@ -297,10 +299,4 @@ const styles = StyleSheet.create({
   streak: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#ff7a1a22', borderRadius: 999, paddingHorizontal: Spacing.two, paddingVertical: 2 },
   divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.one },
   viewAll: { alignItems: 'center', paddingVertical: Spacing.two },
-  pinned: {
-    position: 'absolute',
-    left: Spacing.three,
-    right: Spacing.three,
-    bottom: Spacing.three,
-  },
 });

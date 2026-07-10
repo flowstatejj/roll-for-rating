@@ -43,6 +43,7 @@ export default function LeagueDetailScreen() {
   const [invited, setInvited] = useState(false);
   const [msgText, setMsgText] = useState('');
   const [postingMsg, setPostingMsg] = useState(false);
+  const [showOlderMsgs, setShowOlderMsgs] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -167,15 +168,14 @@ export default function LeagueDetailScreen() {
 
       {/* Invitation to accept (you've been invited by the organizer) */}
       {invited && !isMember && (
-        <Card style={{ gap: Spacing.two, borderColor: theme.accent, borderWidth: 1 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
-            <Ionicons name="mail-open" size={20} color={theme.accent} />
-            <ThemedText style={{ fontWeight: '800', flex: 1 }}>{t('le.invitedTitle')}</ThemedText>
-          </View>
-          <ThemedText type="small" themeColor="textSecondary">{t('le.invitedBody')}</ThemedText>
-          <Button label={t('le.acceptInvite')} icon="checkmark-circle" loading={busy} onPress={() => act(() => respondLeagueInvite(id, true))} />
-          <Button label={t('le.declineInvite')} variant="ghost" loading={busy} onPress={() => act(() => respondLeagueInvite(id, false))} />
-        </Card>
+        <View style={{ gap: Spacing.one }}>
+          <ThemedText type="smallBold" style={{ color: theme.accent }}>{t('le.invitedTitle')}</ThemedText>
+          <Card style={{ gap: Spacing.two }}>
+            <ThemedText type="small" themeColor="textSecondary">{t('le.invitedBody')}</ThemedText>
+            <Button label={t('le.acceptInvite')} icon="checkmark-circle" loading={busy} onPress={() => act(() => respondLeagueInvite(id, true))} />
+            <Button label={t('le.declineInvite')} variant="ghost" loading={busy} onPress={() => act(() => respondLeagueInvite(id, false))} />
+          </Card>
+        </View>
       )}
 
       {/* Membership actions */}
@@ -212,7 +212,7 @@ export default function LeagueDetailScreen() {
       {/* Announcements */}
       {(isMember || isOrganizer) && (
         <>
-          <ThemedText style={styles.section}>{t('le.announcements')}</ThemedText>
+          <ThemedText type="smallBold" themeColor="textSecondary" style={styles.section}>{t('le.announcements')}</ThemedText>
           {isOrganizer && (
             <Card style={{ gap: Spacing.two }}>
               <TextField
@@ -228,25 +228,32 @@ export default function LeagueDetailScreen() {
           {messages.length === 0 ? (
             <EmptyState icon="megaphone-outline" title={t('le.noAnnouncements')} subtitle={isOrganizer ? t('le.noAnnouncementsOrg') : t('le.noAnnouncementsSub')} />
           ) : (
-            <Card style={{ paddingVertical: Spacing.one }}>
-              {messages.map((m, i) => (
-                <View key={m.id}>
-                  {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
-                  <View style={{ paddingVertical: Spacing.two, paddingHorizontal: Spacing.two, gap: 2 }}>
-                    <ThemedText>{m.body}</ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {m.author?.display_name ?? t('le.organizer')} · {new Date(m.created_at).toLocaleDateString()}
-                    </ThemedText>
+            <>
+              <Card style={{ paddingVertical: Spacing.one }}>
+                {(showOlderMsgs ? messages : messages.slice(0, 3)).map((m, i) => (
+                  <View key={m.id}>
+                    {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
+                    <View style={{ paddingVertical: Spacing.two, paddingHorizontal: Spacing.two, gap: 2 }}>
+                      <ThemedText>{m.body}</ThemedText>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {m.author?.display_name ?? t('le.organizer')} · {new Date(m.created_at).toLocaleDateString()}
+                      </ThemedText>
+                    </View>
                   </View>
-                </View>
-              ))}
-            </Card>
+                ))}
+              </Card>
+              {messages.length > 3 && !showOlderMsgs && (
+                <Pressable onPress={() => setShowOlderMsgs(true)} style={[styles.older, { borderColor: theme.tileBorder }]}>
+                  <ThemedText type="smallBold" themeColor="textSecondary">{t('ui.showOlder')}</ThemedText>
+                </Pressable>
+              )}
+            </>
           )}
         </>
       )}
 
       {/* This week */}
-      <ThemedText style={styles.section}>{t('le.thisWeek')}</ThemedText>
+      <ThemedText type="smallBold" themeColor="textSecondary" style={styles.section}>{t('le.thisWeek')}</ThemedText>
       {isOrganizer && fixtures.length === 0 && (
         <Button label={t('le.generate')} icon="shuffle" variant="secondary" loading={busy} onPress={confirmGenWeek} />
       )}
@@ -255,28 +262,30 @@ export default function LeagueDetailScreen() {
       ) : (
         <>
           {isMember && (
-            <Card style={{ gap: Spacing.two, borderColor: theme.accent, borderWidth: 1 }}>
-              <ThemedText style={{ fontWeight: '800' }}>{t('le.yourMatch')}</ThemedText>
-              {!myFixture ? (
-                <ThemedText themeColor="textSecondary">{t('le.notPaired')}</ThemedText>
-              ) : !myFixture.player_b ? (
-                <ThemedText themeColor="textSecondary">{t('le.bye')}</ThemedText>
-              ) : (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.three }}>
-                  <Avatar name={(myFixture.player_a === userId ? myFixture.b : myFixture.a)?.display_name ?? '?'} size={40} />
-                  <View style={{ flex: 1 }}>
-                    <ThemedText style={{ fontWeight: '700' }}>
-                      {t('le.vs')} {(myFixture.player_a === userId ? myFixture.b : myFixture.a)?.display_name ?? '?'}
-                    </ThemedText>
+            <View style={{ gap: Spacing.one }}>
+              <ThemedText type="smallBold" style={{ color: theme.accent }}>{t('le.yourMatch')}</ThemedText>
+              <Card style={{ gap: Spacing.two }}>
+                {!myFixture ? (
+                  <ThemedText themeColor="textSecondary">{t('le.notPaired')}</ThemedText>
+                ) : !myFixture.player_b ? (
+                  <ThemedText themeColor="textSecondary">{t('le.bye')}</ThemedText>
+                ) : (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.three }}>
+                    <Avatar name={(myFixture.player_a === userId ? myFixture.b : myFixture.a)?.display_name ?? '?'} size={40} />
+                    <View style={{ flex: 1 }}>
+                      <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>
+                        {t('le.vs')} {(myFixture.player_a === userId ? myFixture.b : myFixture.a)?.display_name ?? '?'}
+                      </ThemedText>
+                    </View>
+                    {myFixture.match_id ? (
+                      <Button label={t('le.viewMatch')} variant="secondary" onPress={() => router.push(`/match/${myFixture.match_id}`)} />
+                    ) : (
+                      <Button label={t('le.startMatch')} icon="flame" onPress={() => startFixture(myFixture)} />
+                    )}
                   </View>
-                  {myFixture.match_id ? (
-                    <Button label={t('le.viewMatch')} variant="secondary" onPress={() => router.push(`/match/${myFixture.match_id}`)} />
-                  ) : (
-                    <Button label={t('le.startMatch')} icon="flame" onPress={() => startFixture(myFixture)} />
-                  )}
-                </View>
-              )}
-            </Card>
+                )}
+              </Card>
+            </View>
           )}
 
           <Card style={{ paddingVertical: Spacing.one }}>
@@ -296,7 +305,7 @@ export default function LeagueDetailScreen() {
       )}
 
       {/* Standings */}
-      <ThemedText style={styles.section}>{t('le.standings')}</ThemedText>
+      <ThemedText type="smallBold" themeColor="textSecondary" style={styles.section}>{t('le.standings')}</ThemedText>
       {standings.length === 0 ? (
         <EmptyState icon="podium-outline" title={t('le.noStandingsTitle')} subtitle={t('le.noStandingsSub')} />
       ) : (
@@ -331,7 +340,7 @@ export default function LeagueDetailScreen() {
       )}
 
       {/* Members */}
-      <ThemedText style={styles.section}>{t('le.members')} · {members.length}</ThemedText>
+      <ThemedText type="smallBold" themeColor="textSecondary" style={styles.section}>{t('le.members')} · {members.length}</ThemedText>
       <Card style={{ paddingVertical: Spacing.one }}>
         {members.map((m, i) => (
           <View key={m.user_id}>
@@ -362,11 +371,12 @@ function Tag({ text, tint }: { text: string; tint: string }) {
 }
 
 const styles = StyleSheet.create({
-  section: { fontSize: 18, fontWeight: '800', marginTop: Spacing.one },
+  section: { marginTop: Spacing.one },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.two, paddingHorizontal: Spacing.two },
   fixtureRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.two, paddingHorizontal: Spacing.two },
   rank: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.two },
+  older: { alignSelf: 'center', paddingVertical: Spacing.two, paddingHorizontal: Spacing.four, borderRadius: 999, borderWidth: 1 },
   tag: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 1 },
   prow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.two },
 });
