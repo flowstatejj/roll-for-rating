@@ -340,13 +340,18 @@ export default function ProfileScreen() {
         </View>
       )}
 
-      {/* Guardian (non-participating): no rating/competition surfaces. */}
+      {/* Non-participating accounts: no rating/competition surfaces. Gym
+          accounts get their own card; guardians keep the family copy. */}
       {!profile.participating && (
         <Card style={styles.openRow}>
-          <Ionicons name="people" size={22} color={theme.accent} />
+          <Ionicons name={profile.is_gym_account ? 'business' : 'people'} size={22} color={theme.accent} />
           <View style={{ flex: 1 }}>
-            <ThemedText style={{ fontWeight: '800' }}>{t('pf.guardianTitle')}</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">{t('pf.guardianBody')}</ThemedText>
+            <ThemedText style={{ fontWeight: '800' }}>
+              {profile.is_gym_account ? t('pf.gymTitle') : t('pf.guardianTitle')}
+            </ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              {profile.is_gym_account ? t('pf.gymBody') : t('pf.guardianBody')}
+            </ThemedText>
           </View>
         </Card>
       )}

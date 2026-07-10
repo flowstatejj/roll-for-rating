@@ -126,6 +126,17 @@ begin
     update public.profiles
        set is_gym_account = true, gym_verified = true, participating = false, gym_id = v_gym
      where id = app.profile_id;
+    -- The account may have competed before converting: kill its open matches so
+    -- nothing settles rating onto a gym account (the insert trigger only guards
+    -- NEW matches; acceptance/recording are UPDATEs on existing rows).
+    update public.matches
+       set status = 'cancelled'
+     where (challenger_id = app.profile_id or opponent_id = app.profile_id)
+       and status in ('pending_opponent','pending_referee','pending_confirmation');
+    -- Comp the account. If a store trial/sub is currently active this no-ops by
+    -- design (grant_comp_entitlement never clobbers a paid row); access is still
+    -- guaranteed because has_active_entitlement (below) treats verified gyms as
+    -- entitled by flag.
     perform public.grant_comp_entitlement(app.profile_id, 'comp:gym');
     insert into public.notifications (user_id, type, title, body, data)
     values (app.profile_id, 'gym_account', 'Gym account approved',
@@ -199,34 +210,121 @@ returns jsonb language sql stable security definer set search_path = public as $
 $$;
 grant execute on function public.my_elite_grants() to authenticated;
 
--- If a banned gym account loses access, its comp + grants go with it: revoking
--- happens via the existing ban path deleting entitlements; elite grants from a
--- banned gym are removed here so the comps cascade away too.
+-- Claw a gym account back. Elite comps are only removed from members with no
+-- SURVIVING grant from another patron (entitlements is one row per user, but a
+-- member can be granted by several patrons - deleting blindly would strip a
+-- founder's legitimate grant). participating flips back on so the person can
+-- subscribe and compete as a normal member afterward.
 create or replace function public.revoke_gym_account(p_profile uuid)
 returns void language plpgsql security definer set search_path = public as $$
 begin
   if not public.is_admin() then raise exception 'Admins only'; end if;
   delete from public.entitlements e
    where e.user_id in (select member_id from public.elite_grants where founder_id = p_profile)
-     and e.source = 'comp' and e.product_id = 'comp:elite';
+     and e.source = 'comp' and e.product_id = 'comp:elite'
+     and not exists (
+       select 1 from public.elite_grants g2
+       where g2.member_id = e.user_id and g2.founder_id <> p_profile
+     );
   delete from public.elite_grants where founder_id = p_profile;
   delete from public.entitlements where user_id = p_profile and source = 'comp' and product_id = 'comp:gym';
-  update public.profiles set is_gym_account = false, gym_verified = false where id = p_profile;
+  update public.profiles
+     set is_gym_account = false, gym_verified = false, participating = true
+   where id = p_profile;
   update public.gym_applications set status = 'denied', note = 'Revoked', decided_at = now(), decided_by = auth.uid()
    where profile_id = p_profile and status = 'approved';
 end; $$;
 grant execute on function public.revoke_gym_account(uuid) to authenticated;
 
--- ---- Hard stop: gym accounts never appear in a match ------------------------
+-- Same shared-entitlement bug existed in the original revoke_elite: only pull
+-- the comp when no other patron still grants this member.
+create or replace function public.revoke_elite(p_member uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare me uuid := auth.uid();
+begin
+  if not exists (select 1 from public.elite_grants where founder_id = me and member_id = p_member) then
+    raise exception 'You did not grant this member elite access.';
+  end if;
+  delete from public.elite_grants where founder_id = me and member_id = p_member;
+  -- Only remove the comp we granted (leaves a real store subscription untouched,
+  -- and leaves the comp in place while another patron's grant survives).
+  delete from public.entitlements e
+   where e.user_id = p_member and e.source = 'comp' and e.product_id = 'comp:elite'
+     and not exists (select 1 from public.elite_grants g2 where g2.member_id = p_member);
+end; $$;
+grant execute on function public.revoke_elite(uuid) to authenticated;
+
+-- Invite-link plumbing (elite-invites.sql) was founders-only with a hardcoded
+-- quota of 10; verified gyms share it with their quota of 4.
+create or replace function public.elite_slots_left(p_founder uuid)
+returns integer language sql stable security definer set search_path = public as $$
+  select public.elite_quota_for(p_founder)
+    - (select count(*) from public.elite_grants where founder_id = p_founder)
+    - (select count(*) from public.elite_invite_codes
+         where grantor_id = p_founder and claimed_by is null and expires_at > now());
+$$;
+
+create or replace function public.mint_elite_invite_code()
+returns text language plpgsql security definer set search_path = public as $$
+declare
+  me uuid := auth.uid(); gen text; tries int := 0;
+  alphabet text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; -- no O/0/1/I
+begin
+  if public.elite_quota_for(me) = 0 then
+    raise exception 'Only founding members and verified gyms can create elite invites.';
+  end if;
+  if public.elite_slots_left(me) <= 0 then
+    raise exception 'You have no elite slots left (all % are used or reserved).', public.elite_quota_for(me);
+  end if;
+  loop
+    gen := '';
+    for i in 1..8 loop
+      gen := gen || substr(alphabet, 1 + floor(random() * length(alphabet))::int, 1);
+    end loop;
+    exit when not exists (select 1 from public.elite_invite_codes where code = gen);
+    tries := tries + 1; if tries > 15 then raise exception 'Could not allocate a code, try again.'; end if;
+  end loop;
+  insert into public.elite_invite_codes (grantor_id, code) values (me, gen);
+  return gen;
+end; $$;
+grant execute on function public.mint_elite_invite_code() to authenticated;
+
+-- Verified gyms are entitled BY FLAG, not just by comp row. This covers the
+-- gym that started a store trial while waiting for approval: the comp can't be
+-- written over an active paid row, but access must survive the trial lapsing.
+create or replace function public.has_active_entitlement(p_user uuid)
+returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.entitlements e
+    where e.user_id = p_user
+      and (
+        e.source = 'comp'                                    -- comp never expires
+        or (
+          e.status in ('active','grace')
+          and (e.expires_at is null or e.expires_at > now())
+        )
+      )
+  ) or exists (
+    select 1 from public.profiles p
+    where p.id = p_user and p.is_gym_account and p.gym_verified
+  );
+$$;
+grant execute on function public.has_active_entitlement(uuid) to authenticated;
+
+-- ---- Hard stop: gym accounts never COMPETE ----------------------------------
+-- Refereeing stays allowed: the gym is the organizer, and recording a hosted
+-- tournament bout (record_bout_result) inserts a match with the host as the
+-- fallback referee - blocking that would break gym-run tournaments.
 
 create or replace function public.block_gym_account_matches()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
   if exists (
     select 1 from public.profiles
-    where id in (new.challenger_id, new.opponent_id, new.referee_id) and is_gym_account
+    where id in (new.challenger_id, new.opponent_id) and is_gym_account
   ) then
-    raise exception 'Gym accounts cannot compete in or referee matches.';
+    raise exception 'Gym accounts cannot compete in matches.';
   end if;
   return new;
 end; $$;
