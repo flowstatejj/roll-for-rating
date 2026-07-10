@@ -183,7 +183,6 @@ export default function TournamentDetailScreen() {
 
       {/* Header */}
       <Card style={{ gap: Spacing.two }}>
-        <ThemedText style={{ fontWeight: '800', fontSize: 22 }}>{tr.name}</ThemedText>
         {tr.description ? <ThemedText themeColor="textSecondary">{tr.description}</ThemedText> : null}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.one }}>
           <Tag text={t(`tn.fmt.${tr.format}`)} tint={theme.accent} />
@@ -318,7 +317,7 @@ export default function TournamentDetailScreen() {
               return (
                 <Card key={team.id} style={{ gap: Spacing.one }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <ThemedText style={{ flex: 1, fontWeight: '800' }}>{team.name}</ThemedText>
+                    <ThemedText style={{ flex: 1, fontWeight: '800' }} numberOfLines={1}>{team.name}</ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">{team.members?.length ?? 0}/{tr.team_size}</ThemedText>
                   </View>
                   {(team.members ?? []).map((m) => (
@@ -375,34 +374,39 @@ export default function TournamentDetailScreen() {
                 <ThemedText type="smallBold" themeColor="textSecondary">
                   {bracket === 'playoff' ? t('tn.playoff') : t('tn.round')} {rn}
                 </ThemedText>
-                {rbouts.map((b) => {
-                  const canRec =
-                    (b.referee_id === userId || isHost || mats.some((m) => m.id === b.mat_id && m.referee_id === userId)) &&
-                    b.status !== 'done' && b.status !== 'bye' && !!b.a_name && !!b.b_name;
-                  const mat = mats.find((m) => m.id === b.mat_id);
-                  return (
-                    <Card key={b.id} style={styles.boutRow}>
-                      <View style={{ flex: 1 }}>
-                        <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>
-                          {b.a_name ?? t('tn.tbd')} {t('le.vs')} {b.b_name ?? t('tn.tbd')}
-                        </ThemedText>
-                        <ThemedText type="small" themeColor="textSecondary">
-                          {b.status === 'done'
-                            ? (b.winner === 'draw' ? t('md.drawChoice') : `${b.winner === 'a' ? b.a_name : b.b_name} ${t('md.won')}${isTeam ? ` (${b.a_score}-${b.b_score})` : ''}`)
-                            : b.status === 'bye' ? t('le.byeShort')
-                            : mat ? `${t('tn.mat')} ${mat.mat_no}` : t('tn.unassigned')}
-                        </ThemedText>
+                <Card style={{ paddingVertical: Spacing.one }}>
+                  {rbouts.map((b, i) => {
+                    const canRec =
+                      (b.referee_id === userId || isHost || mats.some((m) => m.id === b.mat_id && m.referee_id === userId)) &&
+                      b.status !== 'done' && b.status !== 'bye' && !!b.a_name && !!b.b_name;
+                    const mat = mats.find((m) => m.id === b.mat_id);
+                    return (
+                      <View key={b.id}>
+                        {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
+                        <View style={styles.boutRow}>
+                          <View style={{ flex: 1 }}>
+                            <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>
+                              {b.a_name ?? t('tn.tbd')} {t('le.vs')} {b.b_name ?? t('tn.tbd')}
+                            </ThemedText>
+                            <ThemedText type="small" themeColor="textSecondary">
+                              {b.status === 'done'
+                                ? (b.winner === 'draw' ? t('md.drawChoice') : `${b.winner === 'a' ? b.a_name : b.b_name} ${t('md.won')}${isTeam ? ` (${b.a_score}-${b.b_score})` : ''}`)
+                                : b.status === 'bye' ? t('le.byeShort')
+                                : mat ? `${t('tn.mat')} ${mat.mat_no}` : t('tn.unassigned')}
+                            </ThemedText>
+                          </View>
+                          {b.status === 'done' && <Ionicons name="checkmark-circle" size={20} color={theme.success} />}
+                          {isHost && b.status !== 'done' && b.status !== 'bye' && mats.length > 0 && !!b.a_name && !!b.b_name && (
+                            <Pressable onPress={() => assignMat(b)} hitSlop={8} style={{ paddingHorizontal: Spacing.one }}>
+                              <Ionicons name="grid-outline" size={18} color={theme.accent} />
+                            </Pressable>
+                          )}
+                          {canRec && <Button label={t('tn.record')} onPress={() => router.push(`/tournament/bout/${b.id}`)} />}
+                        </View>
                       </View>
-                      {b.status === 'done' && <Ionicons name="checkmark-circle" size={20} color={theme.success} />}
-                      {isHost && b.status !== 'done' && b.status !== 'bye' && mats.length > 0 && !!b.a_name && !!b.b_name && (
-                        <Pressable onPress={() => assignMat(b)} hitSlop={8} style={{ paddingHorizontal: Spacing.one }}>
-                          <Ionicons name="grid-outline" size={18} color={theme.accent} />
-                        </Pressable>
-                      )}
-                      {canRec && <Button label={t('tn.record')} onPress={() => router.push(`/tournament/bout/${b.id}`)} />}
-                    </Card>
-                  );
-                })}
+                    );
+                  })}
+                </Card>
               </View>
             );
           })}
@@ -449,7 +453,7 @@ const styles = StyleSheet.create({
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: Spacing.one },
   prow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingVertical: 4 },
   matRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  boutRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  boutRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.two },
   standRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.two, paddingHorizontal: Spacing.two },
   divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.two },
   tag: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 1 },

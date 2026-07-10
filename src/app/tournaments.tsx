@@ -31,6 +31,7 @@ export default function TournamentsScreen() {
   const [creating, setCreating] = useState(false);
   const [busy, setBusy] = useState(false);
   const [cityQ, setCityQ] = useState('');
+  const [showCompleted, setShowCompleted] = useState(false);
   const cityRef = useRef('');
 
   // form
@@ -122,6 +123,37 @@ export default function TournamentsScreen() {
     }
   }
 
+  const open = items.filter((tr) => tr.status !== 'complete');
+  const completed = items.filter((tr) => tr.status === 'complete');
+
+  // One slim row per tournament, shared by the open and completed sections.
+  const renderRow = (tr: Tournament, i: number) => (
+    <View key={tr.id}>
+      {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
+      <Pressable onPress={() => router.push(`/tournament/${tr.id}`)} style={styles.row}>
+        <View style={[styles.icon, { backgroundColor: theme.backgroundSelected }]}>
+          <Ionicons name="trophy" size={18} color={theme.text} />
+        </View>
+        <View style={{ flex: 1, gap: 3 }}>
+          <ThemedText style={{ fontWeight: '800' }} numberOfLines={1}>{tr.name}</ThemedText>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: Spacing.one }}>
+            <Tag text={t(`tn.fmt.${tr.format}`)} tint={theme.textSecondary} />
+            <Tag text={tr.team_rule === 'none' ? t('tn.individual') : `${tr.team_size}v${tr.team_size}`} tint={theme.textSecondary} />
+            <Tag text={tr.ranked ? t('tn.rankedChip') : t('tn.casualChip')} tint={tr.ranked ? theme.accent : theme.textSecondary} />
+            <Tag text={t(`tn.status.${tr.status}`)} tint={tr.status === 'running' ? theme.success : theme.textSecondary} />
+          </View>
+          {tr.city ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Ionicons name="location-outline" size={13} color={theme.textSecondary} />
+              <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>{tr.city}</ThemedText>
+            </View>
+          ) : null}
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
+      </Pressable>
+    </View>
+  );
+
   return (
     <Screen>
       <Stack.Screen options={{ title: t('nav.tournaments') }} />
@@ -210,12 +242,13 @@ export default function TournamentsScreen() {
       )}
 
       {invites.length > 0 && (
-        <View style={{ gap: Spacing.two }}>
-          <ThemedText style={{ fontWeight: '800', fontSize: 16 }}>{t('tn.invitedSection')}</ThemedText>
-          {invites.map((iv) => (
-            <Card key={iv.tournament_id} style={{ gap: Spacing.two, borderColor: theme.accent, borderWidth: 1 }}>
-              <Pressable onPress={() => router.push(`/tournament/${iv.tournament_id}`)}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+        <View style={{ gap: Spacing.one }}>
+          <ThemedText type="smallBold" style={{ color: theme.accent }}>{t('tn.invitedSection')}</ThemedText>
+          <Card style={{ paddingVertical: Spacing.one }}>
+            {invites.map((iv, i) => (
+              <View key={iv.tournament_id}>
+                {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
+                <Pressable onPress={() => router.push(`/tournament/${iv.tournament_id}`)} style={styles.row}>
                   <Ionicons name="mail-open" size={20} color={theme.accent} />
                   <View style={{ flex: 1 }}>
                     <ThemedText style={{ fontWeight: '800' }} numberOfLines={1}>{iv.name}</ThemedText>
@@ -223,14 +256,14 @@ export default function TournamentsScreen() {
                       {t('tn.invitedBy').replace('{name}', iv.invited_by_name)} · {t(`tn.fmt.${iv.format}`)}
                     </ThemedText>
                   </View>
+                </Pressable>
+                <View style={{ flexDirection: 'row', gap: Spacing.two, paddingBottom: Spacing.two }}>
+                  <View style={{ flex: 1 }}><Button label={t('tn.acceptInvite')} loading={busy} onPress={() => respondInvite(iv.tournament_id, true)} /></View>
+                  <View style={{ flex: 1 }}><Button label={t('tn.declineInvite')} variant="ghost" loading={busy} onPress={() => respondInvite(iv.tournament_id, false)} /></View>
                 </View>
-              </Pressable>
-              <View style={{ flexDirection: 'row', gap: Spacing.two }}>
-                <View style={{ flex: 1 }}><Button label={t('tn.acceptInvite')} loading={busy} onPress={() => respondInvite(iv.tournament_id, true)} /></View>
-                <View style={{ flex: 1 }}><Button label={t('tn.declineInvite')} variant="ghost" loading={busy} onPress={() => respondInvite(iv.tournament_id, false)} /></View>
               </View>
-            </Card>
-          ))}
+            ))}
+          </Card>
         </View>
       )}
 
@@ -239,32 +272,28 @@ export default function TournamentsScreen() {
       {items.length === 0 ? (
         <EmptyState icon="trophy-outline" title={cityQ.trim() ? t('tn.noneCityTitle') : t('tn.emptyTitle')} subtitle={cityQ.trim() ? t('tn.noneCitySub') : t('tn.emptySub')} />
       ) : (
-        <View style={{ gap: Spacing.two }}>
-          {items.map((tr) => (
-            <Pressable key={tr.id} onPress={() => router.push(`/tournament/${tr.id}`)}>
-              <Card style={styles.row}>
-                <View style={[styles.icon, { backgroundColor: theme.backgroundSelected }]}>
-                  <Ionicons name="trophy" size={22} color={theme.text} />
-                </View>
-                <View style={{ flex: 1, gap: 3 }}>
-                  <ThemedText style={{ fontWeight: '800' }} numberOfLines={1}>{tr.name}</ThemedText>
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: Spacing.one }}>
-                    <Tag text={t(`tn.fmt.${tr.format}`)} tint={theme.textSecondary} />
-                    <Tag text={tr.team_rule === 'none' ? t('tn.individual') : `${tr.team_size}v${tr.team_size}`} tint={theme.textSecondary} />
-                    <Tag text={tr.ranked ? t('tn.rankedChip') : t('tn.casualChip')} tint={tr.ranked ? theme.accent : theme.textSecondary} />
-                    <Tag text={t(`tn.status.${tr.status}`)} tint={tr.status === 'running' ? theme.success : theme.textSecondary} />
-                  </View>
-                  {tr.city ? (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                      <Ionicons name="location-outline" size={13} color={theme.textSecondary} />
-                      <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>{tr.city}</ThemedText>
-                    </View>
-                  ) : null}
-                </View>
-                <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
+        <View style={{ gap: Spacing.three }}>
+          {open.length > 0 && (
+            <View style={{ gap: Spacing.one }}>
+              <ThemedText type="smallBold" themeColor="textSecondary">{t('tn.openSection')}</ThemedText>
+              <Card style={{ paddingVertical: Spacing.one }}>
+                {open.map(renderRow)}
               </Card>
+            </View>
+          )}
+          {completed.length > 0 && !showCompleted && (
+            <Pressable onPress={() => setShowCompleted(true)} style={[styles.older, { borderColor: theme.tileBorder }]}>
+              <ThemedText type="smallBold" themeColor="textSecondary">{t('ui.showOlder')}</ThemedText>
             </Pressable>
-          ))}
+          )}
+          {completed.length > 0 && showCompleted && (
+            <View style={{ gap: Spacing.one }}>
+              <ThemedText type="smallBold" themeColor="textSecondary">{t('tn.completedSection')}</ThemedText>
+              <Card style={{ paddingVertical: Spacing.one }}>
+                {completed.map(renderRow)}
+              </Card>
+            </View>
+          )}
         </View>
       )}
     </Screen>
@@ -299,7 +328,9 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   chip: { paddingVertical: Spacing.one, paddingHorizontal: Spacing.three, borderRadius: 999, borderWidth: 1 },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  icon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.two },
+  icon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.one },
+  older: { alignSelf: 'center', paddingVertical: Spacing.two, paddingHorizontal: Spacing.four, borderRadius: 999, borderWidth: 1 },
   tag: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 1 },
 });

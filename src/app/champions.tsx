@@ -51,7 +51,7 @@ export default function ChampionsScreen() {
                 {c.champ ? (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
                     <Avatar name={c.champ.display_name} size={28} />
-                    <ThemedText type="small" themeColor="textSecondary">
+                    <ThemedText type="small" themeColor="textSecondary" numberOfLines={1} style={{ flexShrink: 1 }}>
                       {c.champ.display_name}
                       {c.isMe ? ` ${t('md.you')}` : ''} · {c.champ.rating}
                     </ThemedText>

@@ -171,7 +171,7 @@ export default function ProfileScreen() {
   const loadMatches = useCallback(async () => {
     if (!userId) return;
     try {
-      const ms = await fetchMyMatches(userId);
+      const ms = await fetchMyMatches(userId, 500); // achievements scan deeper history
       setMatches(ms);
     } catch (e) {
       console.warn('Failed to load profile data', e);
@@ -267,6 +267,12 @@ export default function ProfileScreen() {
     wClass ? t(`wc.${wClass}`) : null,
   ].filter(Boolean).join(' · ');
 
+  // Role-gated manage rows - same visibility conditions as the old buttons.
+  const manageItems: MenuItem[] = [];
+  if (profile.is_admin) manageItems.push({ icon: 'shield-checkmark-outline', label: t('profile.admin'), onPress: () => router.push('/admin') });
+  if (profile.is_founding_member) manageItems.push({ icon: 'ribbon-outline', label: t('profile.elite'), onPress: () => router.push('/elite') });
+  if (profile.is_founding_member || profile.is_admin) manageItems.push({ icon: 'cash-outline', label: t('profile.affiliate'), onPress: () => router.push('/affiliate') });
+
   return (
     <Screen>
       {/* Header */}
@@ -328,7 +334,7 @@ export default function ProfileScreen() {
           {titles.map((t) => (
             <View key={t} style={[styles.titleChip, { borderColor: theme.accent, backgroundColor: theme.accent + '22' }]}>
               <ThemedText style={{ fontSize: 13 }}>👑</ThemedText>
-              <ThemedText style={{ color: theme.accent, fontWeight: '800', fontSize: 13 }}>{t}</ThemedText>
+              <ThemedText style={{ color: theme.accent, fontWeight: '800', fontSize: 13, flexShrink: 1 }} numberOfLines={1}>{t}</ThemedText>
             </View>
           ))}
         </View>
@@ -370,6 +376,8 @@ export default function ProfileScreen() {
           <MiniStat label="Losses" value={profile.losses} tint={theme.accentText} />
           <MiniStat label="Draws" value={profile.draws} tint={theme.accentText} />
           <MiniStat label="Win %" value={`${winRate}%`} tint={theme.accentText} />
+          <MiniStat label={t('pf.drawRate')} value={`${drawRate}%`} tint={theme.accentText} />
+          <MiniStat label={t('pf.matches')} value={total} tint={theme.accentText} />
         </View>
       </Card>
       )}
@@ -422,19 +430,8 @@ export default function ProfileScreen() {
         </Card>
       )}
 
-      {/* Stat grid */}
-      <ThemedText style={styles.sectionLabel}>Stats</ThemedText>
-      <View style={styles.grid}>
-        <GridTile icon="trophy" value={profile.wins} label="Wins" />
-        <GridTile icon="close-circle" value={profile.losses} label="Losses" />
-        <GridTile icon="remove-circle" value={profile.draws} label="Draws" />
-        <GridTile icon="pie-chart" value={`${winRate}%`} label="Win rate" />
-        <GridTile icon="pie-chart-outline" value={`${drawRate}%`} label="Draw rate" />
-        <GridTile icon="albums" value={total} label="Matches" />
-      </View>
-
       {/* Trophy case */}
-      <ThemedText style={styles.sectionLabel}>
+      <ThemedText type="smallBold" themeColor="textSecondary" style={styles.sectionLabel}>
         Trophy case · {earnedCount}/{achievements.length}
       </ThemedText>
       <View style={styles.grid}>
@@ -454,12 +451,17 @@ export default function ProfileScreen() {
         ))}
       </View>
 
-      <Button label={t('profile.friends')} variant="secondary" icon="people" onPress={() => router.push('/friends')} />
-      <Button label="Rivalries" variant="secondary" icon="git-compare" onPress={() => router.push('/rivalries')} />
-      <Button label="Champions" variant="secondary" icon="trophy" onPress={() => router.push('/champions')} />
+      <MenuSection
+        title={t('pf.sectionSocial')}
+        items={[
+          { icon: 'people', label: t('profile.friends'), onPress: () => router.push('/friends') },
+          { icon: 'git-compare', label: t('nav.rivalries'), onPress: () => router.push('/rivalries') },
+          { icon: 'trophy', label: t('nav.champions'), onPress: () => router.push('/champions') },
+        ]}
+      />
 
       {/* Match history */}
-      <ThemedText style={styles.sectionLabel}>Match history</ThemedText>
+      <ThemedText type="smallBold" themeColor="textSecondary" style={styles.sectionLabel}>Match history</ThemedText>
       {recent.length === 0 ? (
         <EmptyState icon="time-outline" title="No matches yet" subtitle="Your completed rolls will show up here." />
       ) : (
@@ -551,70 +553,31 @@ export default function ProfileScreen() {
       )}
 
       {!profile.is_minor && (
-        <>
-          <Button
-            label={t('profile.myJuniors')}
-            variant="secondary"
-            icon="people-outline"
-            onPress={() => router.push('/juniors')}
-          />
-          <Button
-            label={t('profile.juniorChallenges')}
-            variant="secondary"
-            icon="mail-outline"
-            onPress={() => router.push('/invites')}
-          />
-        </>
-      )}
-
-      {profile.is_admin && (
-        <Button
-          label={t('profile.admin')}
-          variant="secondary"
-          icon="shield-checkmark-outline"
-          onPress={() => router.push('/admin')}
+        <MenuSection
+          title={t('pf.sectionFamily')}
+          items={[
+            { icon: 'people-outline', label: t('profile.myJuniors'), onPress: () => router.push('/juniors') },
+            { icon: 'mail-outline', label: t('profile.juniorChallenges'), onPress: () => router.push('/invites') },
+          ]}
         />
       )}
 
-      {profile.is_founding_member && (
-        <Button
-          label={t('profile.elite')}
-          variant="secondary"
-          icon="ribbon-outline"
-          onPress={() => router.push('/elite')}
-        />
-      )}
+      {manageItems.length > 0 && <MenuSection title={t('pf.sectionManage')} items={manageItems} />}
 
-      {(profile.is_founding_member || profile.is_admin) && (
-        <Button
-          label={t('profile.affiliate')}
-          variant="secondary"
-          icon="cash-outline"
-          onPress={() => router.push('/affiliate')}
-        />
-      )}
-
-      <Button
-        label={t('profile.settings')}
-        variant="secondary"
-        icon="settings-outline"
-        onPress={() => router.push('/settings')}
-      />
-
-      <Button
-        label={t('profile.help')}
-        variant="secondary"
-        icon="help-buoy-outline"
-        onPress={() => router.push('/support')}
-      />
-
-      <Button label={t('profile.signOut')} variant="ghost" icon="log-out-outline" onPress={signOut} />
-      <Button
-        label={deleting ? 'Deleting…' : t('profile.deleteAccount')}
-        variant="ghost"
-        icon="trash-outline"
-        loading={deleting}
-        onPress={confirmDeleteAccount}
+      <MenuSection
+        title={t('pf.sectionAccount')}
+        items={[
+          { icon: 'settings-outline', label: t('profile.settings'), onPress: () => router.push('/settings') },
+          { icon: 'help-buoy-outline', label: t('profile.help'), onPress: () => router.push('/support') },
+          { icon: 'log-out-outline', label: t('profile.signOut'), onPress: signOut, noChevron: true },
+          {
+            icon: 'trash-outline',
+            label: deleting ? 'Deleting…' : t('profile.deleteAccount'),
+            onPress: confirmDeleteAccount,
+            danger: true,
+            noChevron: true,
+          },
+        ]}
       />
     </Screen>
   );
@@ -629,24 +592,34 @@ function MiniStat({ label, value, tint }: { label: string; value: string | numbe
   );
 }
 
-function GridTile({
-  icon,
-  value,
-  label,
-}: {
+type MenuItem = {
   icon: keyof typeof Ionicons.glyphMap;
-  value: string | number;
   label: string;
-}) {
+  onPress: () => void;
+  danger?: boolean;
+  noChevron?: boolean;
+};
+
+function MenuSection({ title, items }: { title: string; items: MenuItem[] }) {
   const theme = useTheme();
   return (
-    <Card style={styles.gridTile}>
-      <Ionicons name={icon} size={20} color={theme.accent} />
-      <ThemedText style={{ fontSize: 20, fontWeight: '800' }}>{value}</ThemedText>
-      <ThemedText type="small" themeColor="textSecondary">
-        {label}
-      </ThemedText>
-    </Card>
+    <View style={{ gap: Spacing.one }}>
+      <ThemedText type="smallBold" themeColor="textSecondary">{title}</ThemedText>
+      <Card style={{ paddingVertical: Spacing.one }}>
+        {items.map((item, i) => (
+          <View key={item.label}>
+            {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
+            <Pressable onPress={item.onPress} style={styles.menuRow}>
+              <Ionicons name={item.icon} size={20} color={item.danger ? theme.danger : theme.textSecondary} />
+              <ThemedText style={{ flex: 1, fontWeight: '600', color: item.danger ? theme.danger : theme.text }} numberOfLines={1}>
+                {item.label}
+              </ThemedText>
+              {!item.noChevron && <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />}
+            </Pressable>
+          </View>
+        ))}
+      </Card>
+    </View>
   );
 }
 
@@ -664,23 +637,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   titleRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
-  titleChip: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderRadius: 999, paddingHorizontal: Spacing.three, paddingVertical: 4 },
+  titleChip: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderRadius: 999, paddingHorizontal: Spacing.three, paddingVertical: 4, maxWidth: '100%' },
   tierTrack: { height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.25)', overflow: 'hidden' },
   tierFill: { height: 6, borderRadius: 3, backgroundColor: '#fff' },
   achv: { flexBasis: '31%', flexGrow: 1, alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: Spacing.three, borderRadius: 10, borderWidth: 1 },
   openRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   socialDisplay: { alignItems: 'center', gap: Spacing.two, marginTop: -Spacing.one },
   recordRow: { flexDirection: 'row', marginTop: Spacing.three },
-  sectionLabel: { fontSize: 18, fontWeight: '800', marginTop: Spacing.one },
+  sectionLabel: { marginTop: Spacing.one },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
-  gridTile: {
-    flexBasis: '31%',
-    flexGrow: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 3,
-    paddingVertical: Spacing.three,
-  },
+  menuRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.two },
   divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.one },
   belts: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   beltOption: { paddingVertical: Spacing.two, paddingHorizontal: Spacing.three, borderRadius: 10, borderWidth: 1 },

@@ -10,7 +10,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
 import { claimSubmissionRewards, fetchSubmissionCollection } from '@/lib/matches';
-import { SUBMISSION_ROR, SUBMISSIONS } from '@/lib/types';
+import { SUBMISSION_CATEGORIES, SUBMISSION_LIST, SUBMISSION_ROR, SUBMISSIONS } from '@/lib/types';
 
 export default function SubmissionHuntScreen() {
   const { session, refreshProfile } = useAuth();
@@ -86,24 +86,36 @@ export default function SubmissionHuntScreen() {
         <Button label={`${t('sh.claim')} +${unclaimedRor} ROR`} icon="cash" loading={claiming} onPress={claim} />
       )}
 
-      <View style={styles.grid}>
-        {SUBMISSIONS.map((s) => {
-          const got = wonSet.has(s);
-          return (
-            <Card key={s} style={[styles.tile, { opacity: got ? 1 : 0.45, borderColor: got ? theme.accent : theme.tileBorder }]}>
-              <Ionicons name={got ? 'lock-open' : 'lock-closed'} size={20} color={got ? theme.accent : theme.textSecondary} />
-              <ThemedText style={{ fontWeight: '700', fontSize: 12, textAlign: 'center' }} numberOfLines={2}>
-                {s}
-              </ThemedText>
-              {got && !rewardedSet.has(s) && (
-                <ThemedText type="small" style={{ color: theme.success, fontWeight: '800' }}>
-                  +{rorFor(s)} {t('sh.ready')}
-                </ThemedText>
-              )}
-            </Card>
-          );
-        })}
-      </View>
+      {SUBMISSION_CATEGORIES.map((cat) => {
+        const subs = SUBMISSION_LIST.filter((d) => d.category === cat.key);
+        const gotCount = subs.filter((d) => wonSet.has(d.name)).length;
+        return (
+          <View key={cat.key} style={{ gap: Spacing.two }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+              <ThemedText type="smallBold" themeColor="textSecondary" style={{ flex: 1 }}>{t(`sh.cat.${cat.key}`)}</ThemedText>
+              <ThemedText type="smallBold" themeColor="textSecondary">{gotCount}/{subs.length}</ThemedText>
+            </View>
+            <View style={styles.grid}>
+              {subs.map(({ name: s }) => {
+                const got = wonSet.has(s);
+                return (
+                  <Card key={s} style={[styles.tile, { opacity: got ? 1 : 0.45, borderColor: got ? theme.accent : theme.tileBorder }]}>
+                    <Ionicons name={got ? 'lock-open' : 'lock-closed'} size={20} color={got ? theme.accent : theme.textSecondary} />
+                    <ThemedText style={{ fontWeight: '700', fontSize: 12, textAlign: 'center' }} numberOfLines={2}>
+                      {s}
+                    </ThemedText>
+                    {got && !rewardedSet.has(s) && (
+                      <ThemedText type="small" style={{ color: theme.success, fontWeight: '800' }}>
+                        +{rorFor(s)} {t('sh.ready')}
+                      </ThemedText>
+                    )}
+                  </Card>
+                );
+              })}
+            </View>
+          </View>
+        );
+      })}
     </Screen>
   );
 }

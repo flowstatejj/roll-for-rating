@@ -44,16 +44,16 @@ export function MatchCard({ match, currentUserId }: { match: MatchWithPeople; cu
 
   return (
     <Pressable onPress={() => router.push(`/match/${match.id}`)}>
-      <Card style={needsMe ? { borderColor: theme.accent, borderWidth: 1.5 } : undefined}>
+      <Card>
         <View style={styles.topRow}>
           <View style={[styles.badge, { backgroundColor: meta.color + '22' }]}>
-            <ThemedText style={{ color: meta.color, fontWeight: '700', fontSize: 12 }}>
+            <ThemedText numberOfLines={1} style={{ color: meta.color, fontWeight: '700', fontSize: 12 }}>
               {meta.label}
             </ThemedText>
           </View>
           {needsMe && (
             <View style={[styles.badge, { backgroundColor: theme.accent }]}>
-              <ThemedText style={{ color: theme.accentText, fontWeight: '700', fontSize: 12 }}>
+              <ThemedText numberOfLines={1} style={{ color: theme.accentText, fontWeight: '700', fontSize: 12 }}>
                 {isOpponentPending ? t('mc.respond') : t('mc.recordResult')}
               </ThemedText>
             </View>
@@ -123,8 +123,8 @@ function Competitor({
 }
 
 const styles = StyleSheet.create({
-  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.three },
-  badge: { borderRadius: 999, paddingHorizontal: Spacing.two, paddingVertical: 3 },
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: Spacing.two, marginBottom: Spacing.three },
+  badge: { borderRadius: 999, paddingHorizontal: Spacing.two, paddingVertical: 3, flexShrink: 1 },
   competitors: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   footer: {
     flexDirection: 'row',

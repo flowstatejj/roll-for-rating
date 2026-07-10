@@ -186,7 +186,7 @@ export default function EliteScreen() {
                   <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>{m.display_name}</ThemedText>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
                     <BeltChip belt={m.belt_rank as BeltRank} size="sm" />
-                    <ThemedText type="small" themeColor="textSecondary">@{m.username} · {m.rating}</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary" numberOfLines={1} style={{ flexShrink: 1 }}>@{m.username} · {m.rating}</ThemedText>
                   </View>
                 </View>
                 <Pressable onPress={() => confirmRevoke(m)} hitSlop={8}>

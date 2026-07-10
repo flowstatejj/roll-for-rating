@@ -59,7 +59,8 @@ export async function fetchMatchVideos(matchId: string): Promise<MatchVideo[]> {
     .from('match_videos')
     .select('*')
     .eq('match_id', matchId)
-    .order('created_at', { ascending: true });
+    .order('created_at', { ascending: true })
+    .limit(10);
   if (error) throw error;
   return (data ?? []) as MatchVideo[];
 }

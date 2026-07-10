@@ -35,6 +35,7 @@ export default function OpenMatsScreen() {
   const [mats, setMats] = useState<OpenMat[]>([]);
   const [adding, setAdding] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [showOlder, setShowOlder] = useState(false);
   const [form, setForm] = useState({ title: '', city: '', state: '', country: '', address: '', schedule: '', notes: '' });
 
   const load = useCallback(async () => {
@@ -206,7 +207,7 @@ export default function OpenMatsScreen() {
 
         {open && (
           <Card style={{ padding: Spacing.one, maxHeight: 240 }}>
-            <ScrollView keyboardShouldPersistTaps="handled">
+            <ScrollView keyboardShouldPersistTaps="handled" nestedScrollEnabled>
               <FilterOption label={t('om.all')} selected={valueFor[open] === null} onPress={() => pick(open, null)} />
               {optionsFor[open].map((opt) => (
                 <FilterOption key={opt} label={opt} selected={valueFor[open] === opt} onPress={() => pick(open, opt)} />
@@ -225,7 +226,7 @@ export default function OpenMatsScreen() {
         <EmptyState icon="calendar-outline" title={t('om.emptyTitle')} subtitle={hasFilters || query ? t('om.noMatch') : t('om.emptySub')} />
       ) : (
         <View style={{ gap: Spacing.two }}>
-          {mats.map((m) => (
+          {(showOlder ? mats : mats.slice(0, 20)).map((m) => (
             <Card key={m.id} style={{ gap: Spacing.one }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <ThemedText style={{ fontSize: 16, fontWeight: '800', flex: 1 }}>{m.title}</ThemedText>
@@ -239,9 +240,16 @@ export default function OpenMatsScreen() {
               {(m.city || m.state || m.country || m.address) ? (
                 <Row icon="location-outline" text={[m.address, m.city, m.state, m.country].filter(Boolean).join(' · ')} />
               ) : null}
-              {m.notes ? <ThemedText themeColor="textSecondary">{m.notes}</ThemedText> : null}
+              {m.notes ? <ThemedText themeColor="textSecondary" numberOfLines={3}>{m.notes}</ThemedText> : null}
             </Card>
           ))}
+          {mats.length > 20 && !showOlder && (
+            <Pressable
+              onPress={() => setShowOlder(true)}
+              style={[styles.older, { borderColor: theme.tileBorder }]}>
+              <ThemedText type="smallBold" themeColor="textSecondary">{t('ui.showOlder')}</ThemedText>
+            </Pressable>
+          )}
         </View>
       )}
     </Screen>
@@ -298,7 +306,7 @@ function Row({ icon, text }: { icon: keyof typeof Ionicons.glyphMap; text: strin
   return (
     <View style={styles.row}>
       <Ionicons name={icon} size={15} color={theme.textSecondary} />
-      <ThemedText type="small" themeColor="textSecondary">
+      <ThemedText type="small" themeColor="textSecondary" numberOfLines={2} style={{ flex: 1 }}>
         {text}
       </ThemedText>
     </View>
@@ -318,6 +326,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   clearBtn: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  older: { alignSelf: 'center', paddingVertical: Spacing.two, paddingHorizontal: Spacing.four, borderRadius: 999, borderWidth: 1 },
   option: {
     flexDirection: 'row',
     alignItems: 'center',

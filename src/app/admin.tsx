@@ -27,6 +27,7 @@ export default function AdminScreen() {
   const [resolvingId, setResolvingId] = useState<string | null>(null);
   const [reports, setReports] = useState<UserReport[]>([]);
   const [actingReportId, setActingReportId] = useState<string | null>(null);
+  const [showAllFounders, setShowAllFounders] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -146,6 +147,10 @@ export default function AdminScreen() {
     );
   }
 
+  // Alphabetical, first 10 by default - the founder list grows unbounded otherwise.
+  const sortedFounders = [...founders].sort((a, b) => a.display_name.localeCompare(b.display_name));
+  const visibleFounders = showAllFounders ? sortedFounders : sortedFounders.slice(0, 10);
+
   return (
     <Screen>
       <Stack.Screen options={{ title: t('admin.title') }} />
@@ -158,8 +163,8 @@ export default function AdminScreen() {
             <ThemedText style={{ fontWeight: '800', fontSize: 18 }}>{t('admin.disputesTitle')} · {disputes.length}</ThemedText>
           </View>
           {disputes.map((d) => (
-            <Card key={d.match_id} style={{ gap: Spacing.two, borderColor: theme.danger, borderWidth: 1 }}>
-              <ThemedText style={{ fontWeight: '800' }}>{d.challenger.name} {t('md.vs')} {d.opponent.name}</ThemedText>
+            <Card key={d.match_id} style={{ gap: Spacing.two }}>
+              <ThemedText style={{ fontWeight: '800' }} numberOfLines={2}>{d.challenger.name} {t('md.vs')} {d.opponent.name}</ThemedText>
               {(d.reports ?? []).map((r) => {
                 const reporter = r.reporter_id === d.challenger.id ? d.challenger.name : d.opponent.name;
                 return (
@@ -192,22 +197,31 @@ export default function AdminScreen() {
             <ThemedText style={{ fontWeight: '800', fontSize: 18 }}>{t('admin.reportsTitle')} · {reports.length}</ThemedText>
           </View>
           {reports.map((rep) => (
-            <Card key={rep.id} style={{ gap: Spacing.two, borderColor: theme.danger, borderWidth: 1 }}>
-              <ThemedText style={{ fontWeight: '800' }}>{rep.reported_name ?? t('admin.repUnknown')}</ThemedText>
+            <Card key={rep.id} style={{ gap: Spacing.two }}>
+              <ThemedText style={{ fontWeight: '800' }} numberOfLines={1}>{rep.reported_name ?? t('admin.repUnknown')}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                {t('admin.repReason').replace('{reason}', rep.reason).replace('{reporter}', rep.reporter_name ?? '—')}
+                {t('admin.repReason').replace('{reason}', rep.reason).replace('{reporter}', rep.reporter_name ?? '-')}
               </ThemedText>
               {rep.details ? (
                 <ThemedText type="small" themeColor="textSecondary">{rep.details}</ThemedText>
               ) : null}
-              {rep.match_id ? (
-                <Button label={t('admin.viewVideo')} variant="secondary" icon="play-circle" onPress={() => router.push(`/match/${rep.match_id}`)} />
-              ) : null}
-              <Button label={t('admin.repDismiss')} variant="secondary" onPress={() => actOnReport(rep, 'dismiss')} loading={actingReportId === rep.id} />
-              {rep.match_id ? (
-                <Button label={t('admin.repRemove')} onPress={() => actOnReport(rep, 'remove')} loading={actingReportId === rep.id} />
-              ) : null}
-              <Button label={t('admin.repBan')} onPress={() => actOnReport(rep, 'ban')} loading={actingReportId === rep.id} />
+              <View style={styles.reportActions}>
+                {rep.match_id ? (
+                  <Button label={t('admin.viewVideo')} variant="secondary" icon="play-circle" onPress={() => router.push(`/match/${rep.match_id}`)} />
+                ) : null}
+                <View style={{ flex: 1 }} />
+                <Pressable onPress={() => actOnReport(rep, 'dismiss')} disabled={actingReportId === rep.id} hitSlop={8}>
+                  <ThemedText type="smallBold" style={{ color: theme.accent, opacity: actingReportId === rep.id ? 0.5 : 1 }}>{t('admin.repDismiss')}</ThemedText>
+                </Pressable>
+                {rep.match_id ? (
+                  <Pressable onPress={() => actOnReport(rep, 'remove')} disabled={actingReportId === rep.id} hitSlop={8}>
+                    <ThemedText type="smallBold" style={{ color: theme.danger, opacity: actingReportId === rep.id ? 0.5 : 1 }}>{t('admin.repRemove')}</ThemedText>
+                  </Pressable>
+                ) : null}
+                <Pressable onPress={() => actOnReport(rep, 'ban')} disabled={actingReportId === rep.id} hitSlop={8}>
+                  <ThemedText type="smallBold" style={{ color: theme.danger, opacity: actingReportId === rep.id ? 0.5 : 1 }}>{t('admin.repBan')}</ThemedText>
+                </Pressable>
+              </View>
             </Card>
           ))}
         </>
@@ -232,7 +246,7 @@ export default function AdminScreen() {
         <Button label={t('admin.makeFounder')} icon="star" onPress={add} loading={busy} />
       </Card>
 
-      <ThemedText style={{ fontWeight: '800', fontSize: 18, marginTop: Spacing.one }}>
+      <ThemedText type="smallBold" themeColor="textSecondary" style={{ marginTop: Spacing.one }}>
         {t('admin.foundersTitle')} · {founders.length}
       </ThemedText>
 
@@ -240,7 +254,7 @@ export default function AdminScreen() {
         <EmptyState icon="people-outline" title={t('admin.none')} subtitle={t('admin.addHint')} />
       ) : (
         <Card style={{ paddingVertical: Spacing.one, paddingHorizontal: Spacing.one }}>
-          {founders.map((f, i) => (
+          {visibleFounders.map((f, i) => (
             <View key={f.id}>
               {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
               <View style={styles.row}>
@@ -264,6 +278,12 @@ export default function AdminScreen() {
           ))}
         </Card>
       )}
+
+      {founders.length > 10 && !showAllFounders && (
+        <Pressable onPress={() => setShowAllFounders(true)} style={[styles.pill, { borderColor: theme.tileBorder }]}>
+          <ThemedText type="smallBold" themeColor="textSecondary">{t('ui.showAll').replace('{n}', String(founders.length))}</ThemedText>
+        </Pressable>
+      )}
     </Screen>
   );
 }
@@ -271,4 +291,6 @@ export default function AdminScreen() {
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.two, paddingHorizontal: Spacing.two },
   divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.two },
+  reportActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, marginTop: Spacing.one },
+  pill: { alignSelf: 'center', paddingVertical: Spacing.two, paddingHorizontal: Spacing.four, borderRadius: 999, borderWidth: 1 },
 });

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Button, Card, Loading, Screen } from '@/components/ui/kit';
@@ -19,6 +19,7 @@ export default function QuestsScreen() {
   const [quests, setQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
   const [claimingKey, setClaimingKey] = useState<string | null>(null);
+  const [showClaimed, setShowClaimed] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -54,6 +55,10 @@ export default function QuestsScreen() {
   if (loading || !profile) return <Loading />;
 
   const challenges = quests.filter((q) => q.period === 'once');
+  // Claimable first, in-progress next; claimed collapse behind "Show completed".
+  const claimable = challenges.filter((q) => q.progress >= q.target && !q.claimed);
+  const inProgress = challenges.filter((q) => q.progress < q.target && !q.claimed);
+  const claimed = challenges.filter((q) => q.claimed);
 
   const renderQuest = (q: Quest) => {
     const done = q.progress >= q.target;
@@ -94,12 +99,44 @@ export default function QuestsScreen() {
 
       <ThemedText style={styles.section}>{t('q.challenges')}</ThemedText>
       <ThemedText type="small" themeColor="textSecondary">{t('q.challengesSub')}</ThemedText>
-      {challenges.length > 0 ? (
-        <View style={{ gap: Spacing.two }}>{challenges.map(renderQuest)}</View>
-      ) : (
+
+      {claimable.length > 0 && (
+        <View style={{ gap: Spacing.two }}>
+          <ThemedText type="smallBold" style={{ color: theme.accent }}>{t('q.readyToClaim')}</ThemedText>
+          {claimable.map(renderQuest)}
+        </View>
+      )}
+
+      {inProgress.length > 0 ? (
+        <View style={{ gap: Spacing.two }}>
+          <ThemedText type="smallBold" themeColor="textSecondary">{t('q.inProgress')}</ThemedText>
+          {inProgress.map(renderQuest)}
+        </View>
+      ) : claimable.length === 0 ? (
         <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center', marginTop: Spacing.two }}>
           {t('q.allDone')}
         </ThemedText>
+      ) : null}
+
+      {claimed.length > 0 && showClaimed && (
+        <Card style={{ paddingVertical: Spacing.one }}>
+          {claimed.map((q, i) => (
+            <View key={q.key}>
+              {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
+              <View style={styles.claimedRow}>
+                <ThemedText style={{ flex: 1, flexShrink: 1 }} numberOfLines={1}>{q.title}</ThemedText>
+                <Ionicons name="checkmark-circle" size={18} color={theme.success} />
+              </View>
+            </View>
+          ))}
+        </Card>
+      )}
+      {claimed.length > 0 && (
+        <Pressable onPress={() => setShowClaimed((v) => !v)} style={[styles.pill, { borderColor: theme.tileBorder }]}>
+          <ThemedText type="smallBold" themeColor="textSecondary">
+            {showClaimed ? t('ui.hideCompleted') : t('ui.showCompleted')}
+          </ThemedText>
+        </Pressable>
       )}
     </Screen>
   );
@@ -111,4 +148,7 @@ const styles = StyleSheet.create({
   reward: { flexDirection: 'row', alignItems: 'center', gap: 3, borderRadius: 999, paddingHorizontal: Spacing.two, paddingVertical: 2 },
   track: { height: 8, borderRadius: 4, overflow: 'hidden' },
   fill: { height: 8, borderRadius: 4 },
+  claimedRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.two, paddingHorizontal: Spacing.two },
+  divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.one },
+  pill: { alignSelf: 'center', paddingVertical: Spacing.two, paddingHorizontal: Spacing.four, borderRadius: 999, borderWidth: 1 },
 });

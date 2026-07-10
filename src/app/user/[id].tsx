@@ -202,7 +202,7 @@ export default function UserProfileScreen() {
           {titles.map((title) => (
             <View key={title} style={[styles.titleChip, { borderColor: theme.accent, backgroundColor: theme.accent + '22' }]}>
               <ThemedText style={{ fontSize: 13 }}>👑</ThemedText>
-              <ThemedText style={{ color: theme.accent, fontWeight: '800', fontSize: 13 }}>{title}</ThemedText>
+              <ThemedText style={{ color: theme.accent, fontWeight: '800', fontSize: 13, flexShrink: 1 }} numberOfLines={1}>{title}</ThemedText>
             </View>
           ))}
         </View>
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   socialDisplay: { alignItems: 'center', gap: Spacing.two },
   titleRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
-  titleChip: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderRadius: 999, paddingHorizontal: Spacing.three, paddingVertical: 4 },
+  titleChip: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderRadius: 999, paddingHorizontal: Spacing.three, paddingVertical: 4, maxWidth: '100%' },
   recordRow: { flexDirection: 'row', marginTop: Spacing.three },
   protected: { alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.five },
 });

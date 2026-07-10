@@ -171,13 +171,16 @@ function PlanCard({
             size={20}
             color={selected ? theme.accent : theme.textSecondary}
           />
-          <ThemedText style={{ fontWeight: '800', fontSize: 16, flex: 1 }}>{title}</ThemedText>
+          <ThemedText style={{ fontWeight: '800', fontSize: 16, flex: 1 }} numberOfLines={1}>{title}</ThemedText>
           {badge ? (
-            <View style={{ backgroundColor: theme.accent, borderRadius: 999, paddingHorizontal: Spacing.two, paddingVertical: 2 }}>
-              <ThemedText type="small" style={{ color: theme.accentText, fontWeight: '800' }}>{badge}</ThemedText>
+            <View style={{ backgroundColor: theme.accent, borderRadius: 999, paddingHorizontal: Spacing.two, paddingVertical: 2, flexShrink: 0 }}>
+              <ThemedText type="small" style={{ color: theme.accentText, fontWeight: '800' }} numberOfLines={1}>{badge}</ThemedText>
             </View>
           ) : null}
-          <ThemedText style={{ fontWeight: '900', fontSize: 16 }}>{price}</ThemedText>
+        </View>
+        {/* Price on its own line so long titles + the badge never crush it on narrow phones. */}
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: Spacing.one, marginLeft: 28 }}>
+          <ThemedText style={{ fontWeight: '900', fontSize: 16, flexShrink: 0 }}>{price}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">{per}</ThemedText>
         </View>
         <ThemedText type="small" themeColor="textSecondary" style={{ marginLeft: 28 }}>{blurb}</ThemedText>

@@ -26,6 +26,7 @@ export default function FindScreen() {
   const [city, setCity] = useState(profile?.city ?? '');
   const [belt, setBelt] = useState<BeltRank | 'any'>('any');
   const [results, setResults] = useState<Profile[]>([]);
+  const [showMore, setShowMore] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -62,8 +63,8 @@ export default function FindScreen() {
 
       {/* Mode toggle */}
       <View style={styles.segment}>
-        <Seg label={t('find.network')} active={mode === 'network'} onPress={() => setMode('network')} />
-        <Seg label={t('find.area')} active={mode === 'area'} onPress={() => setMode('area')} />
+        <Seg label={t('find.network')} active={mode === 'network'} onPress={() => { setMode('network'); setShowMore(false); }} />
+        <Seg label={t('find.area')} active={mode === 'area'} onPress={() => { setMode('area'); setShowMore(false); }} />
       </View>
 
       {mode === 'network' ? (
@@ -102,29 +103,36 @@ export default function FindScreen() {
         />
       ) : (
         <View style={{ gap: Spacing.two }}>
-          {results.map((p) => (
-            <Pressable key={p.id} onPress={() => router.push(`/user/${p.id}`)}>
-              <Card style={styles.row}>
-                <Avatar name={p.display_name} size={44} />
-                <View style={{ flex: 1, gap: 2 }}>
-                  <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>
-                    {p.display_name}
-                  </ThemedText>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two, flexWrap: 'wrap' }}>
-                    <BeltChip belt={p.belt_rank} size="sm" />
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {p.rating}
-                      {p.city ? ` · ${p.city}` : ''}
+          <Card style={{ paddingVertical: Spacing.one }}>
+            {(showMore ? results : results.slice(0, 20)).map((p, i) => (
+              <View key={p.id}>
+                {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
+                <Pressable onPress={() => router.push(`/user/${p.id}`)} style={styles.resultRow}>
+                  <Avatar name={p.display_name} size={40} />
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>
+                      {p.display_name}
                     </ThemedText>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two, flexWrap: 'wrap' }}>
+                      <BeltChip belt={p.belt_rank} size="sm" />
+                      <ThemedText type="small" themeColor="textSecondary" numberOfLines={1} style={{ flexShrink: 1 }}>
+                        {p.rating}
+                        {p.city ? ` · ${p.city}` : ''}
+                      </ThemedText>
+                    </View>
                   </View>
-                </View>
-                <View style={[styles.challenge, { backgroundColor: theme.accent }]}>
-                  <Ionicons name="flame" size={16} color={theme.accentText} />
-                  <ThemedText style={{ color: theme.accentText, fontWeight: '700', fontSize: 13 }}>{t('find.challenge')}</ThemedText>
-                </View>
-              </Card>
+                  <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />
+                </Pressable>
+              </View>
+            ))}
+          </Card>
+          {results.length > 20 && !showMore && (
+            <Pressable
+              onPress={() => setShowMore(true)}
+              style={[styles.older, { borderColor: theme.tileBorder }]}>
+              <ThemedText type="smallBold" themeColor="textSecondary">{t('ui.showMore')}</ThemedText>
             </Pressable>
-          ))}
+          )}
         </View>
       )}
     </Screen>
@@ -148,5 +156,7 @@ const styles = StyleSheet.create({
   belts: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   chip: { paddingVertical: Spacing.two, paddingHorizontal: Spacing.three, borderRadius: 999, borderWidth: 1 },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  challenge: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 999, paddingHorizontal: Spacing.two, paddingVertical: 6 },
+  resultRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.two, paddingHorizontal: Spacing.two },
+  divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.one },
+  older: { alignSelf: 'center', paddingVertical: Spacing.two, paddingHorizontal: Spacing.four, borderRadius: 999, borderWidth: 1 },
 });

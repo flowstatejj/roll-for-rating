@@ -206,21 +206,24 @@ export default function InviteScreen() {
           subtitle={tab === 'invited' ? t('inv.noneInvitedSub') : t('inv.noneDeclinedSub')}
         />
       ) : (
-        <View style={{ gap: Spacing.two }}>
-          {list.map((s) => (
-            <Card key={s.user_id} style={styles.row}>
-              <Avatar name={s.display_name} size={38} />
-              <View style={{ flex: 1 }}>
-                <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>{s.display_name}</ThemedText>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
-                  <BeltChip belt={s.belt_rank as BeltRank} size="sm" />
-                  <ThemedText type="small" themeColor="textSecondary">@{s.username}</ThemedText>
+        <Card style={{ paddingVertical: Spacing.one }}>
+          {list.map((s, i) => (
+            <View key={s.user_id}>
+              {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
+              <View style={styles.listRow}>
+                <Avatar name={s.display_name} size={34} />
+                <View style={{ flex: 1 }}>
+                  <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>{s.display_name}</ThemedText>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+                    <BeltChip belt={s.belt_rank as BeltRank} size="sm" />
+                    <ThemedText type="small" themeColor="textSecondary">@{s.username}</ThemedText>
+                  </View>
                 </View>
+                <StatusPill status={s.status} />
               </View>
-              <StatusPill status={s.status} />
-            </Card>
+            </View>
           ))}
-        </View>
+        </Card>
       )}
     </Screen>
   );
@@ -251,6 +254,8 @@ function StatusPill({ status }: { status: SentInvite['status'] }) {
 const styles = StyleSheet.create({
   opt: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.two },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  listRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.two },
+  divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.one },
   tabs: { flexDirection: 'row', gap: Spacing.two, marginTop: Spacing.one },
   tab: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.two, paddingHorizontal: Spacing.three, borderRadius: 999, borderWidth: 1 },
   pill: { borderRadius: 999, borderWidth: 1, paddingHorizontal: Spacing.two, paddingVertical: 4 },
