@@ -23,6 +23,7 @@ const KIND_KEYS: Record<string, { title: string; body: string }> = {
   'friend.request': { title: 'notif.tFriendReq', body: 'notif.bFriendReq' },
   'friend.accepted': { title: 'notif.tFriendAcc', body: 'notif.bFriendAcc' },
   'match.disputed': { title: 'notif.tDisputed', body: 'notif.bDisputed' },
+  'affiliate.statement': { title: 'notif.tAffiliate', body: 'notif.bAffiliate' },
 };
 
 /**
@@ -46,7 +47,9 @@ export function localizeNotification(
       .replace('{ra}', String(d.ra ?? ''))
       .replace('{emoji}', d.emoji ?? '')
       .replace('{snippet}', d.snippet ?? '')
-      .replace('{gym}', d.gym ?? '');
+      .replace('{gym}', d.gym ?? '')
+      .replace('{amt}', d.amt ?? '')
+      .replace('{n}', String(d.n ?? ''));
   return { title: t(titleKey), body: fill(t(bodyKey)) };
 }
 

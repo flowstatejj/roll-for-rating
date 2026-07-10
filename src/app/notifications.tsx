@@ -50,6 +50,7 @@ function iconFor(type: string): keyof typeof Ionicons.glyphMap {
     case 'league_invite': return 'people-circle';
     case 'friend_request': return 'person-add';
     case 'friend_accepted': return 'people';
+    case 'affiliate': return 'cash';
     default: return 'notifications';
   }
 }
@@ -189,6 +190,7 @@ export default function NotificationsScreen() {
     else if (n.type === 'friend_accepted' && n.data?.fid) router.push(`/user/${n.data.fid}`);
     else if (n.type === 'friend_request') router.push('/friends');
     else if (n.type === 'gym_request') router.push('/(tabs)/community');
+    else if (n.type === 'affiliate') router.push('/affiliate');
   }
 
   if (loading) return <Loading />;

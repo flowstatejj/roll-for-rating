@@ -66,5 +66,6 @@ export function routeForNotification(data: TapData | null | undefined): string |
   if (data.type === 'friend_accepted' && data.fid) return `/user/${data.fid}`;
   if (data.type === 'friend_request') return '/friends';
   if (data.type === 'gym_request') return '/(tabs)/community';
+  if (data.type === 'affiliate') return '/affiliate';
   return '/notifications';
 }

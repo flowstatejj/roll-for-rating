@@ -484,6 +484,8 @@ export interface NotificationData {
   tid?: string; // tournament id (tournament.invite)
   lid?: string; // league id (league.invite)
   fid?: string; // friend id (friend.request / friend.accepted)
+  amt?: string; // formatted dollar amount (affiliate.statement)
+  n?: string; // count (affiliate.statement)
 }
 
 export interface AppNotification {
