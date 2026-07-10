@@ -5,6 +5,7 @@ import { Platform } from 'react-native';
 
 import { useAuth } from '@/lib/auth';
 import { registerForPush, routeForNotification } from '@/lib/push';
+import { supabase } from '@/lib/supabase';
 
 /**
  * Registers this device for push once per signed-in user, and routes a tapped
@@ -67,7 +68,13 @@ export function usePush() {
   // queue it until the navigator + auth become ready.
   const handle = useCallback(
     (data: unknown) => {
-      const route = routeForNotification(data as Parameters<typeof routeForNotification>[0]);
+      const d = data as (Parameters<typeof routeForNotification>[0] & { notifId?: string }) | null;
+      // A tapped push counts as read - best effort (the session may still be
+      // restoring on a cold start; the bell reconciles on next load either way).
+      if (d?.notifId) {
+        supabase.from('notifications').update({ read: true }).eq('id', d.notifId).then(() => {}, () => {});
+      }
+      const route = routeForNotification(d);
       if (!route) return;
       pendingRoute.current = route;
       flush();

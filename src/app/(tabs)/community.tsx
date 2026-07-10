@@ -107,6 +107,7 @@ export default function CommunityScreen() {
           { icon: 'calendar', label: t('nav.openMats'), onPress: () => router.push('/open-mats') },
           { icon: 'cash', label: t('nav.biggestPots'), onPress: () => router.push('/high-rollers') },
           { icon: 'play-circle', label: t('nav.watch'), onPress: () => router.push('/watch') },
+          { icon: 'school', label: t('tut.title'), onPress: () => router.push('/tutorials') },
         ]}
       />
     </Screen>

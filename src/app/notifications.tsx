@@ -93,19 +93,8 @@ export default function NotificationsScreen() {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  // Mark a tab's notifications read once it's shown — clears the bell badge for
-  // exactly what the user actually looked at, and drops that tab's red dot.
-  const markViewed = useCallback((which: NotifTab) => {
-    const unread = itemsRef.current.filter((n) => !n.read && tabFor(n.type) === which);
-    if (unread.length === 0) return;
-    const ids = new Set(unread.map((n) => n.id));
-    setItems((prev) => prev.map((n) => (ids.has(n.id) ? { ...n, read: true } : n)));
-    markRead(userId, [...ids]).catch(() => {});
-  }, [userId]);
-
-  useEffect(() => {
-    if (!loading) markViewed(tab);
-  }, [tab, loading, markViewed]);
+  // Reading is an ACTION now, not a side effect of glancing at a tab: a
+  // notification moves to the Read area when tapped (or via Mark all read).
 
   const unreadByTab = useMemo(() => {
     const m: Record<NotifTab, number> = { challenges: 0, messages: 0, friends: 0, cancelled: 0 };
@@ -125,8 +114,9 @@ export default function NotificationsScreen() {
   const visible = useMemo(() => items.filter((n) => tabFor(n.type) === tab), [items, tab]);
 
   // Spammy per-event types collapse into one row per conversation/match; the
-  // row shows the newest item and how many it stands for.
-  type Row = { key: string; latest: AppNotification; count: number; unread: boolean };
+  // row shows the newest item, how many it stands for, and every id it covers
+  // (so opening the row can mark the whole group read).
+  type Row = { key: string; latest: AppNotification; count: number; unread: boolean; ids: string[] };
   const rows = useMemo(() => {
     const groupable = new Set(['reaction', 'message', 'league_message']);
     const byKey = new Map<string, Row>();
@@ -137,8 +127,9 @@ export default function NotificationsScreen() {
       if (existing) {
         existing.count += 1;
         existing.unread = existing.unread || !n.read;
+        existing.ids.push(n.id);
       } else {
-        const row: Row = { key, latest: n, count: 1, unread: !n.read };
+        const row: Row = { key, latest: n, count: 1, unread: !n.read, ids: [n.id] };
         byKey.set(key, row);
         out.push(row); // `visible` is newest-first, so `latest` is the newest
       }
@@ -146,9 +137,15 @@ export default function NotificationsScreen() {
     return out;
   }, [visible]);
 
-  // Day sections, with anything older than two weeks behind "Show older".
+  // Unread stays front and center; read rows collapse into a Read area below.
+  const unreadRows = useMemo(() => rows.filter((r) => r.unread), [rows]);
+  const readRows = useMemo(() => rows.filter((r) => !r.unread), [rows]);
+  const [showRead, setShowRead] = useState(false);
   const [showOlder, setShowOlder] = useState(false);
-  const sections = useMemo(() => {
+  useEffect(() => { setShowRead(false); setShowOlder(false); }, [tab]);
+
+  // Day sections; the read area additionally gates 14-day-old items.
+  function buildSections(list: Row[], gateOld: boolean) {
     const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
     const today = startOfDay(new Date());
     const yesterday = today - 86400000;
@@ -159,15 +156,17 @@ export default function NotificationsScreen() {
       { titleKey: 'notif.earlier', rows: [] },
     ];
     let hiddenOlder = 0;
-    for (const r of rows) {
+    for (const r of list) {
       const ts = new Date(r.latest.created_at).getTime();
       if (ts >= today) buckets[0].rows.push(r);
       else if (ts >= yesterday) buckets[1].rows.push(r);
-      else if (ts >= cutoff || showOlder) buckets[2].rows.push(r);
+      else if (ts >= cutoff || !gateOld || showOlder) buckets[2].rows.push(r);
       else hiddenOlder += 1;
     }
     return { buckets: buckets.filter((b) => b.rows.length > 0), hiddenOlder };
-  }, [rows, showOlder]);
+  }
+  const unreadSections = useMemo(() => buildSections(unreadRows, false), [unreadRows]); // eslint-disable-line react-hooks/exhaustive-deps
+  const readSections = useMemo(() => buildSections(readRows, true), [readRows, showOlder]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Title/body for a row; grouped rows get their own honest phrasing.
   function rowText(row: Row): { title: string; body: string | null } {
@@ -184,7 +183,14 @@ export default function NotificationsScreen() {
     return { title, body: t('notif.gMessages').replace('{n}', String(row.count)) };
   }
 
-  function open(n: AppNotification) {
+  // Tapping a row reads it (moves it to the Read area) and opens its target.
+  function open(row: Row) {
+    if (row.unread) {
+      const ids = new Set(row.ids);
+      setItems((prev) => prev.map((n) => (ids.has(n.id) && !n.read ? { ...n, read: true } : n)));
+      markRead(userId, row.ids).catch(() => {});
+    }
+    const n = row.latest;
     if (n.match_id) router.push(`/match/${n.match_id}`);
     else if (n.type === 'tournament_invite' && n.data?.tid) router.push(`/tournament/${n.data.tid}`);
     else if ((n.type === 'league_invite' || n.type === 'league_matchup' || n.type === 'league_message') && n.data?.lid) router.push(`/league/${n.data.lid}`);
@@ -242,48 +248,41 @@ export default function NotificationsScreen() {
         <EmptyState icon="notifications-outline" title={t('notif.emptyTitle')} subtitle={t('notif.emptySub')} />
       ) : (
         <View style={{ gap: Spacing.three }}>
-          {sections.buckets.map((b) => (
-            <View key={b.titleKey} style={{ gap: Spacing.one }}>
-              <ThemedText type="smallBold" themeColor="textSecondary">{t(b.titleKey)}</ThemedText>
+          {/* Unread: always fully visible - this is the actionable list. */}
+          {unreadRows.length === 0 ? (
+            <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center' }}>
+              {t('notif.caughtUp')}
+            </ThemedText>
+          ) : (
+            unreadSections.buckets.map((b) => (
+              <View key={`u-${b.titleKey}`} style={{ gap: Spacing.one }}>
+                <ThemedText type="smallBold" themeColor="textSecondary">{t(b.titleKey)}</ThemedText>
+                <Card style={{ padding: 0, gap: 0 }}>
+                  {b.rows.map((r, i) => renderRow(r, i))}
+                </Card>
+              </View>
+            ))
+          )}
+
+          {/* Read: collapsed by default so cleared items stop taking space. */}
+          {readRows.length > 0 && !showRead && (
+            <Pressable onPress={() => setShowRead(true)} style={[styles.older, { borderColor: theme.tileBorder }]}>
+              <ThemedText type="smallBold" themeColor="textSecondary">
+                {t('notif.showRead').replace('{n}', String(readRows.length))}
+              </ThemedText>
+            </Pressable>
+          )}
+          {showRead && readSections.buckets.map((b) => (
+            <View key={`r-${b.titleKey}`} style={{ gap: Spacing.one }}>
+              <ThemedText type="smallBold" themeColor="textSecondary">
+                {t('notif.readSection')} · {t(b.titleKey)}
+              </ThemedText>
               <Card style={{ padding: 0, gap: 0 }}>
-                {b.rows.map((r, i) => {
-                  const n = r.latest;
-                  const { title, body } = rowText(r);
-                  const hasTarget = !!(n.match_id || n.type === 'gym_request' || n.type === 'friend_request'
-                    || (n.type === 'tournament_invite' && n.data?.tid)
-                    || (n.type === 'league_invite' && n.data?.lid)
-                    || (n.type === 'friend_accepted' && n.data?.fid));
-                  return (
-                    <Pressable key={r.key} onPress={() => open(n)}>
-                      <View style={[styles.row, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.tileBorder }]}>
-                        <View style={[styles.dot, r.unread && { backgroundColor: theme.accent }]} />
-                        <View style={[styles.icon, { backgroundColor: theme.backgroundSelected }]}>
-                          <Ionicons name={iconFor(n.type)} size={16} color={r.unread ? theme.accent : theme.textSecondary} />
-                        </View>
-                        <View style={{ flex: 1, gap: 1 }}>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
-                            <ThemedText style={{ fontWeight: r.unread ? '800' : '600', flex: 1 }} numberOfLines={1}>
-                              {title}
-                            </ThemedText>
-                            <ThemedText type="small" themeColor="textSecondary">
-                              {relative(n.created_at, t)}
-                            </ThemedText>
-                          </View>
-                          {body ? (
-                            <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-                              {body}
-                            </ThemedText>
-                          ) : null}
-                        </View>
-                        {hasTarget && <Ionicons name="chevron-forward" size={14} color={theme.textSecondary} />}
-                      </View>
-                    </Pressable>
-                  );
-                })}
+                {b.rows.map((r, i) => renderRow(r, i))}
               </Card>
             </View>
           ))}
-          {sections.hiddenOlder > 0 && !showOlder && (
+          {showRead && readSections.hiddenOlder > 0 && !showOlder && (
             <Pressable
               onPress={() => setShowOlder(true)}
               style={[styles.older, { borderColor: theme.tileBorder }]}>
@@ -294,6 +293,42 @@ export default function NotificationsScreen() {
       )}
     </Screen>
   );
+
+  function renderRow(r: Row, i: number) {
+    const n = r.latest;
+    const { title, body } = rowText(r);
+    const hasTarget = !!(n.match_id || n.type === 'gym_request' || n.type === 'friend_request'
+      || (n.type === 'tournament_invite' && n.data?.tid)
+      || (n.type === 'league_invite' && n.data?.lid)
+      || (n.type === 'friend_accepted' && n.data?.fid)
+      || n.type === 'affiliate' || n.type === 'gym_account');
+    return (
+      <Pressable key={r.key} onPress={() => open(r)}>
+        <View style={[styles.row, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.tileBorder }]}>
+          <View style={[styles.dot, r.unread && { backgroundColor: theme.accent }]} />
+          <View style={[styles.icon, { backgroundColor: theme.backgroundSelected }]}>
+            <Ionicons name={iconFor(n.type)} size={16} color={r.unread ? theme.accent : theme.textSecondary} />
+          </View>
+          <View style={{ flex: 1, gap: 1 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+              <ThemedText style={{ fontWeight: r.unread ? '800' : '600', flex: 1 }} numberOfLines={1}>
+                {title}
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {relative(n.created_at, t)}
+              </ThemedText>
+            </View>
+            {body ? (
+              <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+                {body}
+              </ThemedText>
+            ) : null}
+          </View>
+          {hasTarget && <Ionicons name="chevron-forward" size={14} color={theme.textSecondary} />}
+        </View>
+      </Pressable>
+    );
+  }
 }
 
 const styles = StyleSheet.create({
