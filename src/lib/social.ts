@@ -153,7 +153,9 @@ export async function fetchFriendlyOpponents(userId: string, myGymId: string): P
     .in('gym_id', gymIds)
     .neq('id', userId)
     .order('rating', { ascending: false })
-    .limit(50);
+    // Safety valve only: network mode has no search, so a tight cap would make
+    // lower-rated gym-mates unreachable. The UI gates rendering at 20 rows.
+    .limit(200);
   if (pErr) throw pErr;
   return (data ?? []) as Profile[];
 }
