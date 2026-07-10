@@ -54,6 +54,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'geo.city': 'City', 'geo.state': 'State', 'geo.country': 'Country',
     'geo.continent': 'Continent', 'geo.world': 'World',
 
+    'matches.needsAction': 'Needs your action', 'matches.inProgress': 'In progress', 'matches.showOlder': 'Show older',
     'matches.filterAll': 'All', 'matches.filterActive': 'Active', 'matches.filterCompleted': 'Completed',
     'matches.emptyTitle': 'Nothing here yet',
     'matches.emptySub': 'Matches you compete in or referee will show up here.',
@@ -572,6 +573,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'geo.city': 'Ciudad', 'geo.state': 'Estado', 'geo.country': 'País',
     'geo.continent': 'Continente', 'geo.world': 'Mundo',
 
+    'matches.needsAction': 'Requiere tu acción', 'matches.inProgress': 'En curso', 'matches.showOlder': 'Ver anteriores',
     'matches.filterAll': 'Todos', 'matches.filterActive': 'Activos', 'matches.filterCompleted': 'Completados',
     'matches.emptyTitle': 'Aún no hay nada',
     'matches.emptySub': 'Los combates en los que compites o arbitras aparecerán aquí.',
@@ -1085,6 +1087,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'geo.city': 'Cidade', 'geo.state': 'Estado', 'geo.country': 'País',
     'geo.continent': 'Continente', 'geo.world': 'Mundo',
 
+    'matches.needsAction': 'Precisa da sua ação', 'matches.inProgress': 'Em andamento', 'matches.showOlder': 'Mostrar antigas',
     'matches.filterAll': 'Todas', 'matches.filterActive': 'Ativas', 'matches.filterCompleted': 'Concluídas',
     'matches.emptyTitle': 'Ainda não há nada',
     'matches.emptySub': 'As lutas em que você compete ou arbitra aparecem aqui.',
@@ -1598,6 +1601,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'geo.city': 'Ville', 'geo.state': 'État', 'geo.country': 'Pays',
     'geo.continent': 'Continent', 'geo.world': 'Monde',
 
+    'matches.needsAction': 'Action requise', 'matches.inProgress': 'En cours', 'matches.showOlder': 'Voir plus ancien',
     'matches.filterAll': 'Tous', 'matches.filterActive': 'Actifs', 'matches.filterCompleted': 'Terminés',
     'matches.emptyTitle': 'Rien ici pour l’instant',
     'matches.emptySub': 'Les combats où tu participes ou arbitres apparaîtront ici.',
