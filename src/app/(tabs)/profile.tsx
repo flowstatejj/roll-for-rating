@@ -270,7 +270,7 @@ export default function ProfileScreen() {
   // Role-gated manage rows - same visibility conditions as the old buttons.
   const manageItems: MenuItem[] = [];
   if (profile.is_admin) manageItems.push({ icon: 'shield-checkmark-outline', label: t('profile.admin'), onPress: () => router.push('/admin') });
-  if (profile.is_founding_member) manageItems.push({ icon: 'ribbon-outline', label: t('profile.elite'), onPress: () => router.push('/elite') });
+  if (profile.is_founding_member || (profile.is_gym_account && profile.gym_verified)) manageItems.push({ icon: 'ribbon-outline', label: t('profile.elite'), onPress: () => router.push('/elite') });
   if (profile.is_founding_member || profile.is_admin) manageItems.push({ icon: 'cash-outline', label: t('profile.affiliate'), onPress: () => router.push('/affiliate') });
 
   return (

@@ -51,6 +51,7 @@ function iconFor(type: string): keyof typeof Ionicons.glyphMap {
     case 'friend_request': return 'person-add';
     case 'friend_accepted': return 'people';
     case 'affiliate': return 'cash';
+    case 'gym_account': return 'business';
     default: return 'notifications';
   }
 }
@@ -191,6 +192,7 @@ export default function NotificationsScreen() {
     else if (n.type === 'friend_request') router.push('/friends');
     else if (n.type === 'gym_request') router.push('/(tabs)/community');
     else if (n.type === 'affiliate') router.push('/affiliate');
+    else if (n.type === 'gym_account') router.push('/(tabs)/profile');
   }
 
   if (loading) return <Loading />;

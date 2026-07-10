@@ -42,6 +42,7 @@ export async function fetchGymMembers(gymId: string): Promise<GymMember[]> {
     .from('profiles')
     .select('id,display_name,belt_rank,rating')
     .eq('gym_id', gymId)
+    .eq('participating', true) // guardians + gym accounts aren't roster members
     .order('rating', { ascending: false })
     .limit(100);
   if (error) throw error;
@@ -152,6 +153,7 @@ export async function fetchFriendlyOpponents(userId: string, myGymId: string): P
     .select('*')
     .in('gym_id', gymIds)
     .neq('id', userId)
+    .eq('participating', true) // guardians + gym accounts are never opponents
     .order('rating', { ascending: false })
     // Safety valve only: network mode has no search, so a tight cap would make
     // lower-rated gym-mates unreachable. The UI gates rendering at 20 rows.

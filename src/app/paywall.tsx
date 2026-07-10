@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react';
 import { Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Button, Card, Screen } from '@/components/ui/kit';
+import { Button, Card, Screen, TextField } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { track } from '@/lib/analytics';
 import { useAuth } from '@/lib/auth';
+import { applyGymAccount, myGymApplication, type GymApplication } from '@/lib/gym-account';
 import { useTranslation } from '@/lib/i18n';
 import { useSubscription } from '@/lib/subscription';
 
@@ -135,12 +136,92 @@ export default function PaywallScreen() {
         </Pressable>
       </View>
 
+      <GymApplySection />
+
       <Pressable onPress={() => signOut()} hitSlop={8} style={{ alignSelf: 'center', paddingTop: Spacing.two }}>
         <ThemedText type="small" themeColor="textSecondary">
           {t('pw.signOut')}
         </ThemedText>
       </Pressable>
     </Screen>
+  );
+}
+
+/**
+ * Gym accounts are free but verified. The application lives on the paywall
+ * because that's where an unsubscribed gym owner lands; approval comps the
+ * account, so the navigator lets them through on the next check.
+ */
+function GymApplySection() {
+  const theme = useTheme();
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const [app, setApp] = useState<GymApplication | null>(null);
+  const [gymName, setGymName] = useState('');
+  const [address, setAddress] = useState('');
+  const [link, setLink] = useState('');
+  const [ownerName, setOwnerName] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    myGymApplication().then(setApp).catch(() => {});
+  }, []);
+
+  async function submit() {
+    if (!gymName.trim() || !address.trim() || !link.trim() || !ownerName.trim()) {
+      Alert.alert(t('gy.applyTitle'), t('gy.allRequired'));
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await applyGymAccount(gymName, address, link, ownerName);
+      setApp({ status: 'pending', gym_name: gymName.trim(), note: null, created_at: new Date().toISOString() });
+    } catch (e: any) {
+      Alert.alert(t('gy.applyTitle'), e.message ?? t('md.tryAgain'));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  // Pending or approved: show status instead of the form.
+  if (app && app.status !== 'denied') {
+    return (
+      <Card style={{ gap: Spacing.two, alignItems: 'center' }}>
+        <Ionicons name="business" size={22} color={theme.accent} />
+        <ThemedText style={{ fontWeight: '800' }}>{app.gym_name}</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center' }}>
+          {app.status === 'pending' ? t('gy.pending') : t('gy.approved')}
+        </ThemedText>
+      </Card>
+    );
+  }
+
+  if (!open) {
+    return (
+      <Pressable onPress={() => setOpen(true)} hitSlop={8} style={{ alignSelf: 'center' }}>
+        <ThemedText type="small" style={{ color: theme.accent, fontWeight: '700' }}>{t('gy.ownGym')}</ThemedText>
+      </Pressable>
+    );
+  }
+
+  return (
+    <Card style={{ gap: Spacing.three }}>
+      <ThemedText style={{ fontWeight: '800' }}>{t('gy.applyTitle')}</ThemedText>
+      <ThemedText type="small" themeColor="textSecondary">{t('gy.applyIntro')}</ThemedText>
+      {app?.status === 'denied' && (
+        <ThemedText type="small" style={{ color: theme.danger }}>
+          {t('gy.denied')}{app.note ? ` ${app.note}` : ''}
+        </ThemedText>
+      )}
+      <TextField label={t('gy.gymName')} value={gymName} onChangeText={setGymName} placeholder="Flow State Jiu Jitsu" />
+      <TextField label={t('gy.address')} value={address} onChangeText={setAddress} placeholder="123 Main St, Peyton, CO" />
+      <TextField
+        label={t('gy.link')} value={link} onChangeText={setLink}
+        placeholder="https://..." autoCapitalize="none" keyboardType="url"
+      />
+      <TextField label={t('gy.ownerName')} value={ownerName} onChangeText={setOwnerName} placeholder="John Keil" />
+      <Button label={t('gy.submit')} icon="business" onPress={submit} loading={submitting} />
+    </Card>
   );
 }
 

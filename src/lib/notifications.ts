@@ -24,6 +24,8 @@ const KIND_KEYS: Record<string, { title: string; body: string }> = {
   'friend.accepted': { title: 'notif.tFriendAcc', body: 'notif.bFriendAcc' },
   'match.disputed': { title: 'notif.tDisputed', body: 'notif.bDisputed' },
   'affiliate.statement': { title: 'notif.tAffiliate', body: 'notif.bAffiliate' },
+  'gym.approved': { title: 'notif.tGymApproved', body: 'notif.bGymApproved' },
+  'gym.denied': { title: 'notif.tGymDenied', body: 'notif.bGymDenied' },
 };
 
 /**

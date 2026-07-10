@@ -113,8 +113,8 @@ export default function EliteScreen() {
     ]);
   }
 
-  // Founding members only — defensive (the entry point is gated too, and the DB re-checks).
-  if (!profile?.is_founding_member) {
+  // Founding members + verified gyms - defensive (the entry point is gated too, and the DB re-checks).
+  if (!profile?.is_founding_member && !(profile?.is_gym_account && profile?.gym_verified)) {
     return (
       <Screen>
         <Stack.Screen options={{ title: t('elite.title') }} />
