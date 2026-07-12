@@ -2,6 +2,11 @@
 -- Roll for Rating — Founder affiliate program (single-level)
 -- Run AFTER subscriptions.sql + admin-founders.sql. Safe to re-run.
 --
+-- RUN ORDER: affiliate-statements.sql must run AFTER this file and OWNS the
+-- final versions of referral_est_cents and admin_referral_owed (it overrides
+-- both). Re-running referrals.sql ALONE reverts those overrides - always
+-- re-run affiliate-statements.sql after this file.
+--
 -- Each FOUNDING member gets a referral code/link. Anyone who signs up with it is
 -- tied to that founder for life. The founder earns 50% of the NET revenue of
 -- each referred subscriber. "Net" = price minus Apple's commission; refunds /

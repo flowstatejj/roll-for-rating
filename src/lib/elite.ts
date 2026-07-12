@@ -1,6 +1,7 @@
 // Elite memberships — a founding member grants up to 10 complimentary
 // free-access memberships. Backed by SECURITY DEFINER RPCs (see
 // supabase/elite-memberships.sql) that re-check is_founding_member + the quota.
+import { redeemReferralCode } from './referrals';
 import { supabase } from './supabase';
 
 export interface EliteMember {
@@ -90,5 +91,32 @@ export async function fetchMyEliteInvites(): Promise<MyEliteInvites> {
 
 /** The shareable web link for an elite invite code (deep-links into sign-up). */
 export function eliteInviteLink(code: string): string {
-  return `https://roll.flowstatejj.com/join?elite=${encodeURIComponent(code)}`;
+  // rfr-site.onrender.com is the live site; roll.flowstatejj.com does NOT resolve.
+  return `https://rfr-site.onrender.com/?elite=${encodeURIComponent(code)}`;
+}
+
+// --- In-app code entry (Settings + paywall) ----------------------------------
+
+/** Outcome of applying a pasted code whose kind (referral vs elite) is unknown. */
+export type CodeApplyOutcome =
+  | { kind: 'referral'; name: string | null }
+  | { kind: 'referralAlready' }
+  | { kind: 'elite'; grantorName: string | null }
+  | { kind: 'eliteAlready' }
+  | { kind: 'invalid' };
+
+/** Apply a code the user pasted in-app without knowing which kind it is:
+ *  referral attribution first, then the elite invite path (the same redeemer
+ *  the signup flow uses). Elite is still tried when the referral RPC says
+ *  'already' - an account that already has a referrer must remain able to
+ *  redeem an elite invite. */
+export async function applyInviteOrReferralCode(raw: string): Promise<CodeApplyOutcome> {
+  const code = raw.trim().toUpperCase();
+  const ref = await redeemReferralCode(code);
+  if (ref.ok) return { kind: 'referral', name: ref.name ?? null };
+  const el = await redeemEliteInviteCode(code);
+  if (el.ok) return { kind: 'elite', grantorName: el.grantor_name ?? null };
+  if (el.reason === 'already_elite') return { kind: 'eliteAlready' };
+  if (ref.reason === 'already') return { kind: 'referralAlready' };
+  return { kind: 'invalid' };
 }

@@ -300,8 +300,10 @@ language sql stable security definer set search_path = public as $$
     where e.user_id = p_user
       and (
         e.source = 'comp'                                    -- comp never expires
+        or e.status = 'grace'                                -- billing retry runs AFTER expires_at; the store
+                                                             -- clears the flag when retries are exhausted
         or (
-          e.status in ('active','grace')
+          e.status = 'active'
           and (e.expires_at is null or e.expires_at > now())
         )
       )

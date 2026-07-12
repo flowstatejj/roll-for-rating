@@ -6,12 +6,14 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
 import { Alert } from 'react-native';
 
 import { PENDING_ELITE_INVITE_KEY, redeemEliteInviteCode } from './elite';
+import { useTranslation } from './i18n';
 import { PENDING_REFERRAL_KEY, redeemReferralCode } from './referrals';
 import { supabase } from './supabase';
 import type { BeltRank, Profile } from './types';
@@ -53,6 +55,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [initializing, setInitializing] = useState(true);
   const [onboarded, setOnboarded] = useState<boolean | null>(null);
+  // t via a ref so the launch effect's deps don't churn on language change.
+  const { t } = useTranslation();
+  const tRef = useRef(t);
+  tRef.current = t;
+  // Serialises the overlapping getSession/onAuthStateChange launch paths so the
+  // pending referral is redeemed (and its outcome alerted) exactly once.
+  const redeemingReferral = useRef(false);
 
   const loadOnboarded = useCallback(async (userId: string) => {
     try {
@@ -88,15 +97,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // If a referral code was captured at signup, attach it once a session exists.
-  // Cleared on a definitive outcome; a bare network failure is retried next session.
+  // Cleared on a definitive outcome; a bare network failure is retried next
+  // session (silently). Definitive outcomes are surfaced once: removing the key
+  // first means no later run can re-alert. 'already' also stays silent - there
+  // is nothing for the user to do about it.
   const redeemPendingReferral = useCallback(async () => {
+    if (redeemingReferral.current) return;
+    redeemingReferral.current = true;
     try {
       const code = await AsyncStorage.getItem(PENDING_REFERRAL_KEY);
       if (!code) return;
       const res = await redeemReferralCode(code);
       if (res.ok || res.reason) await AsyncStorage.removeItem(PENDING_REFERRAL_KEY);
+      if (res.ok) {
+        Alert.alert(tRef.current('code.referralOk').replace('{name}', res.name ?? code));
+      } else if (res.reason === 'invalid') {
+        Alert.alert(tRef.current('code.pendingInvalid'));
+      }
     } catch {
       /* best-effort */
+    } finally {
+      redeemingReferral.current = false;
     }
   }, []);
 

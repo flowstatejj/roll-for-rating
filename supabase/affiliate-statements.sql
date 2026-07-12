@@ -94,6 +94,7 @@ returns jsonb language sql security definer set search_path = public as $$
     cross join m
     where e.source in ('apple','google')
       and e.status <> 'revoked'
+      and r.created_at < m.me            -- a code redeemed today never counts for a prior month
       and e.purchased_at + interval '7 days' < m.me
       and coalesce(e.expires_at, 'infinity'::timestamptz) > m.ms
   ),
@@ -190,7 +191,11 @@ returns jsonb language sql stable security definer set search_path = public as $
 $$;
 grant execute on function public.founder_statements() to authenticated;
 
--- Admin: every founder's statement for the most recent generated month.
+-- Admin: every founder's statement for the most recent generated month, PLUS
+-- any still-pending statement from an earlier month (nothing owed can hide
+-- behind a newer generation). The single where-clause OR dedupes naturally:
+-- a latest-month pending row matches both arms but appears once. Each row
+-- carries its own 'month' so the app can label overdue months.
 create or replace function public.admin_affiliate_statements()
 returns jsonb language sql stable security definer set search_path = public as $$
   select case when not public.is_admin() then jsonb_build_object('month', null, 'rows', '[]'::jsonb) else
@@ -199,13 +204,16 @@ returns jsonb language sql stable security definer set search_path = public as $
       'rows', coalesce((
         select jsonb_agg(jsonb_build_object(
           'id', s.id, 'founder_id', s.founder_id, 'name', f.display_name,
+          'month', s.month,
           'apple_active', s.apple_active, 'google_active', s.google_active,
-          'signups', s.signups, 'share_cents', s.share_cents,
+          'signups', s.signups, 'gross_cents', s.gross_cents, 'net_cents', s.net_cents,
+          'share_cents', s.share_cents,
           'status', s.status, 'paid_at', s.paid_at
-        ) order by s.share_cents desc, f.display_name)
+        ) order by s.month desc, s.share_cents desc, f.display_name)
         from public.affiliate_statements s
         join public.profiles f on f.id = s.founder_id
         where s.month = (select max(month) from public.affiliate_statements)
+           or s.status = 'pending'
       ), '[]'::jsonb)
     ) end;
 $$;
@@ -261,6 +269,10 @@ grant execute on function public.affiliate_leaderboard() to authenticated;
 
 -- ---- Fix: the live estimate now counts Google subs too ----------------------
 -- (referrals.sql only counted source='apple'; Android subscribers earned $0.)
+-- The paid window is also floored at the REFERRAL date: a subscriber who
+-- redeemed a founder's code months into their subscription only earns the
+-- founder from redemption onward, not retroactively. greatest() ignores the
+-- null when no referral row exists (direct call on an unreferred user).
 create or replace function public.referral_est_cents(p_user uuid)
 returns integer language sql stable security definer set search_path = public as $$
   with e as (
@@ -274,7 +286,9 @@ returns integer language sql stable security definer set search_path = public as
       case when source = 'apple' then public.affiliate_cfg('apple_fee', 0.30)
            else public.affiliate_cfg('google_fee', 0.15) end as fee,
       greatest(0, floor(
-        extract(epoch from (least(now(), coalesce(expires_at, now())) - (purchased_at + interval '7 days'))) / (30 * 86400)
+        extract(epoch from (least(now(), coalesce(expires_at, now()))
+          - greatest(purchased_at + interval '7 days',
+                     (select created_at from public.referrals where referred_user_id = p_user)))) / (30 * 86400)
       )::int + 1) as paid_months,
       purchased_at
     from e
@@ -286,6 +300,60 @@ returns integer language sql stable security definer set search_path = public as
   ), 0);
 $$;
 grant execute on function public.referral_est_cents(uuid) to authenticated;
+
+-- ---- Admin drill-down + live pulse -------------------------------------------
+
+-- Admin: one founder's referred members, same shape founder_referrals builds
+-- for the founder themself (display_name, username, active, est_cents, joined).
+create or replace function public.admin_founder_referrals(p_founder uuid)
+returns jsonb language sql stable security definer set search_path = public as $$
+  select case when not public.is_admin() then '[]'::jsonb else coalesce((
+    select jsonb_agg(jsonb_build_object(
+      'id', p.id, 'display_name', p.display_name, 'username', p.username,
+      'active', public.has_active_entitlement(p.id),
+      'est_cents', public.referral_est_cents(p.id),
+      'joined', r.created_at
+    ) order by r.created_at desc)
+    from public.referrals r join public.profiles p on p.id = r.referred_user_id
+    where r.referrer_id = p_founder
+  ), '[]'::jsonb) end;
+$$;
+grant execute on function public.admin_founder_referrals(uuid) to authenticated;
+
+-- Override of referrals.sql's admin_referral_owed: same rows + launch-week
+-- pulse scalars per founder (this file runs AFTER referrals.sql and owns the
+-- final version). paying_* mirror the statement 'paying' test, evaluated now:
+-- store entitlement, never revoked, trial (7 days) over, coverage still open.
+create or replace function public.admin_referral_owed()
+returns jsonb language sql stable security definer set search_path = public as $$
+  select case when not public.is_admin() then '[]'::jsonb else coalesce((
+    select jsonb_agg(jsonb_build_object(
+      'founder_id', f.id, 'name', f.display_name, 'code', rc.code,
+      'referred', (select count(*) from public.referrals r where r.referrer_id = f.id),
+      'est_total_cents', coalesce((select sum(public.referral_est_cents(r.referred_user_id)) from public.referrals r where r.referrer_id = f.id), 0),
+      'paid_cents', coalesce((select sum(amount_cents) from public.referral_payouts where founder_id = f.id), 0),
+      'signups_7d', (select count(*) from public.referrals r
+                     where r.referrer_id = f.id and r.created_at > now() - interval '7 days'),
+      'signups_month', (select count(*) from public.referrals r
+                        where r.referrer_id = f.id and r.created_at >= date_trunc('month', now())),
+      'paying_apple', (select count(*) from public.referrals r
+                       join public.entitlements e on e.user_id = r.referred_user_id
+                       where r.referrer_id = f.id and e.source = 'apple' and e.status <> 'revoked'
+                         and e.purchased_at + interval '7 days' < now()
+                         and coalesce(e.expires_at, 'infinity'::timestamptz) > now()),
+      'paying_google', (select count(*) from public.referrals r
+                        join public.entitlements e on e.user_id = r.referred_user_id
+                        where r.referrer_id = f.id and e.source = 'google' and e.status <> 'revoked'
+                          and e.purchased_at + interval '7 days' < now()
+                          and coalesce(e.expires_at, 'infinity'::timestamptz) > now())
+    ) order by f.display_name)
+    from public.profiles f
+    left join public.referral_codes rc on rc.founder_id = f.id
+    where f.is_founding_member
+      and exists (select 1 from public.referrals r where r.referrer_id = f.id)
+  ), '[]'::jsonb) end;
+$$;
+grant execute on function public.admin_referral_owed() to authenticated;
 
 -- ---- Monthly schedule ---------------------------------------------------------
 create extension if not exists pg_cron;

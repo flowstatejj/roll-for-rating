@@ -9,6 +9,7 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { track } from '@/lib/analytics';
 import { useAuth } from '@/lib/auth';
+import { applyInviteOrReferralCode } from '@/lib/elite';
 import { applyGymAccount, myGymApplication, type GymApplication } from '@/lib/gym-account';
 import { useTranslation } from '@/lib/i18n';
 import { useSubscription } from '@/lib/subscription';
@@ -116,6 +117,8 @@ export default function PaywallScreen() {
         <Button label={t('pw.restore')} onPress={onRestore} variant="ghost" loading={restoring} />
       </View>
 
+      <CodeSection />
+
       <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center', lineHeight: 17 }}>
         {legal}
       </ThemedText>
@@ -144,6 +147,71 @@ export default function PaywallScreen() {
         </ThemedText>
       </Pressable>
     </Screen>
+  );
+}
+
+/**
+ * Post-signup code entry. Elite invite codes unlock free access right here
+ * (the refresh flips the entitlement and the root navigator redirects away);
+ * referral codes only attach attribution, so the paywall stays.
+ */
+function CodeSection() {
+  const theme = useTheme();
+  const { t } = useTranslation();
+  const { refresh } = useSubscription();
+  const [open, setOpen] = useState(false);
+  const [codeInput, setCodeInput] = useState('');
+  const [applying, setApplying] = useState(false);
+
+  async function apply() {
+    const entered = codeInput.trim().toUpperCase();
+    if (!entered) return;
+    setApplying(true);
+    try {
+      const res = await applyInviteOrReferralCode(entered);
+      track('paywall_code_apply', { kind: res.kind });
+      if (res.kind === 'elite') {
+        Alert.alert(t('code.eliteOk'));
+        await refresh();
+      } else if (res.kind === 'referral') {
+        setCodeInput('');
+        Alert.alert(t('code.referralOk').replace('{name}', res.name ?? entered));
+      } else if (res.kind === 'referralAlready') {
+        Alert.alert(t('code.already'));
+      } else if (res.kind === 'eliteAlready') {
+        Alert.alert(t('code.eliteAlready'));
+        await refresh(); // they already hold elite - make sure the gate sees it
+      } else {
+        Alert.alert(t('code.invalid'));
+      }
+    } catch {
+      Alert.alert(t('pw.error'));
+    } finally {
+      setApplying(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <Pressable onPress={() => setOpen(true)} hitSlop={8} style={{ alignSelf: 'center' }}>
+        <ThemedText type="small" style={{ color: theme.accent, fontWeight: '700' }}>{t('code.have')}</ThemedText>
+      </Pressable>
+    );
+  }
+
+  return (
+    <Card style={{ gap: Spacing.three }}>
+      <ThemedText style={{ fontWeight: '800' }}>{t('code.section')}</ThemedText>
+      <ThemedText type="small" themeColor="textSecondary">{t('code.hint')}</ThemedText>
+      <TextField
+        value={codeInput}
+        onChangeText={setCodeInput}
+        placeholder={t('code.ph')}
+        autoCapitalize="characters"
+        autoCorrect={false}
+      />
+      <Button label={t('code.apply')} icon="ticket" onPress={apply} loading={applying} disabled={!codeInput.trim()} />
+    </Card>
   );
 }
 

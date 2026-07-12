@@ -4,10 +4,11 @@ import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Card, Screen } from '@/components/ui/kit';
+import { Button, Card, Screen, TextField } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { applyInviteOrReferralCode } from '@/lib/elite';
 import { LANGUAGES, useTranslation, type LangCode } from '@/lib/i18n';
 import { NOTIF_CATEGORIES, setNotifPref, type NotifCategory } from '@/lib/notif-prefs';
 
@@ -28,6 +29,8 @@ export default function SettingsScreen() {
   const { profile, refreshProfile } = useAuth();
   const [open, setOpen] = useState(false);
   const [savingCat, setSavingCat] = useState<NotifCategory | null>(null);
+  const [codeInput, setCodeInput] = useState('');
+  const [applying, setApplying] = useState(false);
 
   const current = LANGUAGES.find((l) => l.code === lang) ?? LANGUAGES[0];
 
@@ -37,6 +40,34 @@ export default function SettingsScreen() {
   }
 
   const enabled = (cat: NotifCategory) => profile?.notif_prefs?.[cat] !== false; // default on
+
+  // Post-signup code entry: referral codes attach attribution, elite invite
+  // codes unlock free access (the paywall gate re-checks on next launch).
+  async function applyCode() {
+    const entered = codeInput.trim().toUpperCase();
+    if (!entered) return;
+    setApplying(true);
+    try {
+      const res = await applyInviteOrReferralCode(entered);
+      if (res.kind === 'referral') {
+        setCodeInput('');
+        Alert.alert(t('code.referralOk').replace('{name}', res.name ?? entered));
+      } else if (res.kind === 'elite') {
+        setCodeInput('');
+        Alert.alert(t('code.eliteOk'));
+      } else if (res.kind === 'referralAlready') {
+        Alert.alert(t('code.already'));
+      } else if (res.kind === 'eliteAlready') {
+        Alert.alert(t('code.eliteAlready'));
+      } else {
+        Alert.alert(t('code.invalid'));
+      }
+    } catch {
+      Alert.alert(t('md.error'), t('md.tryAgain'));
+    } finally {
+      setApplying(false);
+    }
+  }
 
   async function toggle(cat: NotifCategory, value: boolean) {
     if (!profile) return;
@@ -120,6 +151,25 @@ export default function SettingsScreen() {
             </View>
           </View>
         ))}
+      </Card>
+
+      {/* Invite / referral code - post-signup entry so attribution + elite
+          access aren't lost when a code wasn't typed at sign-up. */}
+      <ThemedText type="smallBold" themeColor="textSecondary" style={{ marginTop: Spacing.three }}>
+        {t('code.section').toUpperCase()}
+      </ThemedText>
+      <ThemedText type="small" themeColor="textSecondary">
+        {t('code.hint')}
+      </ThemedText>
+      <Card style={{ gap: Spacing.three }}>
+        <TextField
+          value={codeInput}
+          onChangeText={setCodeInput}
+          placeholder={t('code.ph')}
+          autoCapitalize="characters"
+          autoCorrect={false}
+        />
+        <Button label={t('code.apply')} icon="ticket" onPress={applyCode} loading={applying} disabled={!codeInput.trim()} />
       </Card>
     </Screen>
   );
