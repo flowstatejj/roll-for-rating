@@ -129,7 +129,20 @@ export default function SignUpScreen() {
         [{ text: t('common.ok'), onPress: () => router.replace('/(auth)/sign-in') }],
       );
     } catch (e: any) {
-      Alert.alert(t('su.failedTitle'), e.message ?? t('su.tryAgain'));
+      // GoTrue's raw "User already registered" reads like an app bug; say what
+      // actually collided (the email) and point at the fix (sign in).
+      if (/already registered/i.test(e?.message ?? '')) {
+        Alert.alert(
+          t('su.emailTakenTitle'),
+          t('su.emailTakenBody'),
+          [
+            { text: t('common.cancel'), style: 'cancel' },
+            { text: t('su.goSignIn'), onPress: () => router.replace('/(auth)/sign-in') },
+          ],
+        );
+      } else {
+        Alert.alert(t('su.failedTitle'), e.message ?? t('su.tryAgain'));
+      }
     } finally {
       setLoading(false);
     }
