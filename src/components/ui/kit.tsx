@@ -342,27 +342,47 @@ export function Screen({
 }) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+
+  // iOS: automaticallyAdjustKeyboardInsets makes the scroll view inset itself
+  // for the keyboard and scroll the focused field into view - no wrapper
+  // needed, so the iOS tree is left exactly as before.
+  // Android: that prop is iOS-only, and with edge-to-edge (default since
+  // SDK 53, enforced on Android 15+) the window no longer resizes for the
+  // keyboard, so the keyboard just covers the bottom of the scroll view and
+  // the last fields can never be scrolled into view. Wrapping the scroll view
+  // in a KeyboardAvoidingView with behavior="height" shrinks it by the actual
+  // measured overlap with the keyboard, which restores full scrollability and
+  // triggers the native scroll-to-focused-input on resize. Because it
+  // compensates measured overlap (frame bottom vs keyboard top), it is a no-op
+  // on devices where adjustResize still works - no double compensation.
+  const scrollBody = (
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={styles.scrollContent}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="interactive"
+      automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+      refreshControl={refreshControl}>
+      {children}
+    </ScrollView>
+  );
+
   return (
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
       <TatamiBackground />
       <SafeAreaView style={[styles.screen, { backgroundColor: 'transparent' }]} edges={['top']}>
         {scroll ? (
-          // automaticallyAdjustKeyboardInsets makes iOS inset the scroll view for
-          // the keyboard and scroll the focused field into view — no header-offset
-          // math needed. (Android resizes via adjustResize.)
-          <ScrollView
-            style={styles.screen}
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="interactive"
-            automaticallyAdjustKeyboardInsets
-            refreshControl={refreshControl}>
-            {children}
-          </ScrollView>
+          Platform.OS === 'android' ? (
+            <KeyboardAvoidingView style={styles.screen} behavior="height">
+              {scrollBody}
+            </KeyboardAvoidingView>
+          ) : (
+            scrollBody
+          )
         ) : (
           <KeyboardAvoidingView
             style={styles.screen}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 44 : 0}>
             {children}
           </KeyboardAvoidingView>

@@ -282,9 +282,11 @@ const styles = StyleSheet.create({
   topSide: { flex: 1, justifyContent: 'center' },
   topRight: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: Spacing.three },
   bellBadge: { position: 'absolute', top: -6, right: -8, minWidth: 16, height: 16, borderRadius: 8, paddingHorizontal: 3, alignItems: 'center', justifyContent: 'center' },
-  brand: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  // flexShrink keeps the centered brand from overflowing into the bell and
+  // podium icons on narrow phones (320dp-class); the text ellipsizes instead.
+  brand: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one, flexShrink: 1 },
   logoMark: { width: 26, height: 26, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
-  brandText: { fontSize: 17, fontWeight: '800', letterSpacing: 0.2 },
+  brandText: { fontSize: 17, fontWeight: '800', letterSpacing: 0.2, flexShrink: 1 },
   scroll: { padding: Spacing.three, gap: Spacing.three, paddingBottom: Spacing.four },
   heroRow: { gap: Spacing.two, alignSelf: 'center', width: '100%', maxWidth: 520 },
   hero: {
