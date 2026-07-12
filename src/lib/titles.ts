@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { BELT_LABELS, type Profile } from './types';
+import { BELT_LABELS, PROFILE_COLS, type Profile } from './types';
 
 export interface Champion {
   key: string;
@@ -10,7 +10,7 @@ export interface Champion {
 
 async function topRated(apply: (q: any) => any): Promise<Profile | null> {
   const { data, error } = await apply(
-    supabase.from('profiles').select('*').order('rating', { ascending: false }).limit(1),
+    supabase.from('profiles').select(PROFILE_COLS).order('rating', { ascending: false }).limit(1),
   );
   if (error) throw error;
   return ((data ?? [])[0] as Profile) ?? null;

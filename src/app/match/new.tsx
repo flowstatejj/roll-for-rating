@@ -14,7 +14,7 @@ import { fetchJuniors } from '@/lib/juniors';
 import { fetchLeague, linkFixtureMatch } from '@/lib/leagues';
 import { createMatch, searchProfiles } from '@/lib/matches';
 import { supabase } from '@/lib/supabase';
-import type { Profile } from '@/lib/types';
+import { PROFILE_COLS, type Profile } from '@/lib/types';
 
 type Slot = 'opponent' | 'referee';
 
@@ -77,12 +77,12 @@ export default function NewMatchScreen() {
     if (!opponentParam) return;
     supabase
       .from('profiles')
-      .select('*')
+      .select(PROFILE_COLS)
       .eq('id', opponentParam)
       .single()
       .then(({ data }) => {
         if (data) {
-          setOpponent(data as Profile);
+          setOpponent(data as unknown as Profile);
           setActive('referee');
         }
       });
