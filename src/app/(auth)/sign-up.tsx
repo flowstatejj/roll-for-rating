@@ -1,8 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, KeyboardAvoidingView, Linking, Platform, Pressable, StyleSheet, View, type TextInput } from 'react-native';
 
 import { PENDING_ELITE_INVITE_KEY } from '@/lib/elite';
 import { PENDING_REFERRAL_KEY } from '@/lib/referrals';
@@ -35,6 +35,10 @@ export default function SignUpScreen() {
   const [dobM, setDobM] = useState('');
   const [dobD, setDobD] = useState('');
   const [dobY, setDobY] = useState('');
+  // Birthdate entry: hop to the next box as soon as the current one is
+  // complete, so the date types like one continuous number.
+  const dobDayRef = useRef<TextInput>(null);
+  const dobYearRef = useRef<TextInput>(null);
   const [parentEmail, setParentEmail] = useState('');
   const [refCode, setRefCode] = useState('');
   const [eliteCode, setEliteCode] = useState('');
@@ -235,22 +239,35 @@ export default function SignUpScreen() {
                 <TextField
                   label="MM"
                   value={dobM}
-                  onChangeText={(t) => setDobM(t.replace(/\D/g, '').slice(0, 2))}
+                  onChangeText={(t) => {
+                    const v = t.replace(/\D/g, '').slice(0, 2);
+                    setDobM(v);
+                    // 2 digits, or a single digit that can't start a valid
+                    // 2-digit month (2-9), means the month is done.
+                    if (v.length === 2 || (v.length === 1 && v > '1')) dobDayRef.current?.focus();
+                  }}
                   keyboardType="number-pad"
                   placeholder="MM"
                 />
               </View>
               <View style={{ flex: 1 }}>
                 <TextField
+                  ref={dobDayRef}
                   label="DD"
                   value={dobD}
-                  onChangeText={(t) => setDobD(t.replace(/\D/g, '').slice(0, 2))}
+                  onChangeText={(t) => {
+                    const v = t.replace(/\D/g, '').slice(0, 2);
+                    setDobD(v);
+                    // Days start with 0-3; a single 4-9 is already complete.
+                    if (v.length === 2 || (v.length === 1 && v > '3')) dobYearRef.current?.focus();
+                  }}
                   keyboardType="number-pad"
                   placeholder="DD"
                 />
               </View>
               <View style={{ flex: 1.6 }}>
                 <TextField
+                  ref={dobYearRef}
                   label="YYYY"
                   value={dobY}
                   onChangeText={(t) => setDobY(t.replace(/\D/g, '').slice(0, 4))}
