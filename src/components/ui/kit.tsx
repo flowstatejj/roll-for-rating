@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { forwardRef } from 'react';
+import { forwardRef, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -342,27 +342,65 @@ export function Screen({
 }) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  // Android: the KAV's height math only sees parent-relative frames, so the
+  // native stack header above it is invisible and the shrink comes up short by
+  // the header height on every header screen. Measure the wrapper's real
+  // window Y and feed it back as keyboardVerticalOffset - exact on header,
+  // headerless, and tab screens alike (0 where there is nothing above us).
+  const kavHostRef = useRef<View>(null);
+  const [kavOffset, setKavOffset] = useState(0);
+
+  // iOS: automaticallyAdjustKeyboardInsets makes the scroll view inset itself
+  // for the keyboard and scroll the focused field into view - no wrapper
+  // needed, so the iOS tree is left exactly as before.
+  // Android: that prop is iOS-only, and with edge-to-edge (default since
+  // SDK 53, enforced on Android 15+) the window no longer resizes for the
+  // keyboard, so the keyboard just covers the bottom of the scroll view and
+  // the last fields can never be scrolled into view. Wrapping the scroll view
+  // in a KeyboardAvoidingView with behavior="height" shrinks it by the actual
+  // measured overlap with the keyboard, which restores full scrollability and
+  // triggers the native scroll-to-focused-input on resize. Because it
+  // compensates measured overlap (frame bottom vs keyboard top), it is a no-op
+  // on devices where adjustResize still works - no double compensation.
+  const scrollBody = (
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={styles.scrollContent}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="interactive"
+      automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+      refreshControl={refreshControl}>
+      {children}
+    </ScrollView>
+  );
+
   return (
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
       <TatamiBackground />
       <SafeAreaView style={[styles.screen, { backgroundColor: 'transparent' }]} edges={['top']}>
         {scroll ? (
-          // automaticallyAdjustKeyboardInsets makes iOS inset the scroll view for
-          // the keyboard and scroll the focused field into view — no header-offset
-          // math needed. (Android resizes via adjustResize.)
-          <ScrollView
-            style={styles.screen}
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="interactive"
-            automaticallyAdjustKeyboardInsets
-            refreshControl={refreshControl}>
-            {children}
-          </ScrollView>
+          Platform.OS === 'android' ? (
+            <View
+              ref={kavHostRef}
+              style={styles.screen}
+              onLayout={() => {
+                // Host view shares the KAV's exact frame; never set onLayout on
+                // the KAV itself (it would clobber its internal frame tracking).
+                kavHostRef.current?.measureInWindow((_x, y) => {
+                  if (Number.isFinite(y) && y >= 0) setKavOffset(y);
+                });
+              }}>
+              <KeyboardAvoidingView style={styles.screen} behavior="height" keyboardVerticalOffset={kavOffset}>
+                {scrollBody}
+              </KeyboardAvoidingView>
+            </View>
+          ) : (
+            scrollBody
+          )
         ) : (
           <KeyboardAvoidingView
             style={styles.screen}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 44 : 0}>
             {children}
           </KeyboardAvoidingView>

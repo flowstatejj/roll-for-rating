@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, Share, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, Share, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Avatar, BeltChip, Button, Card, EmptyState, Loading, Screen } from '@/components/ui/kit';
@@ -10,9 +10,10 @@ import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
 import {
-  dollars, fetchAdminStatements, fetchAffiliateLeaderboard, fetchFounderReferrals, fetchFounderStatements,
-  fetchReferralOwed, generateStatements, markStatementPaid, myReferralCode, recordReferralPayout, referralLink,
+  dollars, fetchAdminFounderReferrals, fetchAdminStatements, fetchAffiliateLeaderboard, fetchFounderReferrals,
+  fetchFounderStatements, fetchReferralOwed, generateStatements, markStatementPaid, myReferralCode, referralLink,
   type AdminStatementRow, type FounderReferrals, type FounderStatement, type LeaderboardRow, type OwedRow,
+  type ReferredMember,
 } from '@/lib/referrals';
 
 export default function AffiliateScreen() {
@@ -33,6 +34,9 @@ export default function AffiliateScreen() {
   const [showAllMembers, setShowAllMembers] = useState(false);
   const [showAllOwed, setShowAllOwed] = useState(false);
   const [showAllStmts, setShowAllStmts] = useState(false);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [founderMembers, setFounderMembers] = useState<Record<string, ReferredMember[]>>({});
+  const [expLoading, setExpLoading] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -113,27 +117,21 @@ export default function AffiliateScreen() {
     }
   }
 
-  function payOut(o: OwedRow) {
-    const owedCents = Math.max(0, o.est_total_cents - o.paid_cents);
-    if (owedCents <= 0) return;
-    Alert.alert(
-      t('af.markPaid'),
-      t('af.payConfirm').replace('{amount}', dollars(owedCents)).replace('{name}', o.name),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('af.markPaid'),
-          onPress: async () => {
-            try {
-              await recordReferralPayout(o.founder_id, owedCents);
-              await load();
-            } catch (e: any) {
-              Alert.alert(t('af.error'), e.message ?? t('md.tryAgain'));
-            }
-          },
-        },
-      ],
-    );
+  // Tap an owed row to see exactly who that founder referred (loaded once).
+  async function toggleFounder(o: OwedRow) {
+    if (expanded === o.founder_id) { setExpanded(null); return; }
+    setExpanded(o.founder_id);
+    if (founderMembers[o.founder_id]) return;
+    setExpLoading(o.founder_id);
+    try {
+      const m = await fetchAdminFounderReferrals(o.founder_id);
+      setFounderMembers((prev) => ({ ...prev, [o.founder_id]: m }));
+    } catch (e) {
+      console.warn('founder referrals load failed', e);
+      setExpanded((cur) => (cur === o.founder_id ? null : cur)); // collapse so a re-tap retries
+    } finally {
+      setExpLoading((cur) => (cur === o.founder_id ? null : cur));
+    }
   }
 
   if (loading) return <Loading />;
@@ -147,7 +145,12 @@ export default function AffiliateScreen() {
     );
   }
 
-  const owedTotal = data ? Math.max(0, data.est_total_cents - data.paid_cents) : 0;
+  // Once statements exist they are the ledger: "owed" = pending statement share,
+  // not the drifting lifetime estimate. Estimate only until the first statement.
+  const pendingStmtCents = stmts.filter((s) => s.status === 'pending').reduce((n, s) => n + s.share_cents, 0);
+  const owedTotal = stmts.length > 0
+    ? pendingStmtCents
+    : (data ? Math.max(0, data.est_total_cents - data.paid_cents) : 0);
 
   // Newest referrals first, capped at 10 - both lists grow unbounded otherwise.
   const members = [...(data?.members ?? [])].sort((a, b) => new Date(b.joined).getTime() - new Date(a.joined).getTime());
@@ -155,6 +158,13 @@ export default function AffiliateScreen() {
   const owedCentsFor = (o: OwedRow) => Math.max(0, o.est_total_cents - o.paid_cents);
   const owedSorted = [...owed].sort((a, b) => owedCentsFor(b) - owedCentsFor(a));
   const visibleOwed = showAllOwed ? owedSorted : owedSorted.slice(0, 10);
+
+  // Owner launch pulse (admin section summary).
+  const totalReferred = owed.reduce((n, o) => n + o.referred, 0);
+  const owedPendingStmts = adminStmts.rows.filter((r) => r.status === 'pending').reduce((n, r) => n + r.share_cents, 0);
+  const lifetimePaid = owed.reduce((n, o) => n + o.paid_cents, 0);
+  const signupsWeek = owed.reduce((n, o) => n + (o.signups_7d ?? 0), 0);
+  const latestMonth = adminStmts.month?.slice(0, 10) ?? null;
 
   return (
     <Screen>
@@ -292,9 +302,20 @@ export default function AffiliateScreen() {
         </>
       )}
 
-      {/* Owner: monthly statements to pay */}
+      {/* Owner: launch pulse + monthly statements to pay */}
       {isAdmin && (
         <>
+          <Card style={{ gap: Spacing.three, marginTop: Spacing.one }}>
+            <View style={styles.stats}>
+              <Stat label={t('af.statReferred')} value={String(totalReferred)} />
+              <Stat label={t('af.newWeek')} value={String(signupsWeek)} />
+            </View>
+            <View style={styles.stats}>
+              <Stat label={t('af.owedMonth')} value={dollars(owedPendingStmts)} tint={theme.accent} />
+              <Stat label={t('af.lifetimePaid')} value={dollars(lifetimePaid)} tint={theme.success} />
+            </View>
+          </Card>
+
           <ThemedText type="smallBold" themeColor="textSecondary" style={styles.section}>
             {t('af.statements')}{adminStmts.month ? ` · ${monthName(adminStmts.month)}` : ''}
           </ThemedText>
@@ -308,11 +329,17 @@ export default function AffiliateScreen() {
                   <View style={styles.row}>
                     <View style={{ flex: 1 }}>
                       <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>{s.name}</ThemedText>
+                      {!!s.month && !!latestMonth && s.month.slice(0, 10) !== latestMonth && (
+                        <ThemedText type="small" style={{ color: theme.accent, fontWeight: '700' }} numberOfLines={1}>
+                          {t('af.overdueMonth').replace('{month}', monthName(s.month))}
+                        </ThemedText>
+                      )}
                       <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
                         {t('af.stLine')
                           .replace('{a}', String(s.apple_active))
                           .replace('{g}', String(s.google_active))
                           .replace('{s}', String(s.signups))}
+                        {` · ${t('af.netLc')} ${dollars(s.net_cents ?? 0)}`}
                       </ThemedText>
                     </View>
                     <View style={{ alignItems: 'flex-end', gap: 2 }}>
@@ -334,7 +361,7 @@ export default function AffiliateScreen() {
           )}
           <Button label={t('af.generate')} icon="refresh" variant="secondary" onPress={generateNow} loading={generating} />
 
-          <ThemedText type="smallBold" themeColor="textSecondary" style={styles.section}>{t('af.ownerTitle')}</ThemedText>
+          <ThemedText type="smallBold" themeColor="textSecondary" style={styles.section}>{t('af.lifetimeRef')}</ThemedText>
           {owed.length === 0 ? (
             <EmptyState icon="cash-outline" title={t('af.ownerNone')} subtitle={t('af.ownerNoneSub')} />
           ) : (
@@ -342,22 +369,39 @@ export default function AffiliateScreen() {
               <Card style={{ gap: Spacing.two }}>
                 {visibleOwed.map((o) => {
                   const owedCents = owedCentsFor(o);
+                  const isOpen = expanded === o.founder_id;
                   return (
-                    <View key={o.founder_id} style={styles.owedRow}>
-                      <View style={{ flex: 1 }}>
-                        <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>{o.name}</ThemedText>
-                        <ThemedText type="small" themeColor="textSecondary">
-                          {o.referred} {t('af.referredLc')} · {t('af.paidLc')} {dollars(o.paid_cents)}
-                        </ThemedText>
-                      </View>
-                      <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                        <ThemedText style={{ fontWeight: '800', color: theme.accent }}>{dollars(owedCents)}</ThemedText>
-                        {owedCents > 0 && (
-                          <Pressable onPress={() => payOut(o)}>
-                            <ThemedText type="small" style={{ color: theme.accent, fontWeight: '700' }}>{t('af.markPaid')}</ThemedText>
-                          </Pressable>
-                        )}
-                      </View>
+                    <View key={o.founder_id}>
+                      <Pressable onPress={() => toggleFounder(o)} style={styles.owedRow}>
+                        <View style={{ flex: 1 }}>
+                          <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>{o.name}</ThemedText>
+                          <ThemedText type="small" themeColor="textSecondary">
+                            {o.referred} {t('af.referredLc')} · {t('af.paidLc')} {dollars(o.paid_cents)}
+                          </ThemedText>
+                        </View>
+                        <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                          <ThemedText style={{ fontWeight: '800', color: theme.accent }}>{dollars(owedCents)}</ThemedText>
+                          <Ionicons name={isOpen ? 'chevron-up' : 'chevron-down'} size={14} color={theme.textSecondary} />
+                        </View>
+                      </Pressable>
+                      {isOpen && (expLoading === o.founder_id ? (
+                        <ActivityIndicator size="small" color={theme.textSecondary} style={{ paddingVertical: Spacing.two }} />
+                      ) : (
+                        (founderMembers[o.founder_id] ?? []).map((m) => (
+                          <View key={m.id} style={styles.memberRow}>
+                            <Avatar name={m.display_name} size={28} />
+                            <View style={{ flex: 1 }}>
+                              <ThemedText type="small" style={{ fontWeight: '700' }} numberOfLines={1}>{m.display_name}</ThemedText>
+                              <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+                                @{m.username} · {m.active ? t('af.active') : t('af.inactive')}
+                              </ThemedText>
+                            </View>
+                            <ThemedText type="small" style={{ fontWeight: '800', color: m.active ? theme.success : theme.textSecondary }}>
+                              {dollars(m.est_cents)}
+                            </ThemedText>
+                          </View>
+                        ))
+                      ))}
                     </View>
                   );
                 })}
@@ -394,6 +438,7 @@ const styles = StyleSheet.create({
   stats: { flexDirection: 'row' },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.two, paddingHorizontal: Spacing.two },
   owedRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.one },
+  memberRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.one, paddingLeft: Spacing.three },
   divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.two },
   older: { alignSelf: 'center', paddingVertical: Spacing.two, paddingHorizontal: Spacing.four, borderRadius: 999, borderWidth: 1 },
 });

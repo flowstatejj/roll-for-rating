@@ -56,6 +56,9 @@ create policy "entitlements_select_own" on public.entitlements
 
 -- ---- Active-access check ---------------------------------------------------
 -- The single source of truth the app (and other policies) can call.
+-- NOTE: gym-accounts.sql OWNS the final has_active_entitlement (grace-period
+-- arm + verified-gym arm). Re-running THIS file reverts it - re-run
+-- gym-accounts.sql afterward. This copy is kept only for fresh-database setup.
 create or replace function public.has_active_entitlement(p_user uuid)
 returns boolean
 language sql stable security definer set search_path = public as $$

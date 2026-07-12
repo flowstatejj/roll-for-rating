@@ -54,9 +54,10 @@
     "android": {
       "package": "com.flowstatejj.rollforrating",
       "googleServicesFile": "./google-services.json",
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "backgroundColor": "#000000",
-        "foregroundImage": "./assets/images/icon.png"
+        "foregroundImage": "./assets/images/android-icon-r4r-foreground.png"
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [

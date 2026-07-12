@@ -30,6 +30,11 @@ export interface OwedRow {
   referred: number;
   est_total_cents: number;
   paid_cents: number;
+  // Launch-week pulse (live, not snapshotted).
+  signups_7d: number;
+  signups_month: number;
+  paying_apple: number;
+  paying_google: number;
 }
 
 /** Founder's referral code, generated on first call. Founders only. */
@@ -69,6 +74,13 @@ export async function fetchReferralOwed(): Promise<OwedRow[]> {
   const { data, error } = await supabase.rpc('admin_referral_owed');
   if (error) throw error;
   return (data ?? []) as OwedRow[];
+}
+
+/** Owner: one founder's referred members (same shape the founder sees). */
+export async function fetchAdminFounderReferrals(founderId: string): Promise<ReferredMember[]> {
+  const { data, error } = await supabase.rpc('admin_founder_referrals', { p_founder: founderId });
+  if (error) throw error;
+  return (data ?? []) as ReferredMember[];
 }
 
 /** Owner records a payout made out-of-app. */
@@ -111,9 +123,12 @@ export interface AdminStatementRow {
   id: string;
   founder_id: string;
   name: string;
+  month: string; // first day of this row's statement month (ISO date)
   apple_active: number;
   google_active: number;
   signups: number;
+  gross_cents: number;
+  net_cents: number;
   share_cents: number;
   status: 'pending' | 'paid';
   paid_at: string | null;
@@ -134,7 +149,8 @@ export async function fetchFounderStatements(): Promise<FounderStatement[]> {
   return (data ?? []) as FounderStatement[];
 }
 
-/** Admin: every founder's statement for the latest generated month. */
+/** Admin: every founder's statement for the latest generated month, plus any
+ *  still-pending statement from an earlier month (each row carries its own `month`). */
 export async function fetchAdminStatements(): Promise<{ month: string | null; rows: AdminStatementRow[] }> {
   const { data, error } = await supabase.rpc('admin_affiliate_statements');
   if (error) throw error;
