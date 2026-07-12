@@ -111,7 +111,7 @@ export const PROFILE_COLS =
   'id,username,display_name,belt_rank,avatar_path,avatar_warrior,avatar_color,' +
   'rating,weight_lbs,wins,losses,draws,gym_id,open_for_challenge,city,state,' +
   'country,continent,activity_streak,last_active_date,is_minor,is_admin,banned,' +
-  'is_founding_member,age_tier,consent_status,managed_by,participating,' +
+  'is_founding_member,is_gym_account,gym_verified,age_tier,consent_status,managed_by,participating,' +
   'notif_prefs,instagram,tiktok,youtube,facebook,created_at';
 
 export interface Quest {
