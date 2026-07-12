@@ -18,11 +18,12 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { Platform } from 'react-native';
+import { Alert, AppState, Platform } from 'react-native';
 import {
   endConnection,
   fetchProducts,
   finishTransaction,
+  getAvailablePurchases,
   initConnection,
   purchaseErrorListener,
   purchaseUpdatedListener,
@@ -35,6 +36,7 @@ import {
 
 import { supabase } from './supabase';
 import { useAuth } from './auth';
+import { useTranslation } from './i18n';
 
 /** Auto-renewable subscription SKUs. Apple uses the App Store Connect product
  *  ids; Google Play caps product ids at 40 chars, so Android uses shorter ids
@@ -53,6 +55,9 @@ const SKU_FOR: Record<Plan, string> = {
 };
 
 const IAP_AVAILABLE = Platform.OS === 'ios' || Platform.OS === 'android';
+
+/** Foreground entitlement re-checks are throttled to once per this window. */
+const FOREGROUND_RECHECK_MS = 6 * 60 * 60 * 1000;
 
 export interface SubInfo {
   active: boolean;
@@ -87,16 +92,22 @@ const SubscriptionContext = createContext<SubscriptionContextValue | undefined>(
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const { session, initializing } = useAuth();
+  const { t } = useTranslation();
   const [ready, setReady] = useState(false);
   const [info, setInfo] = useState<SubInfo | null>(null);
   const [product, setProduct] = useState<ProductSubscription | null>(null);
   const [familyProduct, setFamilyProduct] = useState<ProductSubscription | null>(null);
   const [purchasing, setPurchasing] = useState(false);
   const purchasingRef = useRef(false);
+  // Mirrors `info` so refresh() can read the last known state without taking it
+  // as a dependency (which would churn every callback identity on each poll).
+  const infoRef = useRef<SubInfo | null>(null);
+  const lastForegroundCheckRef = useRef(0);
 
   // Read the authoritative entitlement from our backend. Returns current access.
   const refresh = useCallback(async (): Promise<boolean> => {
     if (!session?.user) {
+      infoRef.current = null;
       setInfo(null);
       setReady(true);
       return false;
@@ -104,21 +115,28 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     const { data, error } = await supabase.rpc('my_subscription');
     let active = false;
     if (error) {
-      // Fail CLOSED would lock everyone out on a transient error; the gate also
-      // checks `ready`, so we surface "inactive" but let a retry recover.
-      setInfo({ active: false, status: null, source: null, productId: null, expiresAt: null, plan: null });
+      // A failed RPC is NOT a definitive "no subscription": keep the last known
+      // state so a transient error on a later re-check never bounces a paying
+      // user to the paywall. A first read (no state yet) still surfaces
+      // "inactive", and the `ready` gate lets a retry recover on launch.
+      active = !!infoRef.current?.active;
+      if (!infoRef.current) {
+        infoRef.current = { active: false, status: null, source: null, productId: null, expiresAt: null, plan: null };
+        setInfo(infoRef.current);
+      }
     } else {
       const row = Array.isArray(data) ? data[0] : data;
       active = !!row?.active;
       const planTier: Plan | null = row?.plan === 'family' ? 'family' : row?.plan === 'individual' ? 'individual' : null;
-      setInfo({
+      infoRef.current = {
         active,
         status: row?.status ?? null,
         source: row?.source ?? null,
         productId: row?.product_id ?? null,
         expiresAt: row?.expires_at ?? null,
         plan: active ? planTier : null,
-      });
+      };
+      setInfo(infoRef.current);
     }
     setReady(true);
     return active;
@@ -126,21 +144,23 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   // Send a completed purchase to the server for verification. iOS hands us a
   // StoreKit transactionId; Android a Play purchaseToken. The edge function
-  // verifies whichever it receives against the right store.
+  // verifies whichever it receives against the right store. Throws when the
+  // server can't confirm the purchase so callers know NOT to finish it.
   const validate = useCallback(
     async (purchase: Purchase) => {
       let body: Record<string, string>;
       if (Platform.OS === 'android') {
-        const p = purchase as { purchaseToken?: string; productId?: string; ids?: string[] };
-        if (!p.purchaseToken) return;
+        const p = purchase as { purchaseToken?: string | null; productId?: string; ids?: string[] };
+        if (!p.purchaseToken) throw new Error('Android purchase is missing its purchaseToken');
         body = { purchaseToken: p.purchaseToken, productId: p.productId ?? p.ids?.[0] ?? '' };
       } else {
         const transactionId = (purchase as { transactionId?: string }).transactionId;
-        if (!transactionId) return;
+        if (!transactionId) throw new Error('iOS purchase is missing its transactionId');
         body = { transactionId };
       }
       const { error } = await supabase.functions.invoke('validate-purchase', { body });
-      if (!error) await refresh();
+      if (error) throw error;
+      await refresh();
     },
     [refresh],
   );
@@ -196,8 +216,15 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           // early acknowledge would leave the user paid-but-unentitled.
           if ((purchase as { purchaseState?: string }).purchaseState === 'pending') return;
           await validate(purchase);
-          // Non-consumable / subscription: finish so it isn't replayed each launch.
-          await finishTransaction({ purchase, isConsumable: false });
+          // Finish ONLY after the server accepted the purchase. Finishing an
+          // unvalidated transaction would consume the user's money with no
+          // entitlement written; left unfinished, the store re-delivers it on
+          // the next launch so validation retries by itself. A failed finish is
+          // harmless for the same reason (re-delivered, re-validated, retried).
+          await finishTransaction({ purchase, isConsumable: false }).catch(() => {});
+        } catch {
+          // Validation failed; the purchase stays unfinished for a later retry.
+          Alert.alert(t('pw.error'));
         } finally {
           purchasingRef.current = false;
           setPurchasing(false);
@@ -216,6 +243,38 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user?.id, initializing]);
+
+  // Renewal pickup on foreground, throttled to once per 6 hours. Apple renewals
+  // reach the server through the replayed StoreKit transaction, but no Google
+  // server notification is wired up, so an Android renewal only re-extends the
+  // entitlement when the app re-validates the (renewal-stable) purchaseToken.
+  // Validation runs BEFORE the refresh so a renewed sub never flashes the
+  // paywall; every step is best-effort and a failure leaves access untouched.
+  useEffect(() => {
+    if (!session?.user) return;
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') return;
+      const now = Date.now();
+      if (now - lastForegroundCheckRef.current < FOREGROUND_RECHECK_MS) return;
+      lastForegroundCheckRef.current = now;
+      (async () => {
+        if (Platform.OS === 'android') {
+          try {
+            const owned = await getAvailablePurchases();
+            for (const p of owned) {
+              if (p.productId !== PRO_MONTHLY_SKU && p.productId !== FAMILY_MONTHLY_SKU) continue;
+              await validate(p);
+            }
+          } catch {
+            // Store or server unavailable; the refresh below still decides.
+          }
+        }
+        await refresh();
+      })().catch(() => {});
+    });
+    return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user?.id, refresh, validate]);
 
   const purchase = useCallback(async (plan: Plan = 'individual') => {
     if (!IAP_AVAILABLE) throw new Error('Subscriptions are only available in the mobile app.');
