@@ -181,6 +181,8 @@ function CodeSection() {
       } else if (res.kind === 'eliteAlready') {
         Alert.alert(t('code.eliteAlready'));
         await refresh(); // they already hold elite - make sure the gate sees it
+      } else if (res.kind === 'error') {
+        Alert.alert(t('code.network'));
       } else {
         Alert.alert(t('code.invalid'));
       }

@@ -12,7 +12,7 @@ import {
 } from 'react';
 import { Alert } from 'react-native';
 
-import { PENDING_ELITE_INVITE_KEY, redeemEliteInviteCode } from './elite';
+import { PENDING_ELITE_INVITE_KEY, applyInviteOrReferralCode, redeemEliteInviteCode } from './elite';
 import { useTranslation } from './i18n';
 import { PENDING_REFERRAL_KEY, redeemReferralCode } from './referrals';
 import { supabase } from './supabase';
@@ -107,11 +107,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const code = await AsyncStorage.getItem(PENDING_REFERRAL_KEY);
       if (!code) return;
-      const res = await redeemReferralCode(code);
-      if (res.ok || res.reason) await AsyncStorage.removeItem(PENDING_REFERRAL_KEY);
-      if (res.ok) {
+      // The sign-up field is the only typed entry point on a store install, so
+      // people paste ELITE codes into it too - try both kinds, exactly like the
+      // in-app code entry. Transport failures keep the key for a retry next
+      // launch; only definitive outcomes clear it.
+      const res = await applyInviteOrReferralCode(code);
+      if (res.kind !== 'error') await AsyncStorage.removeItem(PENDING_REFERRAL_KEY);
+      if (res.kind === 'referral') {
         Alert.alert(tRef.current('code.referralOk').replace('{name}', res.name ?? code));
-      } else if (res.reason === 'invalid') {
+      } else if (res.kind === 'elite') {
+        Alert.alert(tRef.current('code.eliteOk'));
+      } else if (res.kind === 'invalid') {
         Alert.alert(tRef.current('code.pendingInvalid'));
       }
     } catch {

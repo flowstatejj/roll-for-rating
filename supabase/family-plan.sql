@@ -46,6 +46,9 @@ $$;
 -- child is operated inside the manager's (already paywalled) session, so once
 -- the manager is active the child rows they operate are usable. The 1-vs-many
 -- capacity limit is enforced at INSERT time (section 4), not here.
+-- NOTE: gym-accounts.sql OWNS the final has_active_entitlement (grace-period
+-- arm + verified-gym arm). Re-running THIS file reverts it - re-run
+-- gym-accounts.sql afterward. This copy is kept only for fresh-database setup.
 create or replace function public.has_active_entitlement(p_user uuid)
 returns boolean
 language sql stable security definer set search_path = public as $$

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { forwardRef } from 'react';
+import { forwardRef, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -342,6 +342,13 @@ export function Screen({
 }) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  // Android: the KAV's height math only sees parent-relative frames, so the
+  // native stack header above it is invisible and the shrink comes up short by
+  // the header height on every header screen. Measure the wrapper's real
+  // window Y and feed it back as keyboardVerticalOffset - exact on header,
+  // headerless, and tab screens alike (0 where there is nothing above us).
+  const kavHostRef = useRef<View>(null);
+  const [kavOffset, setKavOffset] = useState(0);
 
   // iOS: automaticallyAdjustKeyboardInsets makes the scroll view inset itself
   // for the keyboard and scroll the focused field into view - no wrapper
@@ -373,9 +380,20 @@ export function Screen({
       <SafeAreaView style={[styles.screen, { backgroundColor: 'transparent' }]} edges={['top']}>
         {scroll ? (
           Platform.OS === 'android' ? (
-            <KeyboardAvoidingView style={styles.screen} behavior="height">
-              {scrollBody}
-            </KeyboardAvoidingView>
+            <View
+              ref={kavHostRef}
+              style={styles.screen}
+              onLayout={() => {
+                // Host view shares the KAV's exact frame; never set onLayout on
+                // the KAV itself (it would clobber its internal frame tracking).
+                kavHostRef.current?.measureInWindow((_x, y) => {
+                  if (Number.isFinite(y) && y >= 0) setKavOffset(y);
+                });
+              }}>
+              <KeyboardAvoidingView style={styles.screen} behavior="height" keyboardVerticalOffset={kavOffset}>
+                {scrollBody}
+              </KeyboardAvoidingView>
+            </View>
           ) : (
             scrollBody
           )

@@ -103,7 +103,8 @@ export type CodeApplyOutcome =
   | { kind: 'referralAlready' }
   | { kind: 'elite'; grantorName: string | null }
   | { kind: 'eliteAlready' }
-  | { kind: 'invalid' };
+  | { kind: 'invalid' }
+  | { kind: 'error' };
 
 /** Apply a code the user pasted in-app without knowing which kind it is:
  *  referral attribution first, then the elite invite path (the same redeemer
@@ -118,5 +119,9 @@ export async function applyInviteOrReferralCode(raw: string): Promise<CodeApplyO
   if (el.ok) return { kind: 'elite', grantorName: el.grantor_name ?? null };
   if (el.reason === 'already_elite') return { kind: 'eliteAlready' };
   if (ref.reason === 'already') return { kind: 'referralAlready' };
+  // 'invalid' only on a definitive server verdict from BOTH paths; a transport
+  // failure (the helpers signal it as ok:false with NO reason) must never tell
+  // the user their perfectly valid code is unrecognized.
+  if (!ref.reason || !el.reason) return { kind: 'error' };
   return { kind: 'invalid' };
 }

@@ -59,6 +59,8 @@ export default function SettingsScreen() {
         Alert.alert(t('code.already'));
       } else if (res.kind === 'eliteAlready') {
         Alert.alert(t('code.eliteAlready'));
+      } else if (res.kind === 'error') {
+        Alert.alert(t('code.network'));
       } else {
         Alert.alert(t('code.invalid'));
       }
