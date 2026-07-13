@@ -58,6 +58,8 @@ export interface Profile {
   rating: number;
   /** Self-reported weight in pounds — powers the weight-class leaderboards. */
   weight_lbs: number | null;
+  /** Self-reported competition gender for division eligibility. Null until set. */
+  gender: 'male' | 'female' | null;
   wins: number;
   losses: number;
   draws: number;
@@ -88,6 +90,9 @@ export interface Profile {
   /** False for a guardian account: pays and manages children but does not
    *  compete; hidden from leaderboards and match search. */
   participating: boolean;
+  /** True for a non-member competitor entered by a tournament host (no real
+   *  auth account). Also hidden from search/leaderboards via participating=false. */
+  is_guest: boolean;
   /** Per-category push toggles. Missing key = enabled. Keys are NotifCategory. */
   notif_prefs: Record<string, boolean> | null;
   /** Optional social handles/URLs (adults only). Build links via lib/socials. */
@@ -207,6 +212,10 @@ export interface GymPower {
 export type TournamentFormat = 'round_robin' | 'single_elim' | 'double_elim' | 'rr_playoff';
 export type TournamentTeamRule = 'none' | 'duel' | 'quintet';
 export type TournamentTeamBuild = 'host' | 'captain' | 'auto';
+/** How a bout is won. */
+export type TournamentScoring = 'submission_only' | 'points';
+/** Federation rules framework; 'custom' = host sets everything by hand. */
+export type TournamentRulesetPreset = 'naga' | 'ibjjf' | 'grappling_industries' | 'adcc' | 'custom';
 
 export interface Tournament {
   id: string;
@@ -231,6 +240,8 @@ export interface Tournament {
   visibility: 'open' | 'private';
   join_code: string | null;
   city: string | null;
+  scoring: TournamentScoring;
+  ruleset_preset: TournamentRulesetPreset;
 }
 
 export interface TournamentStanding {
@@ -295,6 +306,56 @@ export interface TournamentBout {
   // resolved labels
   a_name?: string | null;
   b_name?: string | null;
+}
+
+// A division (belt/age/weight/gender/rating bracket) inside a tournament.
+// Weight bounds are stored canonically in KG; `weight_unit` remembers the unit
+// the host typed them in so summaries can echo it back.
+export interface TournamentDivision {
+  id: string;
+  name: string;
+  /** Gi vs No-Gi: a bracket-separating dimension (no-gi weight limits run lighter). */
+  ruleset: 'gi' | 'nogi' | 'any';
+  belt_min: BeltRank | null;
+  belt_max: BeltRank | null;
+  age_min: number | null;
+  age_max: number | null;
+  weight_min_kg: number | null;
+  weight_max_kg: number | null;
+  weight_unit: 'lbs' | 'kg';
+  rating_min: number | null;
+  rating_max: number | null;
+  gender: 'any' | 'male' | 'female';
+  format: TournamentFormat | null;
+  open: boolean;
+  status: string;
+  entrant_count: number;
+}
+
+// A division the signed-in competitor could join, with the computed eligibility
+// state (see eligible_divisions RPC). `fit` breaks eligibility down per axis.
+export interface EligibleDivision {
+  division_id: string;
+  name: string;
+  gender: 'any' | 'male' | 'female';
+  weight_unit: 'lbs' | 'kg';
+  open: boolean;
+  eligible: boolean;
+  already: boolean;
+  note: string;
+  fit: { belt: boolean; age: boolean; weight: boolean; rating: boolean; gender: boolean };
+}
+
+// One entrant in a division roster (member or host-entered guest), as returned
+// by the division_roster RPC — the fields a host needs to eyeball seeding.
+export interface DivisionRosterEntry {
+  user_id: string;
+  display_name: string;
+  belt_rank: BeltRank;
+  gender: 'male' | 'female' | null;
+  weight_lbs: number | null;
+  rating: number;
+  is_guest: boolean;
 }
 
 // ---------------------------------------------------------------------------

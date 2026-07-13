@@ -3,7 +3,9 @@ import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-rou
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, Share, StyleSheet, View } from 'react-native';
 
+import { DivisionRegister } from '@/components/division-register';
 import { ThemedText } from '@/components/themed-text';
+import { TournamentDivisions } from '@/components/tournament-divisions';
 import { Avatar, BeltChip, Button, Card, EmptyState, Loading, Screen, TextField } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -17,6 +19,7 @@ import {
   autoBalanceTeams,
   createTeam,
   fetchBouts,
+  fetchDivisions,
   fetchMats,
   fetchStandingsPro,
   fetchTeams,
@@ -33,6 +36,7 @@ import type {
   Profile,
   Tournament,
   TournamentBout,
+  TournamentDivision,
   TournamentMat,
   TournamentStandingPro,
   TournamentTeam,
@@ -53,6 +57,7 @@ export default function TournamentDetailScreen() {
   const [teams, setTeams] = useState<TournamentTeam[]>([]);
   const [mats, setMats] = useState<TournamentMat[]>([]);
   const [bouts, setBouts] = useState<TournamentBout[]>([]);
+  const [divisions, setDivisions] = useState<TournamentDivision[]>([]);
   const [standings, setStandings] = useState<TournamentStandingPro[]>([]);
   const [invited, setInvited] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -73,10 +78,11 @@ export default function TournamentDetailScreen() {
         .eq('tournament_id', id);
       setEntrants(((ent ?? []).map((e: any) => e.profile).filter(Boolean)) as Profile[]);
       hasTournamentInvite(id).then(setInvited).catch(() => {});
-      const [tm, mt, bt] = await Promise.all([fetchTeams(id), fetchMats(id), fetchBouts(id)]);
+      const [tm, mt, bt, dv] = await Promise.all([fetchTeams(id), fetchMats(id), fetchBouts(id), fetchDivisions(id)]);
       setTeams(tm);
       setMats(mt);
       setBouts(bt);
+      setDivisions(dv);
       if (trow && (trow.format === 'round_robin' || trow.format === 'rr_playoff')) {
         setStandings(await fetchStandingsPro(id, trow.team_rule));
       } else {
@@ -113,6 +119,7 @@ export default function TournamentDetailScreen() {
   const isTeam = tr.team_rule !== 'none';
   const isEntrant = entrants.some((e) => e.id === userId);
   const generated = bouts.length > 0;
+  const hasDivisions = divisions.length > 0;
 
   async function act(fn: () => Promise<unknown>) {
     setBusy(true);
@@ -220,8 +227,13 @@ export default function TournamentDetailScreen() {
         </Card>
       )}
 
-      {/* Register (self-join) */}
-      {!isEntrant && !invited && tr.status !== 'complete' && (
+      {/* Division registration (competitor) - division-based events */}
+      {hasDivisions && !isHost && tr.status !== 'complete' && (
+        <DivisionRegister tournamentId={id} onChanged={load} />
+      )}
+
+      {/* Register (self-join) - legacy single-button path when there are no divisions */}
+      {!hasDivisions && !isEntrant && !invited && tr.status !== 'complete' && (
         <Button label={isTeam ? t('tn.registerTeam') : t('tn.register')} icon="add-circle" loading={busy} onPress={() => act(() => registerForTournament(id))} />
       )}
       {isEntrant && (
@@ -242,6 +254,9 @@ export default function TournamentDetailScreen() {
           onPress={() => router.push({ pathname: '/invite', params: { type: 'tournament', id, name: tr.name } })}
         />
       )}
+
+      {/* Host: divisions builder (belt/age/weight/gender/rating brackets) */}
+      {isHost && <TournamentDivisions tournamentId={id} onChanged={load} />}
 
       {/* Entrants (individual tournaments) — so the host and players can see who's in */}
       {!isTeam && (

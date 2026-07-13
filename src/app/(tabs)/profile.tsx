@@ -30,6 +30,12 @@ import { BELT_COLORS, BELT_LABELS, type BeltRank, type MatchWithPeople } from '@
 
 const BELTS: BeltRank[] = ['white', 'blue', 'purple', 'brown', 'black'];
 
+const GENDER_OPTIONS: { value: 'male' | 'female' | null; key: string }[] = [
+  { value: 'male', key: 'pf.genderMale' },
+  { value: 'female', key: 'pf.genderFemale' },
+  { value: null, key: 'pf.genderUnset' },
+];
+
 export default function ProfileScreen() {
   const { profile, session, signOut, refreshProfile } = useAuth();
   const theme = useTheme();
@@ -44,6 +50,7 @@ export default function ProfileScreen() {
   const [stateRegion, setStateRegion] = useState('');
   const [country, setCountry] = useState('');
   const [weight, setWeight] = useState('');
+  const [gender, setGender] = useState<'male' | 'female' | null>(null);
   const [socials, setSocials] = useState<Record<SocialKey, string>>({
     instagram: '', tiktok: '', youtube: '', facebook: '',
   });
@@ -200,6 +207,7 @@ export default function ProfileScreen() {
     setStateRegion(profile!.state ?? '');
     setCountry(profile!.country ?? '');
     setWeight(profile!.weight_lbs != null ? String(profile!.weight_lbs) : '');
+    setGender(profile!.gender ?? null);
     setSocials({
       instagram: profile!.instagram ?? '',
       tiktok: profile!.tiktok ?? '',
@@ -229,6 +237,7 @@ export default function ProfileScreen() {
         country: country.trim() || null,
         continent: country.trim() ? continentForCountryName(country) : null,
         weight_lbs: w,
+        gender,
       };
       // Social links are adults-only (a minor's other socials shouldn't be
       // discoverable here).
@@ -263,6 +272,7 @@ export default function ProfileScreen() {
   const wClass = weightClassFor(profile.weight_lbs);
   const vitals = [
     age != null ? t('pf.ageYrs').replace('{n}', String(age)) : null,
+    profile.gender ? t(profile.gender === 'male' ? 'pf.genderMale' : 'pf.genderFemale') : null,
     profile.weight_lbs != null ? `${profile.weight_lbs} lbs` : null,
     wClass ? t(`wc.${wClass}`) : null,
   ].filter(Boolean).join(' · ');
@@ -529,6 +539,37 @@ export default function ProfileScreen() {
               })}
             </View>
           </View>
+          <View style={{ gap: Spacing.one }}>
+            <ThemedText type="smallBold" themeColor="textSecondary">
+              {t('pf.genderLabel')}
+            </ThemedText>
+            <View style={styles.genderRow}>
+              {GENDER_OPTIONS.map((opt) => {
+                const selected = gender === opt.value;
+                return (
+                  <Pressable
+                    key={opt.key}
+                    onPress={() => setGender(opt.value)}
+                    style={[
+                      styles.genderOption,
+                      {
+                        backgroundColor: selected ? theme.accent : theme.backgroundElement,
+                        borderColor: selected ? theme.accent : theme.border,
+                      },
+                    ]}>
+                    <ThemedText
+                      style={{
+                        fontWeight: '700',
+                        fontSize: 13,
+                        color: selected ? theme.accentText : theme.text,
+                      }}>
+                      {t(opt.key)}
+                    </ThemedText>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
           {!profile.is_minor && (
             <View style={{ gap: Spacing.two }}>
               <ThemedText type="smallBold" themeColor="textSecondary">
@@ -655,4 +696,6 @@ const styles = StyleSheet.create({
   divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.one },
   belts: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   beltOption: { paddingVertical: Spacing.two, paddingHorizontal: Spacing.three, borderRadius: 10, borderWidth: 1 },
+  genderRow: { flexDirection: 'row', gap: Spacing.two },
+  genderOption: { flex: 1, alignItems: 'center', paddingVertical: Spacing.two, borderRadius: 10, borderWidth: 1 },
 });

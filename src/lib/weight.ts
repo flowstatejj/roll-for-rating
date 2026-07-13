@@ -64,3 +64,21 @@ export function ageFrom(birthdate: string | null | undefined): number | null {
   if (now.getMonth() + 1 < m || (now.getMonth() + 1 === m && now.getDate() < d)) age -= 1;
   return age >= 0 && age < 130 ? age : null;
 }
+
+/** Full years old at now() from an ISO birthdate (0 when unknown/invalid). */
+export function ageFromBirthdate(birthdate: string | null | undefined): number {
+  return ageFrom(birthdate) ?? 0;
+}
+
+// Canonical pounds<->kilograms conversion (matches the DB's division bounds).
+const LBS_PER_KG = 0.45359237;
+
+/** Pounds to kilograms. */
+export function lbsToKg(lbs: number): number {
+  return lbs * LBS_PER_KG;
+}
+
+/** Kilograms to pounds. */
+export function kgToLbs(kg: number): number {
+  return kg / LBS_PER_KG;
+}
