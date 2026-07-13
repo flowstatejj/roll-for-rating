@@ -153,11 +153,58 @@ export interface League {
   loss_points: number;
   sub_kill_bonus: number;
   sub_break_bonus: number;
+  /** How a bout is scored + the federation preset (parity with tournaments). */
+  scoring: LeagueScoring;
+  ruleset_preset: LeagueRulesetPreset;
   created_at: string;
   /** present on rows fetched with membership context */
   member_count?: number;
   is_member?: boolean;
   is_organizer?: boolean;
+}
+
+// Leagues reuse the tournament scoring/ruleset vocabularies verbatim.
+export type LeagueScoring = TournamentScoring;
+export type LeagueRulesetPreset = TournamentRulesetPreset;
+
+// A division inside a league. Mirrors TournamentDivision minus the bracket
+// `format` (a league division is always the weekly circle method) plus optional
+// per-division scoring overrides (null = inherit the league's scheme).
+export interface LeagueDivision {
+  id: string;
+  name: string;
+  ruleset: 'gi' | 'nogi' | 'any';
+  belt_min: BeltRank | null;
+  belt_max: BeltRank | null;
+  age_min: number | null;
+  age_max: number | null;
+  weight_min_kg: number | null;
+  weight_max_kg: number | null;
+  weight_unit: 'lbs' | 'kg';
+  rating_min: number | null;
+  rating_max: number | null;
+  gender: 'any' | 'male' | 'female';
+  open: boolean;
+  status: string;
+  win_points: number | null;
+  draw_points: number | null;
+  loss_points: number | null;
+  sub_kill_bonus: number | null;
+  sub_break_bonus: number | null;
+  entrant_count: number;
+}
+
+// A league division the signed-in competitor could join (eligible_league_divisions).
+export interface EligibleLeagueDivision {
+  division_id: string;
+  name: string;
+  gender: 'any' | 'male' | 'female';
+  weight_unit: 'lbs' | 'kg';
+  open: boolean;
+  eligible: boolean;
+  already: boolean;
+  note: string;
+  fit: { belt: boolean; age: boolean; weight: boolean; rating: boolean; gender: boolean };
 }
 
 export interface LeagueMember {

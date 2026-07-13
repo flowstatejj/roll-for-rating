@@ -376,8 +376,26 @@ function fmtRange(lo: number | null, hi: number | null, suffix = ''): string {
  * Callers pass already-translated words for the open/all/gender pieces so this
  * stays free of the i18n layer. Belt names use the app's English BELT_LABELS.
  */
+// Accepts any division-shaped object (tournament OR league); `format` is not
+// used here, so both TournamentDivision and LeagueDivision satisfy this.
+type DivisionSummaryInput = Pick<
+  TournamentDivision,
+  | 'ruleset'
+  | 'open'
+  | 'belt_min'
+  | 'belt_max'
+  | 'age_min'
+  | 'age_max'
+  | 'weight_min_kg'
+  | 'weight_max_kg'
+  | 'weight_unit'
+  | 'gender'
+  | 'rating_min'
+  | 'rating_max'
+>;
+
 export function divisionSummary(
-  d: TournamentDivision,
+  d: DivisionSummaryInput,
   labels: { open: string; all: string; male: string; female: string; gi: string; nogi: string },
 ): string {
   // Ruleset (Gi/No-Gi) leads the summary since it separates brackets and weight
