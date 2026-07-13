@@ -105,6 +105,15 @@ declare
                            then p_weight_lbs else null end;
   v_gender text := case when p_gender in ('male','female') then p_gender else null end;
   v_uname  text := 'guest_' || left(replace(gid::text, '-', ''), 12);
+  -- A guest has no real account to pick an avatar, so give them a deterministic
+  -- warrior emblem + color (drawn in-app, no upload) so they never render blank
+  -- in brackets/rosters. Keep these arrays in sync with src/lib/warriors.ts.
+  v_warrior text := (array['samurai','ninja','viking','roman','spartan','knight',
+                           'gladiator','mongol','cossack','gunslinger','pirate','musketeer']
+                    )[1 + (abs(hashtext(gid::text)) % 12)];
+  v_color   text := (array['#2f6fed','#d4452f','#2e9e5b','#7d3cc6','#e0a020',
+                           '#178f87','#e07b39','#4b5563','#c2406e','#0f172a']
+                    )[1 + (abs(hashtext(gid::text || 'c')) % 10)];
 begin
   if not public.is_tournament_host(p_tid) then
     raise exception 'Only the host can add guest competitors';
@@ -150,10 +159,12 @@ begin
   -- 2) stamp the guest-specific fields (own the invariants rather than trusting
   --    trigger state - handle_new_user has a history of drift on this repo).
   update public.profiles
-     set is_guest      = true,
-         participating = false,
-         weight_lbs    = v_weight,
-         gender        = v_gender
+     set is_guest       = true,
+         participating  = false,
+         weight_lbs     = v_weight,
+         gender         = v_gender,
+         avatar_warrior = v_warrior,
+         avatar_color   = v_color
    where id = gid;
 
   -- 3) enter the event (+ division)
