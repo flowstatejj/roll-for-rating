@@ -1,5 +1,19 @@
 import { supabase } from './supabase';
-import type { League, LeagueFixture, LeagueMember, LeagueMessage, LeagueStanding, SentInvite } from './types';
+import type {
+  BeltRank,
+  EligibleLeagueDivision,
+  League,
+  LeagueDivision,
+  LeagueFixture,
+  LeagueMember,
+  LeagueMessage,
+  LeagueRulesetPreset,
+  LeagueScoring,
+  LeagueStanding,
+  SentInvite,
+} from './types';
+
+const numOrNull = (v: any): number | null => (v == null ? null : Number(v));
 
 const PERSON = 'id,display_name,belt_rank,rating';
 const MEMBER_SELECT = `*, profile:profiles!league_members_user_id_fkey(${PERSON},avatar_path)`;
@@ -62,6 +76,8 @@ export async function createLeague(args: {
   lossPoints: number;
   subKillBonus: number;
   subBreakBonus: number;
+  scoring: LeagueScoring;
+  rulesetPreset: LeagueRulesetPreset;
 }): Promise<League> {
   const { data, error } = await supabase
     .from('leagues')
@@ -83,6 +99,8 @@ export async function createLeague(args: {
       loss_points: args.lossPoints,
       sub_kill_bonus: args.subKillBonus,
       sub_break_bonus: args.subBreakBonus,
+      scoring: args.scoring,
+      ruleset_preset: args.rulesetPreset,
     })
     .select('*')
     .single();
@@ -236,3 +254,123 @@ export function currentLeagueWeek(league: Pick<League, 'season_starts' | 'weeks'
 }
 
 export const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+// ---------------------------------------------------------------------------
+// League divisions (belt/age/weight/rating/gender + Gi/No-Gi), mirroring the
+// tournament division lib. Divisions are optional; a league with none keeps its
+// legacy single-pool behavior.
+// ---------------------------------------------------------------------------
+
+/** All divisions of a league with entrant counts (organizer builder + browse). */
+export async function fetchLeagueDivisions(leagueId: string): Promise<LeagueDivision[]> {
+  const { data, error } = await supabase.rpc('league_divisions_list', { p_league: leagueId });
+  if (error) throw error;
+  return ((data ?? []) as any[]).map((d) => ({
+    id: d.id,
+    name: d.name,
+    ruleset: (d.ruleset ?? 'any') as 'gi' | 'nogi' | 'any',
+    belt_min: d.belt_min ?? null,
+    belt_max: d.belt_max ?? null,
+    age_min: numOrNull(d.age_min),
+    age_max: numOrNull(d.age_max),
+    weight_min_kg: numOrNull(d.weight_min_kg),
+    weight_max_kg: numOrNull(d.weight_max_kg),
+    weight_unit: (d.weight_unit ?? 'lbs') as 'lbs' | 'kg',
+    rating_min: numOrNull(d.rating_min),
+    rating_max: numOrNull(d.rating_max),
+    gender: (d.gender ?? 'any') as 'any' | 'male' | 'female',
+    open: !!d.open,
+    status: d.status ?? 'setup',
+    win_points: numOrNull(d.win_points),
+    draw_points: numOrNull(d.draw_points),
+    loss_points: numOrNull(d.loss_points),
+    sub_kill_bonus: numOrNull(d.sub_kill_bonus),
+    sub_break_bonus: numOrNull(d.sub_break_bonus),
+    entrant_count: Number(d.entrant_count ?? 0),
+  }));
+}
+
+/** Organizer creates a division. Weight bounds are passed as canonical KG. */
+export async function createLeagueDivision(args: {
+  leagueId: string;
+  name: string;
+  beltMin?: BeltRank | null;
+  beltMax?: BeltRank | null;
+  ageMin?: number | null;
+  ageMax?: number | null;
+  weightMinKg?: number | null;
+  weightMaxKg?: number | null;
+  weightUnit?: 'lbs' | 'kg';
+  ratingMin?: number | null;
+  ratingMax?: number | null;
+  gender?: 'any' | 'male' | 'female';
+  open?: boolean;
+  ruleset?: 'gi' | 'nogi' | 'any';
+}): Promise<string> {
+  const { data, error } = await supabase.rpc('create_league_division', {
+    p_league: args.leagueId,
+    p_name: args.name.trim(),
+    p_belt_min: args.beltMin ?? null,
+    p_belt_max: args.beltMax ?? null,
+    p_age_min: args.ageMin ?? null,
+    p_age_max: args.ageMax ?? null,
+    p_wmin_kg: args.weightMinKg ?? null,
+    p_wmax_kg: args.weightMaxKg ?? null,
+    p_weight_unit: args.weightUnit ?? 'lbs',
+    p_rating_min: args.ratingMin ?? null,
+    p_rating_max: args.ratingMax ?? null,
+    p_gender: args.gender ?? 'any',
+    p_open: args.open ?? false,
+    p_ruleset: args.ruleset ?? 'any',
+    // per-division scoring overrides omitted -> inherit the league's scheme
+  });
+  if (error) throw error;
+  return data as string;
+}
+
+/** Organizer deletes a division. */
+export async function deleteLeagueDivision(divisionId: string): Promise<void> {
+  const { error } = await supabase.rpc('delete_league_division', { p_division: divisionId });
+  if (error) throw error;
+}
+
+/** Divisions the signed-in member could join, with computed eligibility. */
+export async function fetchEligibleLeagueDivisions(leagueId: string): Promise<EligibleLeagueDivision[]> {
+  const { data, error } = await supabase.rpc('eligible_league_divisions', { p_league: leagueId });
+  if (error) throw error;
+  return ((data ?? []) as any[]).map((d) => ({
+    division_id: d.division_id,
+    name: d.name,
+    gender: (d.gender ?? 'any') as 'any' | 'male' | 'female',
+    weight_unit: (d.weight_unit ?? 'lbs') as 'lbs' | 'kg',
+    open: !!d.open,
+    eligible: !!d.eligible,
+    already: !!d.already,
+    note: d.note ?? 'ineligible',
+    fit: {
+      belt: !!d.fit?.belt,
+      age: !!d.fit?.age,
+      weight: !!d.fit?.weight,
+      rating: !!d.fit?.rating,
+      gender: !!d.fit?.gender,
+    },
+  }));
+}
+
+/**
+ * Member self-registers into a league division (also joins the league).
+ * `weightLbs`/`gender` fill any missing profile fields (never overwriting).
+ */
+export async function registerLeagueDivision(
+  divisionId: string,
+  opts: { weightLbs?: number | null; gender?: 'male' | 'female' | null } = {},
+): Promise<{ ok: boolean; reason: string }> {
+  const { data, error } = await supabase.rpc('register_league_division', {
+    p_division: divisionId,
+    p_weight_lbs: opts.weightLbs ?? null,
+    p_gender: opts.gender ?? null,
+  });
+  if (error) throw error;
+  const r = (data ?? {}) as { ok?: boolean; reason?: string };
+  return { ok: !!r.ok, reason: r.reason ?? 'ineligible' };
+}

@@ -3,6 +3,8 @@ import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-rou
 import { useCallback, useState } from 'react';
 import { Alert, Pressable, Share, StyleSheet, View } from 'react-native';
 
+import { LeagueDivisionRegister } from '@/components/league-division-register';
+import { LeagueDivisions } from '@/components/league-divisions';
 import { ThemedText } from '@/components/themed-text';
 import { Avatar, BeltChip, Button, Card, EmptyState, Loading, Screen, TextField } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
@@ -251,6 +253,13 @@ export default function LeagueDetailScreen() {
           )}
         </>
       )}
+
+      {/* Divisions: organizer builds them; members self-register by eligibility.
+          A league with no divisions runs the legacy single pool (nothing shows). */}
+      {isOrganizer && <LeagueDivisions leagueId={league.id} onChanged={load} />}
+      {/* Any member (incl. the organizer, who competes in their own league) can
+          register into a division. Self-hides when the league has none. */}
+      {isMember && <LeagueDivisionRegister leagueId={league.id} onChanged={load} />}
 
       {/* This week */}
       <ThemedText type="smallBold" themeColor="textSecondary" style={styles.section}>{t('le.thisWeek')}</ThemedText>

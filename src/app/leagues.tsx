@@ -10,7 +10,11 @@ import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
 import { createLeague, fetchMyLeagues, fetchMyLeagueInvites, fetchOpenLeagues, joinLeagueByCode, type LeagueInvite, respondLeagueInvite, WEEKDAYS } from '@/lib/leagues';
-import type { League, LeagueAudience, LeagueVisibility } from '@/lib/types';
+import { RULESET_PRESETS } from '@/lib/tournaments';
+import type { League, LeagueAudience, LeagueRulesetPreset, LeagueScoring, LeagueVisibility } from '@/lib/types';
+
+const RULESETS: LeagueRulesetPreset[] = ['ibjjf', 'naga', 'grappling_industries', 'adcc', 'custom'];
+const SCORINGS: LeagueScoring[] = ['points', 'submission_only'];
 
 type Tab = 'mine' | 'browse';
 // Parse a signed integer from a text box (blank / "-" / junk -> 0).
@@ -59,6 +63,22 @@ export default function LeaguesScreen() {
   const [lossPts, setLossPts] = useState('0');
   const [killBonus, setKillBonus] = useState('0');
   const [breakBonus, setBreakBonus] = useState('0');
+  const [scoring, setScoring] = useState<LeagueScoring>('points');
+  const [rulesetPreset, setRulesetPreset] = useState<LeagueRulesetPreset>('custom');
+
+  // Picking a federation seeds the standings-scoring defaults (win/draw/loss +
+  // sub bonuses), same as tournament create. 'custom' leaves whatever is set.
+  function applyPreset(p: LeagueRulesetPreset) {
+    setRulesetPreset(p);
+    if (p === 'custom') return;
+    const d = RULESET_PRESETS[p];
+    setScoring(d.scoring);
+    setWinPts(String(d.winPoints));
+    setDrawPts(String(d.drawPoints));
+    setLossPts(String(d.lossPoints));
+    setKillBonus(String(d.subKillBonus));
+    setBreakBonus(String(d.subBreakBonus));
+  }
 
   const load = useCallback(async () => {
     try {
@@ -118,6 +138,8 @@ export default function LeaguesScreen() {
         lossPoints: intval(lossPts),
         subKillBonus: intval(killBonus),
         subBreakBonus: intval(breakBonus),
+        scoring,
+        rulesetPreset,
       });
       setCreating(false);
       setName(''); setDesc(''); setLocation(''); setCity('');
@@ -240,6 +262,22 @@ export default function LeaguesScreen() {
           </View>
           <TextField label={t('le.location')} value={location} onChangeText={setLocation} placeholder={t('le.locationPh')} />
           <TextField label={t('le.city')} value={city} onChangeText={setCity} autoCapitalize="words" />
+
+          {/* Federation ruleset preset (seeds the scoring defaults) + scoring style */}
+          <Field label={t('tn.ruleset')}>
+            <View style={styles.chips}>
+              {RULESETS.map((r) => (
+                <Chip key={r} label={t(`tn.rs.${r}`)} active={rulesetPreset === r} onPress={() => applyPreset(r)} />
+              ))}
+            </View>
+          </Field>
+          <Field label={t('tn.scoringStyle')}>
+            <View style={styles.chips}>
+              {SCORINGS.map((s) => (
+                <Chip key={s} label={s === 'points' ? t('tn.scorePoints') : t('tn.scoreSub')} active={scoring === s} onPress={() => setScoring(s)} />
+              ))}
+            </View>
+          </Field>
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
             <View style={{ flex: 1 }}>
