@@ -7,8 +7,16 @@ import { Button, Card, TextField } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useTranslation } from '@/lib/i18n';
-import { createDivision, deleteDivision, divisionSummary, fetchDivisions } from '@/lib/tournaments';
-import { lbsToKg } from '@/lib/weight';
+import {
+  createDivision,
+  createGuestCompetitor,
+  deleteDivision,
+  divisionSummary,
+  fetchDivisionRoster,
+  fetchDivisions,
+  removeGuestCompetitor,
+} from '@/lib/tournaments';
+import { kgToLbs, lbsToKg } from '@/lib/weight';
 import {
   ADULT_BELTS,
   BELT_COLORS,
@@ -16,6 +24,7 @@ import {
   YOUTH_BELTS,
   beltNeedsDarkText,
   type BeltRank,
+  type DivisionRosterEntry,
   type TournamentDivision,
   type TournamentFormat,
 } from '@/lib/types';
@@ -176,22 +185,17 @@ export function TournamentDivisions({ tournamentId, onChanged }: { tournamentId:
       ) : null}
 
       {divs.map((d) => (
-        <Card key={d.id} style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
-          <View style={{ flex: 1 }}>
-            <ThemedText style={{ fontWeight: '800' }} numberOfLines={1}>
-              {d.name}
-            </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {divisionSummary(d, sumLabels)}
-            </ThemedText>
-          </View>
-          <ThemedText type="small" themeColor="textSecondary">
-            {t('tdv.entrants').replace('{n}', String(d.entrant_count))}
-          </ThemedText>
-          <Pressable onPress={() => confirmDelete(d)} hitSlop={8} style={{ padding: Spacing.one }}>
-            <Ionicons name="trash-outline" size={18} color={theme.danger} />
-          </Pressable>
-        </Card>
+        <DivisionCard
+          key={d.id}
+          division={d}
+          tournamentId={tournamentId}
+          summary={divisionSummary(d, sumLabels)}
+          onDelete={() => confirmDelete(d)}
+          onChanged={async () => {
+            await reload();
+            onChanged?.();
+          }}
+        />
       ))}
 
       {showForm && (
@@ -325,6 +329,222 @@ export function TournamentDivisions({ tournamentId, onChanged }: { tournamentId:
   );
 }
 
+/**
+ * One division row: tap to expand its roster (members + host-entered guests),
+ * remove a guest, or open a quick "add guest" form for non-member competitors.
+ */
+function DivisionCard({
+  division,
+  tournamentId,
+  summary,
+  onDelete,
+  onChanged,
+}: {
+  division: TournamentDivision;
+  tournamentId: string;
+  summary: string;
+  onDelete: () => void;
+  onChanged: () => void | Promise<void>;
+}) {
+  const theme = useTheme();
+  const { t } = useTranslation();
+  const [expanded, setExpanded] = useState(false);
+  const [roster, setRoster] = useState<DivisionRosterEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [showGuest, setShowGuest] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  // Guest quick-add form (host bypasses eligibility - the guest goes straight in)
+  const [gName, setGName] = useState('');
+  const [gBelt, setGBelt] = useState<BeltRank>('white');
+  const [gGender, setGGender] = useState<'any' | 'male' | 'female'>('any');
+  const [gWeight, setGWeight] = useState('');
+  const [gUnit, setGUnit] = useState<'lbs' | 'kg'>('lbs');
+
+  const loadRoster = useCallback(async () => {
+    setLoading(true);
+    try {
+      setRoster(await fetchDivisionRoster(division.id));
+    } catch (e) {
+      console.warn('roster load failed', e);
+    } finally {
+      setLoading(false);
+    }
+  }, [division.id]);
+
+  useEffect(() => {
+    if (expanded) loadRoster();
+  }, [expanded, loadRoster]);
+
+  async function addGuest() {
+    const nm = gName.trim();
+    if (!nm) {
+      Alert.alert(t('tgu.nameRequired'));
+      return;
+    }
+    const w = parseFloat(gWeight);
+    const weightLbs = Number.isFinite(w) && w > 0 ? (gUnit === 'kg' ? kgToLbs(w) : w) : null;
+    setBusy(true);
+    try {
+      const res = await createGuestCompetitor(tournamentId, {
+        name: nm,
+        divisionId: division.id,
+        belt: gBelt,
+        weightLbs,
+        gender: gGender === 'any' ? null : gGender,
+      });
+      if (!res.ok) throw new Error(t('tgu.addFailed'));
+      setGName('');
+      setGWeight('');
+      setGBelt('white');
+      setGGender('any');
+      await loadRoster();
+      await onChanged();
+    } catch (e: any) {
+      Alert.alert(t('md.error'), e.message ?? t('md.tryAgain'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function confirmRemoveGuest(entry: DivisionRosterEntry) {
+    Alert.alert(t('tgu.removeTitle'), t('tgu.removeBody').replace('{name}', entry.display_name), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('tdv.delete'),
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await removeGuestCompetitor(tournamentId, entry.user_id);
+            await loadRoster();
+            await onChanged();
+          } catch (e: any) {
+            Alert.alert(t('md.error'), e.message ?? t('md.tryAgain'));
+          }
+        },
+      },
+    ]);
+  }
+
+  return (
+    <Card style={{ gap: Spacing.two }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+        <Pressable onPress={() => setExpanded((s) => !s)} style={{ flex: 1 }} hitSlop={6}>
+          <ThemedText style={{ fontWeight: '800' }} numberOfLines={1}>
+            {division.name}
+          </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {summary}
+          </ThemedText>
+        </Pressable>
+        <ThemedText type="small" themeColor="textSecondary">
+          {t('tdv.entrants').replace('{n}', String(division.entrant_count))}
+        </ThemedText>
+        <Pressable onPress={() => setExpanded((s) => !s)} hitSlop={8} style={{ padding: Spacing.one }}>
+          <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={18} color={theme.textSecondary} />
+        </Pressable>
+        <Pressable onPress={onDelete} hitSlop={8} style={{ padding: Spacing.one }}>
+          <Ionicons name="trash-outline" size={18} color={theme.danger} />
+        </Pressable>
+      </View>
+
+      {expanded && (
+        <View style={{ gap: Spacing.two, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border, paddingTop: Spacing.two }}>
+          {loading ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              {t('tgu.loading')}
+            </ThemedText>
+          ) : roster.length === 0 ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              {t('tgu.noEntrants')}
+            </ThemedText>
+          ) : (
+            roster.map((r) => (
+              <View key={r.user_id} style={styles.rosterRow}>
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+                    <ThemedText style={{ fontWeight: '700' }} numberOfLines={1}>
+                      {r.display_name}
+                    </ThemedText>
+                    {r.is_guest && (
+                      <View style={[styles.badge, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+                        <ThemedText type="small" themeColor="textSecondary">
+                          {t('tgu.guestBadge')}
+                        </ThemedText>
+                      </View>
+                    )}
+                  </View>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {BELT_LABELS[r.belt_rank]}
+                    {r.weight_lbs != null ? ` · ${Math.round(r.weight_lbs)} lbs` : ''}
+                    {r.gender ? ` · ${r.gender === 'male' ? t('tdv.male') : t('tdv.female')}` : ''}
+                  </ThemedText>
+                </View>
+                {r.is_guest && (
+                  <Pressable onPress={() => confirmRemoveGuest(r)} hitSlop={8} style={{ padding: Spacing.one }}>
+                    <Ionicons name="close-circle-outline" size={18} color={theme.danger} />
+                  </Pressable>
+                )}
+              </View>
+            ))
+          )}
+
+          {showGuest ? (
+            <Card style={{ gap: Spacing.two, backgroundColor: theme.backgroundElement }}>
+              <ThemedText type="smallBold" themeColor="textSecondary">
+                {t('tgu.addTitle')}
+              </ThemedText>
+              <TextField label={t('tgu.nameLabel')} value={gName} onChangeText={setGName} placeholder={t('tgu.namePh')} />
+              <View style={{ gap: Spacing.one }}>
+                <ThemedText type="smallBold" themeColor="textSecondary">
+                  {t('tdv.beltRange')}
+                </ThemedText>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: Spacing.two, paddingRight: Spacing.two }}>
+                  {BELT_OPTIONS.map((b) => (
+                    <BeltSelChip key={b} belt={b} selected={gBelt === b} onPress={() => setGBelt(b)} />
+                  ))}
+                </ScrollView>
+              </View>
+              <View style={{ gap: Spacing.one }}>
+                <ThemedText type="smallBold" themeColor="textSecondary">
+                  {t('tdv.genderLabel')}
+                </ThemedText>
+                <View style={styles.pairRow}>
+                  <SelChip flex label={t('tdv.any')} selected={gGender === 'any'} onPress={() => setGGender('any')} />
+                  <SelChip flex label={t('tdv.male')} selected={gGender === 'male'} onPress={() => setGGender('male')} />
+                  <SelChip flex label={t('tdv.female')} selected={gGender === 'female'} onPress={() => setGGender('female')} />
+                </View>
+              </View>
+              <View style={{ gap: Spacing.one }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <ThemedText type="smallBold" themeColor="textSecondary">
+                    {t('tgu.weightLabel')}
+                  </ThemedText>
+                  <View style={{ flexDirection: 'row', gap: Spacing.two }}>
+                    <SelChip label="lbs" selected={gUnit === 'lbs'} onPress={() => setGUnit('lbs')} />
+                    <SelChip label="kg" selected={gUnit === 'kg'} onPress={() => setGUnit('kg')} />
+                  </View>
+                </View>
+                <TextField value={gWeight} onChangeText={setGWeight} keyboardType="decimal-pad" placeholder={t('tgu.weightPh')} />
+              </View>
+              <View style={styles.pairRow}>
+                <View style={{ flex: 1 }}>
+                  <Button label={t('common.cancel')} variant="ghost" onPress={() => setShowGuest(false)} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Button label={t('tgu.add')} icon="person-add" loading={busy} onPress={addGuest} />
+                </View>
+              </View>
+            </Card>
+          ) : (
+            <Button label={t('tgu.addGuest')} icon="person-add" variant="secondary" onPress={() => setShowGuest(true)} />
+          )}
+        </View>
+      )}
+    </Card>
+  );
+}
+
 // Horizontal belt selector with a leading "Any" (null) chip.
 function BeltRow({ value, onChange, anyLabel }: { value: BeltRank | null; onChange: (b: BeltRank | null) => void; anyLabel: string }) {
   return (
@@ -374,4 +594,6 @@ const styles = StyleSheet.create({
   pairRow: { flexDirection: 'row', gap: Spacing.two },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   chip: { paddingVertical: Spacing.two, paddingHorizontal: Spacing.three, borderRadius: 10, borderWidth: 1 },
+  rosterRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  badge: { paddingVertical: 2, paddingHorizontal: Spacing.two, borderRadius: 6, borderWidth: 1 },
 });

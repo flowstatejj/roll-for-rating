@@ -10,7 +10,9 @@ export interface Champion {
 
 async function topRated(apply: (q: any) => any): Promise<Profile | null> {
   const { data, error } = await apply(
-    supabase.from('profiles').select('*').order('rating', { ascending: false }).limit(1),
+    // participating=true excludes guardians AND host-entered guests from titles,
+    // matching every other rating surface (matches.ts / social.ts).
+    supabase.from('profiles').select('*').eq('participating', true).order('rating', { ascending: false }).limit(1),
   );
   if (error) throw error;
   return ((data ?? [])[0] as Profile) ?? null;

@@ -47,7 +47,12 @@ begin
 
   is_casual :=
     (m.league_id is not null and coalesce((select not ranked from public.leagues where id = m.league_id), false))
-    or (m.tournament_id is not null and coalesce((select not ranked from public.tournaments where id = m.tournament_id), false));
+    or (m.tournament_id is not null and coalesce((select not ranked from public.tournaments where id = m.tournament_id), false))
+    -- A bout involving a host-entered guest (non-member, belt-seeded phantom) never
+    -- moves real ROR/W-L, even in a ranked event - guests can't be used to farm or
+    -- tank a real member's rating.
+    or exists (select 1 from public.profiles
+               where id in (m.challenger_id, m.opponent_id) and coalesce(is_guest, false));
 
   select rating into c_rating from public.profiles where id = m.challenger_id for update;
   select rating into o_rating from public.profiles where id = m.opponent_id  for update;

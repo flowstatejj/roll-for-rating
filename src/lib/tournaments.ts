@@ -3,6 +3,7 @@ import { BELT_LABELS } from './types';
 import { kgToLbs } from './weight';
 import type {
   BeltRank,
+  DivisionRosterEntry,
   EligibleDivision,
   GymPower,
   Tournament,
@@ -524,4 +525,56 @@ export async function addDivisionEntrant(divisionId: string, userId: string): Pr
 export async function removeDivisionEntrant(divisionId: string, userId: string): Promise<void> {
   const { error } = await supabase.rpc('remove_division_entrant', { p_division: divisionId, p_user: userId });
   if (error) throw error;
+}
+
+/**
+ * Host enters a GUEST competitor (a non-member: kid or adult without the app).
+ * Creates a flagged profile behind the scenes and enters it in the tournament
+ * (+ a division, if given). Returns the new guest's id + resolved name.
+ */
+export async function createGuestCompetitor(
+  tid: string,
+  args: {
+    name: string;
+    divisionId?: string | null;
+    belt?: BeltRank;
+    weightLbs?: number | null;
+    gender?: 'male' | 'female' | null;
+  },
+): Promise<{ ok: boolean; userId: string; name: string }> {
+  // No birthdate: a guest is placed directly into a division (host bypasses
+  // eligibility), and storing a minor birthdate would trip the minor-consent
+  // machinery. The chosen division IS the guest's age bracket.
+  const { data, error } = await supabase.rpc('create_guest_competitor', {
+    p_tid: tid,
+    p_name: args.name.trim(),
+    p_division: args.divisionId ?? null,
+    p_belt: args.belt ?? 'white',
+    p_weight_lbs: args.weightLbs ?? null,
+    p_gender: args.gender ?? null,
+  });
+  if (error) throw error;
+  const r = (data ?? {}) as { ok?: boolean; user_id?: string; name?: string };
+  return { ok: !!r.ok, userId: r.user_id ?? '', name: r.name ?? args.name };
+}
+
+/** Host removes a guest entirely (only ever deletes a real guest, never a member). */
+export async function removeGuestCompetitor(tid: string, userId: string): Promise<void> {
+  const { error } = await supabase.rpc('remove_guest_competitor', { p_tid: tid, p_user: userId });
+  if (error) throw error;
+}
+
+/** A division's entrants (members + guests) with the fields a host needs to seed. */
+export async function fetchDivisionRoster(divisionId: string): Promise<DivisionRosterEntry[]> {
+  const { data, error } = await supabase.rpc('division_roster', { p_division: divisionId });
+  if (error) throw error;
+  return ((data ?? []) as any[]).map((r) => ({
+    user_id: r.user_id,
+    display_name: r.display_name,
+    belt_rank: r.belt_rank as BeltRank,
+    gender: (r.gender ?? null) as 'male' | 'female' | null,
+    weight_lbs: numOrNull(r.weight_lbs),
+    rating: Number(r.rating ?? 0),
+    is_guest: !!r.is_guest,
+  }));
 }

@@ -90,6 +90,9 @@ export interface Profile {
   /** False for a guardian account: pays and manages children but does not
    *  compete; hidden from leaderboards and match search. */
   participating: boolean;
+  /** True for a non-member competitor entered by a tournament host (no real
+   *  auth account). Also hidden from search/leaderboards via participating=false. */
+  is_guest: boolean;
   /** Per-category push toggles. Missing key = enabled. Keys are NotifCategory. */
   notif_prefs: Record<string, boolean> | null;
   /** Optional social handles/URLs (adults only). Build links via lib/socials. */
@@ -341,6 +344,18 @@ export interface EligibleDivision {
   already: boolean;
   note: string;
   fit: { belt: boolean; age: boolean; weight: boolean; rating: boolean; gender: boolean };
+}
+
+// One entrant in a division roster (member or host-entered guest), as returned
+// by the division_roster RPC — the fields a host needs to eyeball seeding.
+export interface DivisionRosterEntry {
+  user_id: string;
+  display_name: string;
+  belt_rank: BeltRank;
+  gender: 'male' | 'female' | null;
+  weight_lbs: number | null;
+  rating: number;
+  is_guest: boolean;
 }
 
 // ---------------------------------------------------------------------------
