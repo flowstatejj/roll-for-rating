@@ -9,8 +9,8 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
-import { createTournament, fetchMyTournamentInvites, fetchTournaments, respondTournamentInvite, type TournamentInvite } from '@/lib/tournaments';
-import type { Tournament, TournamentFormat, TournamentTeamBuild, TournamentTeamRule } from '@/lib/types';
+import { createTournament, fetchMyTournamentInvites, fetchTournaments, respondTournamentInvite, RULESET_PRESETS, type TournamentInvite } from '@/lib/tournaments';
+import type { Tournament, TournamentFormat, TournamentRulesetPreset, TournamentScoring, TournamentTeamBuild, TournamentTeamRule } from '@/lib/types';
 
 // Parse a signed integer from a text box (blank / "-" / junk -> 0).
 const intval = (s: string) => {
@@ -18,6 +18,8 @@ const intval = (s: string) => {
   return Number.isNaN(n) ? 0 : n;
 };
 const FORMATS: TournamentFormat[] = ['single_elim', 'round_robin', 'double_elim', 'rr_playoff'];
+const RULESETS: TournamentRulesetPreset[] = ['ibjjf', 'naga', 'grappling_industries', 'adcc', 'custom'];
+const SCORINGS: TournamentScoring[] = ['points', 'submission_only'];
 
 export default function TournamentsScreen() {
   const { session } = useAuth();
@@ -50,6 +52,22 @@ export default function TournamentsScreen() {
   const [killBonus, setKillBonus] = useState('0');
   const [breakBonus, setBreakBonus] = useState('0');
   const [mats, setMats] = useState('1');
+  const [scoring, setScoring] = useState<TournamentScoring>('points');
+  const [rulesetPreset, setRulesetPreset] = useState<TournamentRulesetPreset>('custom');
+
+  // Picking a federation seeds the scoring defaults; 'custom' leaves them alone.
+  function applyPreset(p: TournamentRulesetPreset) {
+    setRulesetPreset(p);
+    if (p === 'custom') return;
+    const d = RULESET_PRESETS[p];
+    setScoring(d.scoring);
+    setWinPts(String(d.winPoints));
+    setDrawPts(String(d.drawPoints));
+    setLossPts(String(d.lossPoints));
+    setKillBonus(String(d.subKillBonus));
+    setBreakBonus(String(d.subBreakBonus));
+    if (d.subKillBonus || d.subBreakBonus) setAdvScoring(true);
+  }
 
   const load = useCallback(async () => {
     try {
@@ -112,6 +130,8 @@ export default function TournamentsScreen() {
         mats: Math.max(1, Math.min(20, parseInt(mats, 10) || 1)),
         visibility: 'open',
         city,
+        scoring,
+        rulesetPreset,
       });
       setCreating(false);
       setName(''); setDesc(''); setCity('');
@@ -164,6 +184,22 @@ export default function TournamentsScreen() {
           <TextField label={t('tn.name')} value={name} onChangeText={setName} placeholder={t('tn.namePh')} />
           <TextField label={t('tn.desc')} value={desc} onChangeText={setDesc} placeholder={t('tn.descPh')} multiline />
           <TextField label={t('tn.city')} value={city} onChangeText={setCity} placeholder={t('tn.cityPh')} autoCapitalize="words" />
+
+          <Field label={t('tn.ruleset')}>
+            <View style={styles.chips}>
+              {RULESETS.map((r) => (
+                <Chip key={r} label={t(`tn.rs.${r}`)} active={rulesetPreset === r} onPress={() => applyPreset(r)} />
+              ))}
+            </View>
+          </Field>
+
+          <Field label={t('tn.scoringStyle')}>
+            <View style={styles.chips}>
+              {SCORINGS.map((sc) => (
+                <Chip key={sc} label={t(sc === 'points' ? 'tn.scorePoints' : 'tn.scoreSub')} active={scoring === sc} onPress={() => setScoring(sc)} />
+              ))}
+            </View>
+          </Field>
 
           <Field label={t('tn.format')}>
             <View style={styles.chips}>

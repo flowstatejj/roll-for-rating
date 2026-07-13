@@ -15,9 +15,27 @@ import type {
   TournamentTeam,
   TournamentTeamBuild,
   TournamentTeamRule,
+  TournamentScoring,
+  TournamentRulesetPreset,
   ResultType,
   SentInvite,
 } from './types';
+
+// Federation presets seed the create form's scoring defaults ('custom' seeds
+// nothing - the host sets everything). A later slice adds each federation's
+// standard weight classes + age brackets as auto-generated divisions.
+export interface RulesetDefaults {
+  scoring: TournamentScoring;
+  winPoints: number; drawPoints: number; lossPoints: number;
+  subKillBonus: number; subBreakBonus: number;
+}
+export const RULESET_PRESETS: Record<Exclude<TournamentRulesetPreset, 'custom'>, RulesetDefaults> = {
+  ibjjf:                { scoring: 'points', winPoints: 3, drawPoints: 1, lossPoints: 0, subKillBonus: 0, subBreakBonus: 0 },
+  naga:                 { scoring: 'points', winPoints: 3, drawPoints: 1, lossPoints: 0, subKillBonus: 0, subBreakBonus: 0 },
+  adcc:                 { scoring: 'points', winPoints: 3, drawPoints: 1, lossPoints: 0, subKillBonus: 0, subBreakBonus: 0 },
+  // Grappling Industries runs round-robin and rewards finishes; nudge sub bonuses up.
+  grappling_industries: { scoring: 'points', winPoints: 3, drawPoints: 1, lossPoints: 0, subKillBonus: 1, subBreakBonus: 1 },
+};
 
 // ---------------------------------------------------------------------------
 // Teams: gym power ranking
@@ -68,6 +86,8 @@ export async function createTournament(args: {
   mats: number;
   visibility: 'open' | 'private';
   city?: string;
+  scoring: TournamentScoring;
+  rulesetPreset: TournamentRulesetPreset;
 }): Promise<string> {
   const now = new Date();
   const ends = new Date(now.getTime() + 1000 * 60 * 60 * 24 * 30); // 30-day default window
@@ -92,6 +112,8 @@ export async function createTournament(args: {
       mats: args.mats,
       visibility: args.visibility,
       city: args.city?.trim() || null,
+      scoring: args.scoring,
+      ruleset_preset: args.rulesetPreset,
     })
     .select('id')
     .single();

@@ -209,6 +209,10 @@ export interface GymPower {
 export type TournamentFormat = 'round_robin' | 'single_elim' | 'double_elim' | 'rr_playoff';
 export type TournamentTeamRule = 'none' | 'duel' | 'quintet';
 export type TournamentTeamBuild = 'host' | 'captain' | 'auto';
+/** How a bout is won. */
+export type TournamentScoring = 'submission_only' | 'points';
+/** Federation rules framework; 'custom' = host sets everything by hand. */
+export type TournamentRulesetPreset = 'naga' | 'ibjjf' | 'grappling_industries' | 'adcc' | 'custom';
 
 export interface Tournament {
   id: string;
@@ -233,6 +237,8 @@ export interface Tournament {
   visibility: 'open' | 'private';
   join_code: string | null;
   city: string | null;
+  scoring: TournamentScoring;
+  ruleset_preset: TournamentRulesetPreset;
 }
 
 export interface TournamentStanding {
