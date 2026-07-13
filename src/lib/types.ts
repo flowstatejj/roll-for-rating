@@ -58,6 +58,8 @@ export interface Profile {
   rating: number;
   /** Self-reported weight in pounds — powers the weight-class leaderboards. */
   weight_lbs: number | null;
+  /** Self-reported competition gender for division eligibility. Null until set. */
+  gender: 'male' | 'female' | null;
   wins: number;
   losses: number;
   draws: number;
@@ -295,6 +297,44 @@ export interface TournamentBout {
   // resolved labels
   a_name?: string | null;
   b_name?: string | null;
+}
+
+// A division (belt/age/weight/gender/rating bracket) inside a tournament.
+// Weight bounds are stored canonically in KG; `weight_unit` remembers the unit
+// the host typed them in so summaries can echo it back.
+export interface TournamentDivision {
+  id: string;
+  name: string;
+  /** Gi vs No-Gi: a bracket-separating dimension (no-gi weight limits run lighter). */
+  ruleset: 'gi' | 'nogi' | 'any';
+  belt_min: BeltRank | null;
+  belt_max: BeltRank | null;
+  age_min: number | null;
+  age_max: number | null;
+  weight_min_kg: number | null;
+  weight_max_kg: number | null;
+  weight_unit: 'lbs' | 'kg';
+  rating_min: number | null;
+  rating_max: number | null;
+  gender: 'any' | 'male' | 'female';
+  format: TournamentFormat | null;
+  open: boolean;
+  status: string;
+  entrant_count: number;
+}
+
+// A division the signed-in competitor could join, with the computed eligibility
+// state (see eligible_divisions RPC). `fit` breaks eligibility down per axis.
+export interface EligibleDivision {
+  division_id: string;
+  name: string;
+  gender: 'any' | 'male' | 'female';
+  weight_unit: 'lbs' | 'kg';
+  open: boolean;
+  eligible: boolean;
+  already: boolean;
+  note: string;
+  fit: { belt: boolean; age: boolean; weight: boolean; rating: boolean; gender: boolean };
 }
 
 // ---------------------------------------------------------------------------

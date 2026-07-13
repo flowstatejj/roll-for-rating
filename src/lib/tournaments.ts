@@ -1,8 +1,13 @@
 import { supabase } from './supabase';
+import { BELT_LABELS } from './types';
+import { kgToLbs } from './weight';
 import type {
+  BeltRank,
+  EligibleDivision,
   GymPower,
   Tournament,
   TournamentBout,
+  TournamentDivision,
   TournamentFormat,
   TournamentMat,
   TournamentStanding,
@@ -324,3 +329,177 @@ export const TEAM_RULE_LABEL: Record<TournamentTeamRule, string> = { none: 'Indi
 export const FORMAT_LABEL: Record<TournamentFormat, string> = {
   round_robin: 'Round robin', single_elim: 'Single elim', double_elim: 'Double elim', rr_playoff: 'RR + playoff',
 };
+
+// ---------------------------------------------------------------------------
+// Divisions — belt/age/weight/gender/rating brackets inside a tournament.
+// Weight bounds are canonical KG in the DB; the app converts lbs<->kg (lib/weight).
+// ---------------------------------------------------------------------------
+function numOrNull(v: unknown): number | null {
+  return v == null ? null : Number(v);
+}
+
+// One range like "70-80", "70+" (min only), or "-80" (max only); empty when both
+// bounds are null. `suffix` (e.g. a weight unit) is appended when there is a range.
+function fmtRange(lo: number | null, hi: number | null, suffix = ''): string {
+  if (lo != null && hi != null) return lo === hi ? `${lo}${suffix}` : `${lo}-${hi}${suffix}`;
+  if (lo != null) return `${lo}+${suffix}`;
+  if (hi != null) return `-${hi}${suffix}`;
+  return '';
+}
+
+/**
+ * Human summary of a division's filters, e.g. "Blue-Purple, 30-39, 70-80kg,
+ * Male, 1200-1600". Weight is echoed in the host's chosen unit (weight_unit).
+ * Callers pass already-translated words for the open/all/gender pieces so this
+ * stays free of the i18n layer. Belt names use the app's English BELT_LABELS.
+ */
+export function divisionSummary(
+  d: TournamentDivision,
+  labels: { open: string; all: string; male: string; female: string; gi: string; nogi: string },
+): string {
+  // Ruleset (Gi/No-Gi) leads the summary since it separates brackets and weight
+  // tables; 'any' is left unlabelled (the event does not split by ruleset).
+  const rs = d.ruleset === 'gi' ? labels.gi : d.ruleset === 'nogi' ? labels.nogi : null;
+  if (d.open) return rs ? `${rs} · ${labels.open}` : labels.open;
+  const parts: string[] = [];
+  const bl = d.belt_min ? BELT_LABELS[d.belt_min] : null;
+  const bh = d.belt_max ? BELT_LABELS[d.belt_max] : null;
+  if (bl && bh) parts.push(bl === bh ? bl : `${bl}-${bh}`);
+  else if (bl) parts.push(`${bl}+`);
+  else if (bh) parts.push(`-${bh}`);
+  if (d.age_min != null || d.age_max != null) parts.push(fmtRange(d.age_min, d.age_max));
+  if (d.weight_min_kg != null || d.weight_max_kg != null) {
+    const conv = (kg: number) => Math.round(d.weight_unit === 'lbs' ? kgToLbs(kg) : kg);
+    const lo = d.weight_min_kg != null ? conv(d.weight_min_kg) : null;
+    const hi = d.weight_max_kg != null ? conv(d.weight_max_kg) : null;
+    parts.push(fmtRange(lo, hi, d.weight_unit));
+  }
+  if (d.gender === 'male') parts.push(labels.male);
+  else if (d.gender === 'female') parts.push(labels.female);
+  if (d.rating_min != null || d.rating_max != null) parts.push(fmtRange(d.rating_min, d.rating_max));
+  const body = parts.length ? parts.join(', ') : labels.all;
+  return rs ? `${rs} · ${body}` : body;
+}
+
+/** All divisions for a tournament (any authenticated user). */
+export async function fetchDivisions(tid: string): Promise<TournamentDivision[]> {
+  const { data, error } = await supabase.rpc('tournament_divisions_list', { p_tid: tid });
+  if (error) throw error;
+  return ((data ?? []) as any[]).map((d) => ({
+    id: d.id,
+    name: d.name,
+    ruleset: (d.ruleset ?? 'any') as 'gi' | 'nogi' | 'any',
+    belt_min: d.belt_min ?? null,
+    belt_max: d.belt_max ?? null,
+    age_min: numOrNull(d.age_min),
+    age_max: numOrNull(d.age_max),
+    weight_min_kg: numOrNull(d.weight_min_kg),
+    weight_max_kg: numOrNull(d.weight_max_kg),
+    weight_unit: (d.weight_unit ?? 'lbs') as 'lbs' | 'kg',
+    rating_min: numOrNull(d.rating_min),
+    rating_max: numOrNull(d.rating_max),
+    gender: (d.gender ?? 'any') as 'any' | 'male' | 'female',
+    format: (d.format ?? null) as TournamentFormat | null,
+    open: !!d.open,
+    status: d.status ?? 'setup',
+    entrant_count: Number(d.entrant_count ?? 0),
+  }));
+}
+
+/** Host creates a division. Weight bounds are passed as canonical KG. */
+export async function createDivision(args: {
+  tid: string;
+  name: string;
+  beltMin?: BeltRank | null;
+  beltMax?: BeltRank | null;
+  ageMin?: number | null;
+  ageMax?: number | null;
+  weightMinKg?: number | null;
+  weightMaxKg?: number | null;
+  weightUnit?: 'lbs' | 'kg';
+  ratingMin?: number | null;
+  ratingMax?: number | null;
+  gender?: 'any' | 'male' | 'female';
+  format?: TournamentFormat | null;
+  open?: boolean;
+  ruleset?: 'gi' | 'nogi' | 'any';
+}): Promise<string> {
+  const { data, error } = await supabase.rpc('create_division', {
+    p_tid: args.tid,
+    p_name: args.name.trim(),
+    p_belt_min: args.beltMin ?? null,
+    p_belt_max: args.beltMax ?? null,
+    p_age_min: args.ageMin ?? null,
+    p_age_max: args.ageMax ?? null,
+    p_wmin_kg: args.weightMinKg ?? null,
+    p_wmax_kg: args.weightMaxKg ?? null,
+    p_weight_unit: args.weightUnit ?? 'lbs',
+    p_rating_min: args.ratingMin ?? null,
+    p_rating_max: args.ratingMax ?? null,
+    p_gender: args.gender ?? 'any',
+    p_format: args.format ?? null,
+    p_open: args.open ?? false,
+    p_ruleset: args.ruleset ?? 'any',
+  });
+  if (error) throw error;
+  return data as string;
+}
+
+/** Host deletes a division. */
+export async function deleteDivision(divisionId: string): Promise<void> {
+  const { error } = await supabase.rpc('delete_division', { p_division: divisionId });
+  if (error) throw error;
+}
+
+/** Divisions the signed-in competitor could join, with computed eligibility. */
+export async function fetchEligibleDivisions(tid: string): Promise<EligibleDivision[]> {
+  const { data, error } = await supabase.rpc('eligible_divisions', { p_tid: tid });
+  if (error) throw error;
+  return ((data ?? []) as any[]).map((d) => ({
+    division_id: d.division_id,
+    name: d.name,
+    gender: (d.gender ?? 'any') as 'any' | 'male' | 'female',
+    weight_unit: (d.weight_unit ?? 'lbs') as 'lbs' | 'kg',
+    open: !!d.open,
+    eligible: !!d.eligible,
+    already: !!d.already,
+    note: d.note ?? 'ineligible',
+    fit: {
+      belt: !!d.fit?.belt,
+      age: !!d.fit?.age,
+      weight: !!d.fit?.weight,
+      rating: !!d.fit?.rating,
+      gender: !!d.fit?.gender,
+    },
+  }));
+}
+
+/**
+ * Competitor self-registers into a division. `weightLbs`/`gender` fill any
+ * missing profile fields (never overwriting an existing value with null).
+ */
+export async function registerDivision(
+  divisionId: string,
+  opts: { weightLbs?: number | null; gender?: 'male' | 'female' | null } = {},
+): Promise<{ ok: boolean; reason: string }> {
+  const { data, error } = await supabase.rpc('register_division', {
+    p_division: divisionId,
+    p_weight_lbs: opts.weightLbs ?? null,
+    p_gender: opts.gender ?? null,
+  });
+  if (error) throw error;
+  const r = (data ?? {}) as { ok?: boolean; reason?: string };
+  return { ok: !!r.ok, reason: r.reason ?? 'ineligible' };
+}
+
+/** Host force-adds an entrant to a division (bypasses eligibility). */
+export async function addDivisionEntrant(divisionId: string, userId: string): Promise<void> {
+  const { error } = await supabase.rpc('add_division_entrant', { p_division: divisionId, p_user: userId });
+  if (error) throw error;
+}
+
+/** Host removes an entrant from a division (leaves the tournament entrant row). */
+export async function removeDivisionEntrant(divisionId: string, userId: string): Promise<void> {
+  const { error } = await supabase.rpc('remove_division_entrant', { p_division: divisionId, p_user: userId });
+  if (error) throw error;
+}
