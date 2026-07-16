@@ -582,6 +582,12 @@ export async function removeGuestCompetitor(tid: string, userId: string): Promis
   if (error) throw error;
 }
 
+/** Host marks the event finished (divisions + tournament move to complete). */
+export async function completeTournament(tid: string): Promise<void> {
+  const { error } = await supabase.rpc('complete_tournament', { p_tid: tid });
+  if (error) throw error;
+}
+
 /** A division's entrants (members + guests) with the fields a host needs to seed. */
 export async function fetchDivisionRoster(divisionId: string): Promise<DivisionRosterEntry[]> {
   const { data, error } = await supabase.rpc('division_roster', { p_division: divisionId });

@@ -196,7 +196,11 @@ export function DivisionRegister({ tournamentId, onChanged }: { tournamentId: st
                 </View>
               )}
             </View>
-            {!ed.already && renderAction(ed)}
+            {/* A generated bracket can't take new entrants - lock instead of a
+                Register button that would silently never draw them in. */}
+            {!ed.already && (d && d.status !== 'setup' ? (
+              <ThemedText type="small" themeColor="textSecondary">{t('tgu.bracketLocked')}</ThemedText>
+            ) : renderAction(ed))}
           </Card>
         );
       })}

@@ -9,7 +9,7 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
-import { fetchNotifications, localizeNotification, markRead } from '@/lib/notifications';
+import { fetchNotifications, localizeNotification, markAllRead as markAllReadServer, markRead } from '@/lib/notifications';
 import type { AppNotification } from '@/lib/types';
 
 type NotifTab = 'challenges' | 'messages' | 'friends' | 'cancelled';
@@ -108,7 +108,9 @@ export default function NotificationsScreen() {
     const unread = itemsRef.current.filter((n) => !n.read);
     if (unread.length === 0) return;
     setItems((prev) => prev.map((n) => (n.read ? n : { ...n, read: true })));
-    markRead(userId, unread.map((n) => n.id)).catch(() => {});
+    // Server-side unbounded: also clears unread rows beyond the 50 loaded here,
+    // so the bell badge can never strand on older unloadable notifications.
+    markAllReadServer(userId).catch(() => {});
   }
 
   const visible = useMemo(() => items.filter((n) => tabFor(n.type) === tab), [items, tab]);

@@ -15,6 +15,7 @@ import {
   currentLeagueWeek,
   fetchFixtures,
   fetchLeague,
+  fetchLeagueDivisions,
   fetchLeagueMessages,
   fetchMembers,
   fetchStandings,
@@ -25,7 +26,7 @@ import {
   postLeagueMessage,
   respondLeagueInvite,
 } from '@/lib/leagues';
-import type { League, LeagueFixture, LeagueMember, LeagueMessage, LeagueStanding } from '@/lib/types';
+import type { League, LeagueDivision, LeagueFixture, LeagueMember, LeagueMessage, LeagueStanding } from '@/lib/types';
 
 export default function LeagueDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -46,6 +47,7 @@ export default function LeagueDetailScreen() {
   const [msgText, setMsgText] = useState('');
   const [postingMsg, setPostingMsg] = useState(false);
   const [showOlderMsgs, setShowOlderMsgs] = useState(false);
+  const [divisions, setDivisions] = useState<LeagueDivision[]>([]);
 
   const load = useCallback(async () => {
     try {
@@ -53,16 +55,18 @@ export default function LeagueDetailScreen() {
       setLeague(l);
       if (l) {
         const week = currentLeagueWeek(l);
-        const [m, f, s, msgs] = await Promise.all([
+        const [m, f, s, msgs, dvs] = await Promise.all([
           fetchMembers(id),
           fetchFixtures(id, week),
           fetchStandings(id),
           fetchLeagueMessages(id).catch(() => []),
+          fetchLeagueDivisions(id).catch(() => []),
         ]);
         setMembers(m);
         setFixtures(f);
         setStandings(s);
         setMessages(msgs);
+        setDivisions(dvs);
       }
       hasLeagueInvite(id).then(setInvited).catch(() => {});
     } catch (e) {
@@ -130,6 +134,25 @@ export default function LeagueDetailScreen() {
     }
   }
 
+  // Generate, then say so if nothing came out: in division mode a week produces
+  // no fixtures until some division has 2+ registered members, which otherwise
+  // looks like the button silently failing.
+  async function doGenerate() {
+    setBusy(true);
+    try {
+      await generateWeek(league!.id, week);
+      await load();
+      const fresh = await fetchFixtures(id, week);
+      if (fresh.length === 0 && divisions.length > 0) {
+        Alert.alert(t('le.genTitle').replace('{w}', String(week)), t('le.genNoDivEntrants'));
+      }
+    } catch (e: any) {
+      Alert.alert(t('md.error'), e.message ?? t('md.tryAgain'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   // Confirm + guard generating this week's fixtures.
   function confirmGenWeek() {
     if (members.length < 2) { Alert.alert(t('le.needMoreTitle'), t('le.needMoreBody')); return; }
@@ -138,7 +161,7 @@ export default function LeagueDetailScreen() {
       t('le.genBody').replace('{n}', String(members.length)),
       [
         { text: t('common.cancel'), style: 'cancel' },
-        { text: t('le.generate'), onPress: () => act(() => generateWeek(league!.id, week)) },
+        { text: t('le.generate'), onPress: () => doGenerate() },
       ],
     );
   }
@@ -298,17 +321,25 @@ export default function LeagueDetailScreen() {
           )}
 
           <Card style={{ paddingVertical: Spacing.one }}>
-            {fixtures.map((f, i) => (
-              <View key={f.id}>
-                {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
-                <View style={styles.fixtureRow}>
-                  <ThemedText style={{ flex: 1 }} numberOfLines={1}>
-                    {f.a?.display_name ?? '?'} {f.player_b ? `${t('le.vs')} ${f.b?.display_name ?? '?'}` : `· ${t('le.byeShort')}`}
-                  </ThemedText>
-                  {f.match_id && <Ionicons name="checkmark-circle" size={18} color={theme.success} />}
+            {fixtures.map((f, i) => {
+              const divName = f.division_id ? divisions.find((d) => d.id === f.division_id)?.name : null;
+              return (
+                <View key={f.id}>
+                  {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
+                  <View style={styles.fixtureRow}>
+                    <View style={{ flex: 1 }}>
+                      <ThemedText numberOfLines={1}>
+                        {f.a?.display_name ?? '?'} {f.player_b ? `${t('le.vs')} ${f.b?.display_name ?? '?'}` : `· ${t('le.byeShort')}`}
+                      </ThemedText>
+                      {divName ? (
+                        <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>{divName}</ThemedText>
+                      ) : null}
+                    </View>
+                    {f.match_id && <Ionicons name="checkmark-circle" size={18} color={theme.success} />}
+                  </View>
                 </View>
-              </View>
-            ))}
+              );
+            })}
           </Card>
         </>
       )}

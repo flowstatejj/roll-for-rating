@@ -152,7 +152,9 @@ export default function UserProfileScreen() {
   const tier = tierFor(profile.rating);
   const titles = heldTitles(champions);
   const memberSince = new Date(profile.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
-  const canChallenge = !isMe && !profile.is_minor && !blocked;
+  // participating=false covers tournament guests, guardians, and gym accounts:
+  // none of them can accept a challenge, so never offer one.
+  const canChallenge = !isMe && !profile.is_minor && !blocked && profile.participating !== false;
   const age = ageFrom(profile.birthdate);
   const wClass = weightClassFor(profile.weight_lbs);
   const vitals = [

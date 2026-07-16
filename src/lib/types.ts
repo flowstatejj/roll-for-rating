@@ -220,6 +220,8 @@ export interface LeagueMember {
 export interface LeagueFixture {
   id: string;
   league_id: string;
+  /** Set when the pairing came from a league division; null on legacy single-pool weeks. */
+  division_id: string | null;
   week_no: number;
   player_a: string;
   player_b: string | null; // null = bye
@@ -330,6 +332,8 @@ export interface TournamentMat {
 export interface TournamentBout {
   id: string;
   tournament_id: string;
+  /** Set when the bout belongs to a division bracket; null on legacy whole-event brackets. */
+  division_id: string | null;
   bracket: 'main' | 'losers' | 'playoff';
   round_no: number;
   position: number;

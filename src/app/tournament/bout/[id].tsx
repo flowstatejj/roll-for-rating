@@ -23,6 +23,9 @@ export default function BoutRunnerScreen() {
   const [bout, setBout] = useState<any>(null);
   const [teamRule, setTeamRule] = useState<'none' | 'duel' | 'quintet'>('none');
   const [teamSize, setTeamSize] = useState(1);
+  // In an elimination bracket a draw advances no one and permanently dead-ends
+  // the line (the finished-bout guard blocks re-recording), so hide Draw there.
+  const [isElim, setIsElim] = useState(false);
   const [aName, setAName] = useState('?');
   const [bName, setBName] = useState('?');
   const [aRoster, setARoster] = useState<Roster>([]);
@@ -39,9 +42,15 @@ export default function BoutRunnerScreen() {
       const { data: b } = await supabase.from('tournament_bouts').select('*').eq('id', id).single();
       setBout(b);
       if (!b) return;
-      const { data: trow } = await supabase.from('tournaments').select('team_rule, team_size').eq('id', b.tournament_id).single();
+      const { data: trow } = await supabase.from('tournaments').select('team_rule, team_size, format').eq('id', b.tournament_id).single();
       setTeamRule((trow?.team_rule ?? 'none') as any);
       setTeamSize(trow?.team_size ?? 1);
+      let fmt: string | null = trow?.format ?? null;
+      if (b.division_id) {
+        const { data: drow } = await supabase.from('tournament_divisions').select('format').eq('id', b.division_id).maybeSingle();
+        fmt = drow?.format ?? fmt; // division format inherits the tournament's when null
+      }
+      setIsElim(fmt === 'single_elim' || fmt === 'double_elim');
       if (b.a_team || b.b_team) {
         const load1 = async (teamId: string | null) => {
           if (!teamId) return [];
@@ -147,7 +156,9 @@ export default function BoutRunnerScreen() {
             <View style={styles.chips}>
               <Choice label={isTeam ? (aFighter?.display_name ?? aName) : aName} active={winner === 'a'} onPress={() => setWinner('a')} />
               <Choice label={isTeam ? (bFighter?.display_name ?? bName) : bName} active={winner === 'b'} onPress={() => setWinner('b')} />
-              <Choice label={t('md.drawChoice')} active={winner === 'draw'} onPress={() => setWinner('draw')} />
+              {/* Team sub-bout draws are legal (quintet: both fighters out); only
+                  individual elimination bouts must always produce an advancer. */}
+              {(isTeam || !isElim) && <Choice label={t('md.drawChoice')} active={winner === 'draw'} onPress={() => setWinner('draw')} />}
             </View>
           </View>
 

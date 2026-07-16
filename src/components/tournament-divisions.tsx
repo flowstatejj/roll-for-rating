@@ -148,7 +148,12 @@ export function TournamentDivisions({ tournamentId, onChanged }: { tournamentId:
   }
 
   function confirmDelete(d: TournamentDivision) {
-    Alert.alert(t('tdv.deleteTitle'), t('tdv.deleteBody').replace('{name}', d.name), [
+    // A generated (running) division has a live bracket: deleting it erases all
+    // of its bouts, so that case gets a much louder warning.
+    const body = d.status === 'running'
+      ? t('tdv.deleteRunningBody').replace('{name}', d.name)
+      : t('tdv.deleteBody').replace('{name}', d.name);
+    Alert.alert(t('tdv.deleteTitle'), body, [
       { text: t('common.cancel'), style: 'cancel' },
       {
         text: t('tdv.delete'),
@@ -489,7 +494,13 @@ function DivisionCard({
             ))
           )}
 
-          {showGuest ? (
+          {division.status !== 'setup' ? (
+            // Once the bracket is generated a new entrant can never be drawn in,
+            // so adding guests is locked instead of silently doing nothing.
+            <ThemedText type="small" themeColor="textSecondary">
+              {t('tgu.bracketLocked')}
+            </ThemedText>
+          ) : showGuest ? (
             <Card style={{ gap: Spacing.two, backgroundColor: theme.backgroundElement }}>
               <ThemedText type="smallBold" themeColor="textSecondary">
                 {t('tgu.addTitle')}
