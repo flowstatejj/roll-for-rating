@@ -327,6 +327,13 @@ begin
   select * into d from public.tournament_divisions where id = p_division;
   if not found then return jsonb_build_object('ok', false, 'reason', 'not_found'); end if;
 
+  -- Once the bracket is generated (or the event completed) a new entrant can
+  -- never be drawn in - refuse instead of silently accepting a ghost entrant
+  -- (stale clients keep showing Register after the host generates).
+  if d.status <> 'setup' then
+    return jsonb_build_object('ok', false, 'reason', 'locked');
+  end if;
+
   -- Fill in missing profile data only (never overwrite an existing value with null).
   if p_weight_lbs is not null then
     update public.profiles set weight_lbs = p_weight_lbs where id = uid and weight_lbs is null;

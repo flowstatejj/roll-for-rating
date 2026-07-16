@@ -1,7 +1,11 @@
 -- ============================================================================
 -- Roll for Rating — Waive-referee (filmed + mutual confirmation) + wager band
 -- Run after schema.sql, challenges.sql, videos.sql, minor-referee-rules.sql.
--- Safe to re-run.
+-- Safe to re-run ONLY if you re-run ror-symmetric-stake.sql AFTERWARDS: this
+-- file still CREATEs the 5-arg _settle_match overload, which alongside the
+-- authoritative defaulted 6-arg makes every 5-argument call ambiguous
+-- (Postgres 42725) and breaks dispute/dual-report settlement until
+-- ror-symmetric-stake.sql drops it again.
 --
 -- Adds:
 --  • Matches can be reffed (as before) OR waived: both competitors agree to skip

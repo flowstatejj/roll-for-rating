@@ -1,17 +1,23 @@
 -- ============================================================================
--- Roll for Rating - Season points: exclude guest competitors
--- Run in the Supabase SQL editor AFTER seasons.sql AND leagues.sql. Safe to re-run.
+-- Roll for Rating - Season points: exclude guests + keep both existing exclusions
+-- Run in the Supabase SQL editor AFTER seasons.sql, leagues.sql AND
+-- tournaments-pro.sql. Safe to re-run.
 --
 -- *** OWNERSHIP NOTE ***
--- THIS FILE OWNS public.accrue_season_points. It supersedes the versions in
--- seasons.sql (base) and leagues.sql (adds the league exclusion). If either of
--- those files is ever re-run, re-run THIS file afterwards.
+-- THIS FILE OWNS public.accrue_season_points. THREE other files also define it
+-- and would silently clobber this version if re-run:
+--   seasons.sql          (base: every decisive win accrues)
+--   leagues.sql          (adds: league matches excluded)
+--   tournaments-pro.sql  (adds: tournament matches excluded - 'keep season race clean')
+-- If ANY of those is ever re-run, re-run THIS file afterwards.
 --
--- WHY: host-entered GUEST competitors (is_guest) are phantom profiles; a guest
--- winning a tournament bout must not accrue global season points, or the season
--- race fills with rows for accounts that are not real members. Everything else
--- (league matches excluded, +10 per decisive win to the winner) is unchanged
--- from the leagues.sql version.
+-- This version is the UNION of every prior exclusion plus the guest gate:
+--   * league matches never accrue          (leagues.sql behavior, kept)
+--   * tournament matches never accrue      (tournaments-pro.sql behavior, kept)
+--   * matches involving a GUEST competitor never accrue (new): guests are
+--     phantom profiles - a guest must not earn points, and a member must not be
+--     able to farm points off self-created guests. Mirrors _settle_match's
+--     either-participant is_guest -> casual rule.
 -- ============================================================================
 
 create or replace function public.accrue_season_points()
@@ -20,10 +26,11 @@ declare sid uuid;
 begin
   if new.status = 'completed' and (old.status is distinct from new.status)
      and new.result <> 'draw' and new.winner_id is not null
-     and new.league_id is null   -- league matches don't feed the global season
-     and not exists (            -- guest winners don't either
+     and new.league_id is null       -- league matches don't feed the global season
+     and new.tournament_id is null   -- tournament bouts don't either (keep the race clean)
+     and not exists (                -- nor does anything involving a guest
        select 1 from public.profiles p
-       where p.id = new.winner_id and coalesce(p.is_guest, false)
+       where p.id in (new.challenger_id, new.opponent_id) and coalesce(p.is_guest, false)
      ) then
     sid := public.current_season();
     if sid is not null then

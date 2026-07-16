@@ -177,11 +177,15 @@ export default function TournamentDetailScreen() {
     ]);
   }
 
-  // Host closes out the event: moves it (and its divisions) to Completed.
+  // Host closes out the event: moves it (and its divisions) to Completed. Ending
+  // with bouts still undecided is allowed but gets a much louder, destructive
+  // confirm - there is no un-complete.
   function confirmComplete() {
-    Alert.alert(t('tn.completeTitle'), t('tn.completeBody'), [
+    const pending = bouts.filter((b) => b.status !== 'done' && b.status !== 'bye').length;
+    const body = pending > 0 ? t('tn.completePendingBody').replace('{n}', String(pending)) : t('tn.completeBody');
+    Alert.alert(t('tn.completeTitle'), body, [
       { text: t('common.cancel'), style: 'cancel' },
-      { text: t('tn.completeBtn'), onPress: () => act(() => completeTournament(id)) },
+      { text: t('tn.completeBtn'), style: pending > 0 ? 'destructive' : 'default', onPress: () => act(() => completeTournament(id)) },
     ]);
   }
 
@@ -197,9 +201,14 @@ export default function TournamentDetailScreen() {
   // division events crown one champion PER division below).
   const champion = (() => {
     if (!generated || hasDivisions) return null;
-    const done = tr.status === 'complete' || bouts.every((b) => b.status === 'done' || b.status === 'bye');
-    if (!done) return null;
-    if (tr.format === 'round_robin' || tr.format === 'rr_playoff') return standings[0]?.name ?? null;
+    const allDone = bouts.every((b) => b.status === 'done' || b.status === 'bye');
+    if (tr.format === 'round_robin' || tr.format === 'rr_playoff') {
+      if (!(tr.status === 'complete' || allDone)) return null;
+      return standings[0]?.name ?? null;
+    }
+    // Elimination: only crown when the actual final was decided - completing an
+    // event early must not promote a semifinal winner to "Champion".
+    if (!allDone) return null;
     const decided = bouts.filter((b) => b.status === 'done' && (b.winner === 'a' || b.winner === 'b'));
     if (decided.length === 0) return null;
     const final = decided.reduce((a, b) => (b.round_no > a.round_no ? b : a));

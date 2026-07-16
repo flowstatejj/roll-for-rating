@@ -6,6 +6,10 @@
 -- SUPERSEDED by the symmetric-stake engine in ror-symmetric-stake.sql (run LAST).
 -- Do NOT re-run this file standalone after it, or you will revert the symmetric
 -- stake. Kept for history and the mismatch-damping reference used by the draw path.
+-- ALSO (2026-07-16): this file CREATEs the 5-arg _settle_match overload, which
+-- alongside the authoritative defaulted 6-arg makes every 5-argument call
+-- ambiguous (Postgres 42725). If this file is ever re-run, re-run
+-- ror-symmetric-stake.sql afterwards to drop the 5-arg again.
 --
 -- The bigger the rating gap between the two competitors, the less ROR is risked
 -- OR gained — so a strong player can't stack rating by farming much weaker

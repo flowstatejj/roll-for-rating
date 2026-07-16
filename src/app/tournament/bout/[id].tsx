@@ -50,7 +50,9 @@ export default function BoutRunnerScreen() {
         const { data: drow } = await supabase.from('tournament_divisions').select('format').eq('id', b.division_id).maybeSingle();
         fmt = drow?.format ?? fmt; // division format inherits the tournament's when null
       }
-      setIsElim(fmt === 'single_elim' || fmt === 'double_elim');
+      // Playoff-bracket bouts of an rr_playoff event are single-elim too, and any
+      // bout that feeds a next bout must produce an advancer.
+      setIsElim(fmt === 'single_elim' || fmt === 'double_elim' || b.bracket === 'playoff' || !!b.next_bout_id);
       if (b.a_team || b.b_team) {
         const load1 = async (teamId: string | null) => {
           if (!teamId) return [];

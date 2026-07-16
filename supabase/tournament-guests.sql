@@ -125,6 +125,14 @@ begin
     raise exception 'That division does not belong to this tournament';
   end if;
 
+  -- A generated bracket can never take a new entrant: refuse rather than create
+  -- a guest who silently never appears in the draw.
+  if p_division is not null
+     and exists (select 1 from public.tournament_divisions
+                 where id = p_division and status <> 'setup') then
+    raise exception 'This division''s bracket is already generated - the roster is locked';
+  end if;
+
   -- 1) auth.users stub -> the on_auth_user_created trigger builds the profile
   --    (username uniquified, participating=false). Token columns are set to ''
   --    (never NULL) so the GoTrue admin/dashboard user listing does not break.
