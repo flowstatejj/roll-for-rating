@@ -17,6 +17,7 @@ import {
   addTeamMember,
   assignBoutMat,
   autoBalanceTeams,
+  completeTournament,
   createTeam,
   fetchBouts,
   fetchDivisions,
@@ -62,6 +63,7 @@ export default function TournamentDetailScreen() {
   const [invited, setInvited] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [showAllEntrants, setShowAllEntrants] = useState(false);
 
   const [picker, setPicker] = useState<Picker>(null);
   const [pq, setPq] = useState('');
@@ -152,7 +154,18 @@ export default function TournamentDetailScreen() {
     ]);
   }
 
-  const rounds = [...new Set(bouts.map((b) => `${b.bracket}:${b.round_no}`))];
+  // Group bouts by division (division events), in the divisions' own order;
+  // legacy whole-event brackets fall into a single unnamed group. Anything with
+  // a stale/unknown division_id still renders (last, unnamed) rather than vanishing.
+  const boutGroups = (() => {
+    if (!hasDivisions) return [{ id: 'main', name: null as string | null, list: bouts }];
+    const groups = divisions
+      .map((d) => ({ id: d.id, name: d.name as string | null, list: bouts.filter((b) => b.division_id === d.id) }))
+      .filter((g) => g.list.length > 0);
+    const orphans = bouts.filter((b) => !b.division_id || !divisions.some((d) => d.id === b.division_id));
+    if (orphans.length > 0) groups.push({ id: 'main', name: null, list: orphans });
+    return groups;
+  })();
 
   // Confirm + guard the irreversible bracket generation.
   function confirmGenerate() {
@@ -164,6 +177,18 @@ export default function TournamentDetailScreen() {
     ]);
   }
 
+  // Host closes out the event: moves it (and its divisions) to Completed. Ending
+  // with bouts still undecided is allowed but gets a much louder, destructive
+  // confirm - there is no un-complete.
+  function confirmComplete() {
+    const pending = bouts.filter((b) => b.status !== 'done' && b.status !== 'bye').length;
+    const body = pending > 0 ? t('tn.completePendingBody').replace('{n}', String(pending)) : t('tn.completeBody');
+    Alert.alert(t('tn.completeTitle'), body, [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('tn.completeBtn'), style: pending > 0 ? 'destructive' : 'default', onPress: () => act(() => completeTournament(id)) },
+    ]);
+  }
+
   // Let an entrant pull themselves out before the bracket is drawn.
   function confirmWithdraw() {
     Alert.alert(t('tn.withdrawTitle'), t('tn.withdrawBody'), [
@@ -172,17 +197,38 @@ export default function TournamentDetailScreen() {
     ]);
   }
 
-  // Crown a champion once everything is decided.
+  // Crown a champion once everything is decided (legacy whole-event brackets only;
+  // division events crown one champion PER division below).
   const champion = (() => {
-    if (!generated) return null;
-    const done = tr.status === 'complete' || bouts.every((b) => b.status === 'done' || b.status === 'bye');
-    if (!done) return null;
-    if (tr.format === 'round_robin' || tr.format === 'rr_playoff') return standings[0]?.name ?? null;
+    if (!generated || hasDivisions) return null;
+    const allDone = bouts.every((b) => b.status === 'done' || b.status === 'bye');
+    if (tr.format === 'round_robin' || tr.format === 'rr_playoff') {
+      if (!(tr.status === 'complete' || allDone)) return null;
+      return standings[0]?.name ?? null;
+    }
+    // Elimination: only crown when the actual final was decided - completing an
+    // event early must not promote a semifinal winner to "Champion".
+    if (!allDone) return null;
     const decided = bouts.filter((b) => b.status === 'done' && (b.winner === 'a' || b.winner === 'b'));
     if (decided.length === 0) return null;
     const final = decided.reduce((a, b) => (b.round_no > a.round_no ? b : a));
     return final.winner === 'a' ? final.a_name : final.b_name;
   })();
+
+  // One champion per single-elim division, appearing as each division finishes.
+  const divisionChampions = !hasDivisions
+    ? []
+    : divisions.flatMap((d) => {
+        const fmt = d.format ?? tr.format;
+        if (fmt !== 'single_elim' && fmt !== 'double_elim') return [];
+        const dBouts = bouts.filter((b) => b.division_id === d.id);
+        if (dBouts.length === 0 || !dBouts.every((b) => b.status === 'done' || b.status === 'bye')) return [];
+        const decided = dBouts.filter((b) => b.status === 'done' && (b.winner === 'a' || b.winner === 'b'));
+        if (decided.length === 0) return [];
+        const final = decided.reduce((a, b) => (b.round_no > a.round_no ? b : a));
+        const champ = final.winner === 'a' ? final.a_name : final.b_name;
+        return champ ? [{ id: d.id, name: d.name, champ }] : [];
+      });
 
   return (
     <Screen>
@@ -211,6 +257,22 @@ export default function TournamentDetailScreen() {
             <ThemedText type="small" themeColor="textSecondary">{t('tn.champion')}</ThemedText>
             <ThemedText style={{ fontWeight: '900', fontSize: 20 }} numberOfLines={1}>{champion}</ThemedText>
           </View>
+        </Card>
+      )}
+
+      {/* Division champions (each appears as its division finishes) */}
+      {divisionChampions.length > 0 && (
+        <Card style={{ gap: Spacing.two, borderColor: theme.accent, borderWidth: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+            <ThemedText style={{ fontSize: 24 }}>🏆</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">{t('tn.champions')}</ThemedText>
+          </View>
+          {divisionChampions.map((c) => (
+            <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+              <ThemedText type="small" themeColor="textSecondary" style={{ flex: 1 }} numberOfLines={1}>{c.name}</ThemedText>
+              <ThemedText style={{ fontWeight: '900' }} numberOfLines={1}>{c.champ}</ThemedText>
+            </View>
+          ))}
         </Card>
       )}
 
@@ -265,18 +327,27 @@ export default function TournamentDetailScreen() {
           {entrants.length === 0 ? (
             <EmptyState icon="people-outline" title={t('tn.noEntrants')} subtitle={isHost ? t('tn.noEntrantsSub') : ''} />
           ) : (
-            <Card style={{ paddingVertical: Spacing.one }}>
-              {entrants.map((p, i) => (
-                <View key={p.id}>
-                  {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
-                  <Pressable onPress={() => router.push(`/user/${p.id}`)} style={styles.prow}>
-                    <Avatar name={p.display_name} size={32} warrior={p.avatar_warrior ?? undefined} color={p.avatar_color ?? undefined} />
-                    <ThemedText style={{ flex: 1, fontWeight: '700' }} numberOfLines={1}>{p.display_name}</ThemedText>
-                    <BeltChip belt={p.belt_rank} size="sm" />
-                  </Pressable>
-                </View>
-              ))}
-            </Card>
+            <>
+              <Card style={{ paddingVertical: Spacing.one }}>
+                {(showAllEntrants ? entrants : entrants.slice(0, 8)).map((p, i) => (
+                  <View key={p.id}>
+                    {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
+                    <Pressable onPress={() => router.push(`/user/${p.id}`)} style={styles.prow}>
+                      <Avatar name={p.display_name} size={32} warrior={p.avatar_warrior ?? undefined} color={p.avatar_color ?? undefined} />
+                      <ThemedText style={{ flex: 1, fontWeight: '700' }} numberOfLines={1}>{p.display_name}</ThemedText>
+                      <BeltChip belt={p.belt_rank} size="sm" />
+                    </Pressable>
+                  </View>
+                ))}
+              </Card>
+              {entrants.length > 8 && !showAllEntrants && (
+                <Pressable onPress={() => setShowAllEntrants(true)} style={[styles.showAll, { borderColor: theme.tileBorder }]}>
+                  <ThemedText type="smallBold" themeColor="textSecondary">
+                    {t('tn.showAllEntrants').replace('{n}', String(entrants.length))}
+                  </ThemedText>
+                </Pressable>
+              )}
+            </>
           )}
         </>
       )}
@@ -376,19 +447,30 @@ export default function TournamentDetailScreen() {
       {isHost && generated && tr.format === 'rr_playoff' && !bouts.some((b) => b.bracket === 'playoff') && (
         <Button label={t('tn.startPlayoff')} icon="trophy" variant="secondary" loading={busy} onPress={() => act(() => generatePlayoff(id, 4))} />
       )}
+      {isHost && generated && tr.status === 'running' && (
+        <Button label={t('tn.completeBtn')} icon="flag" variant="secondary" loading={busy} onPress={confirmComplete} />
+      )}
 
-      {/* Bracket / bouts */}
+      {/* Bracket / bouts (division events get one bracket section per division) */}
       {generated && (
         <>
           <ThemedText style={styles.section}>{t('tn.bouts')}</ThemedText>
-          {rounds.map((rk) => {
-            const [bracket, rn] = rk.split(':');
-            const rbouts = bouts.filter((b) => `${b.bracket}:${b.round_no}` === rk);
-            return (
-              <View key={rk} style={{ gap: Spacing.one }}>
-                <ThemedText type="smallBold" themeColor="textSecondary">
-                  {bracket === 'playoff' ? t('tn.playoff') : t('tn.round')} {rn}
-                </ThemedText>
+          {boutGroups.map((g) => (
+            <View key={g.id} style={{ gap: Spacing.one }}>
+              {g.name ? (
+                <View style={[styles.divHeader, { borderColor: theme.accent }]}>
+                  <Ionicons name="git-branch-outline" size={14} color={theme.accent} />
+                  <ThemedText type="smallBold" style={{ color: theme.accent }} numberOfLines={1}>{g.name}</ThemedText>
+                </View>
+              ) : null}
+              {[...new Set(g.list.map((b) => `${b.bracket}:${b.round_no}`))].map((rk) => {
+                const [bracket, rn] = rk.split(':');
+                const rbouts = g.list.filter((b) => `${b.bracket}:${b.round_no}` === rk);
+                return (
+                  <View key={rk} style={{ gap: Spacing.one }}>
+                    <ThemedText type="smallBold" themeColor="textSecondary">
+                      {bracket === 'playoff' ? t('tn.playoff') : t('tn.round')} {rn}
+                    </ThemedText>
                 <Card style={{ paddingVertical: Spacing.one }}>
                   {rbouts.map((b, i) => {
                     const canRec =
@@ -423,8 +505,10 @@ export default function TournamentDetailScreen() {
                   })}
                 </Card>
               </View>
-            );
-          })}
+                );
+              })}
+            </View>
+          ))}
         </>
       )}
 
@@ -472,4 +556,6 @@ const styles = StyleSheet.create({
   standRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.two, paddingHorizontal: Spacing.two },
   divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.two },
   tag: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 1 },
+  divHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one, borderLeftWidth: 3, paddingLeft: Spacing.two, marginTop: Spacing.two },
+  showAll: { alignItems: 'center', paddingVertical: Spacing.two, borderWidth: 1, borderRadius: 10 },
 });

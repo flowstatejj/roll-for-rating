@@ -7,9 +7,10 @@ import { ThemedText } from '@/components/themed-text';
 import { Card, EmptyState, Loading, Screen } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useUnread } from '@/hooks/use-unread';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
-import { fetchNotifications, localizeNotification, markRead } from '@/lib/notifications';
+import { fetchNotifications, localizeNotification, markAllRead as markAllReadServer, markRead } from '@/lib/notifications';
 import type { AppNotification } from '@/lib/types';
 
 type NotifTab = 'challenges' | 'messages' | 'friends' | 'cancelled';
@@ -103,12 +104,16 @@ export default function NotificationsScreen() {
   }, [items]);
 
   const totalUnread = unreadByTab.challenges + unreadByTab.messages + unreadByTab.friends + unreadByTab.cancelled;
+  // Server-side unread count (same source as the bell badge): can exceed the
+  // loaded window when older unread rows exist beyond the newest 50.
+  const serverUnread = useUnread();
 
   function markAllRead() {
-    const unread = itemsRef.current.filter((n) => !n.read);
-    if (unread.length === 0) return;
     setItems((prev) => prev.map((n) => (n.read ? n : { ...n, read: true })));
-    markRead(userId, unread.map((n) => n.id)).catch(() => {});
+    // Server-side unbounded, called even when the LOADED 50 look read: unread
+    // rows older than the load window are exactly the ones that strand the
+    // bell badge, and they are invisible to any client-side count.
+    markAllReadServer(userId).catch(() => {});
   }
 
   const visible = useMemo(() => items.filter((n) => tabFor(n.type) === tab), [items, tab]);
@@ -238,7 +243,9 @@ export default function NotificationsScreen() {
         })}
       </ScrollView>
 
-      {totalUnread > 0 && (
+      {/* serverUnread covers unread rows OLDER than the 50 loaded here, so the
+          control stays reachable in exactly the stranded-badge case. */}
+      {(totalUnread > 0 || serverUnread > 0) && (
         <Pressable onPress={markAllRead} hitSlop={8} style={{ alignSelf: 'flex-end', paddingVertical: Spacing.one }}>
           <ThemedText type="smallBold" style={{ color: theme.accent }}>{t('notif.markAllRead')}</ThemedText>
         </Pressable>

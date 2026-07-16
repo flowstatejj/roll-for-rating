@@ -4,11 +4,16 @@
 --   schema.sql, ror-mismatch-scaling.sql, leagues.sql, match-waive-and-wager.sql,
 --   tournaments-pro.sql. Safe to re-run.
 --
--- This is the single source of truth for how a decisive match moves ROR. Its
--- 6-arg body is kept byte-identical to the one in tournaments-pro.sql on purpose:
--- no matter which redefining migration is applied last, the result is the same
--- symmetric stake. The 5-arg overload (referee / waived-confirm / dispute path)
--- delegates to the 6-arg here, so EVERY settlement path settles identically.
+-- This is the single source of truth for how a decisive match moves ROR, and it
+-- INTENTIONALLY DIFFERS from the older copies in tournaments-pro.sql /
+-- leagues.sql / match-waive-and-wager.sql: this body adds the guest-casual gate
+-- (a bout involving an is_guest profile never moves real ROR/W-L). So this file
+-- MUST be the last _settle_match definition applied - re-running any older file
+-- silently strips the guest gate until this one is re-run.
+--
+-- There is deliberately NO 5-arg overload anymore (see the DROP below): the
+-- 6-arg default covers 5-argument calls, and having both made every 5-arg call
+-- ambiguous (Postgres 42725), breaking dispute/dual-report settlement.
 --
 -- WHY: with classic Elo an upset is worth a lot -- a strong player who loses to a
 -- much weaker one sheds a big chunk of ROR but only gains a sliver for winning,
@@ -121,21 +126,14 @@ begin
   return m;
 end; $$;
 
--- The 5-arg overload (referee / waived-confirm / dispute path) delegates to the
--- 6-arg above, so the regular record/confirm and dispute paths settle identically.
-create or replace function public._settle_match(
-  p_match_id uuid, p_winner_id uuid, p_result result_type,
-  p_method text, p_notes text
-)
-returns public.matches
-language plpgsql security definer set search_path = public
-as $$
-begin
-  return public._settle_match(p_match_id, p_winner_id, p_result, p_method, p_notes, null::text);
-end; $$;
+-- NO 5-arg overload. The 6-arg version defaults p_sub_category, so a 5-argument
+-- call binds to it directly. Keeping a separate 5-arg function alongside the
+-- defaulted 6-arg made EVERY 5-argument call ambiguous (Postgres 42725 "function
+-- is not unique"), which silently broke the dual-report and admin dispute
+-- settlement paths (match-disputes.sql calls with 5 args). Drop it for good.
+drop function if exists public._settle_match(uuid, uuid, result_type, text, text);
 
 -- Internal-only helper: never client-callable (its callers authorize first).
-revoke execute on function public._settle_match(uuid, uuid, result_type, text, text) from public, anon, authenticated;
 revoke execute on function public._settle_match(uuid, uuid, result_type, text, text, text) from public, anon, authenticated;
 
 notify pgrst, 'reload schema';
