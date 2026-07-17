@@ -36,7 +36,12 @@ begin
       and p.proname in (
         '_settle_match', '_advance_bye', '_advance_winner', '_division_seeds',
         '_ensure_mats', '_gen_round_robin', '_gen_single_elim', '_tournament_seeds',
-        '_may_record', 'grant_comp_entitlement'
+        '_may_record', 'grant_comp_entitlement',
+        -- 2026-07-16: divisions-era internals. The eligibility helpers take an
+        -- ARBITRARY user id and bypass profiles RLS (PII oracle if callable);
+        -- generate_league_division_week has no organizer gate of its own.
+        '_eligibility_check', '_division_eligibility', '_league_division_eligibility',
+        'generate_league_division_week'
       )
   loop
     execute format('revoke execute on function %s from public, anon, authenticated', r.sig);
