@@ -6,6 +6,7 @@ import { Alert, Pressable, Share, StyleSheet, View } from 'react-native';
 import { LeagueDivisionRegister } from '@/components/league-division-register';
 import { LeagueDivisions } from '@/components/league-divisions';
 import { LeagueTeams } from '@/components/league-teams';
+import { LeagueTeamSeason } from '@/components/league-team-season';
 import { ThemedText } from '@/components/themed-text';
 import { Avatar, BeltChip, Button, Card, EmptyState, Loading, Screen, TextField } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
@@ -295,13 +296,9 @@ export default function LeagueDetailScreen() {
       {!isTeamLeague && isOrganizer && <LeagueDivisions leagueId={league.id} onChanged={load} />}
       {!isTeamLeague && isMember && <LeagueDivisionRegister leagueId={league.id} onChanged={load} />}
 
-      {/* Team leagues: season play (fixtures / scoring / playoff) is a later phase.
-          Show the roster builder above; skip the individual weekly pairing here. */}
+      {/* Team leagues: double round-robin season, scores + team standings. */}
       {isTeamLeague && (
-        <Card style={{ gap: Spacing.one }}>
-          <ThemedText style={{ fontWeight: '700' }}>{t('lt.seasonSoonTitle')}</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">{t('lt.seasonSoonBody')}</ThemedText>
-        </Card>
+        <LeagueTeamSeason leagueId={league.id} isOrganizer={isOrganizer} onChanged={load} />
       )}
 
       {/* This week (individual leagues) */}

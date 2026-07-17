@@ -191,6 +191,30 @@ export interface LeagueTeam {
   members: LeagueTeamMember[];
 }
 
+export interface LeagueTeamFixture {
+  id: string;
+  week_no: number;
+  bracket: 'season' | 'playoff';
+  team_a: string | null;
+  team_b: string | null;
+  team_a_name: string | null;
+  team_b_name: string | null;
+  a_score: number;
+  b_score: number;
+  winner: 'a' | 'b' | 'draw' | null;
+  status: 'pending' | 'done' | 'bye';
+}
+
+export interface LeagueTeamStanding {
+  team_id: string;
+  name: string;
+  played: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  points: number;
+}
+
 // Leagues reuse the tournament scoring/ruleset vocabularies verbatim.
 export type LeagueScoring = TournamentScoring;
 export type LeagueRulesetPreset = TournamentRulesetPreset;

@@ -11,7 +11,9 @@ import type {
   LeagueScoring,
   LeagueStanding,
   LeagueTeam,
+  LeagueTeamFixture,
   LeagueTeamRule,
+  LeagueTeamStanding,
   SentInvite,
 } from './types';
 
@@ -311,6 +313,57 @@ export async function removeLeagueTeamMember(teamId: string, userId: string): Pr
 // LeagueTeamRule is re-exported so screens can type format helpers without a
 // second import path.
 export type { LeagueTeamRule } from './types';
+
+// ---------------------------------------------------------------------------
+// League team season (Phase 2): double round-robin fixtures + team standings.
+// ---------------------------------------------------------------------------
+
+/** Organizer generates the whole double round-robin. Returns {ok, weeks?, reason?}. */
+export async function generateTeamSeason(leagueId: string): Promise<{ ok: boolean; weeks?: number; reason?: string }> {
+  const { data, error } = await supabase.rpc('generate_league_team_season', { p_league: leagueId });
+  if (error) throw error;
+  const r = (data ?? {}) as { ok?: boolean; weeks?: number; reason?: string };
+  return { ok: !!r.ok, weeks: r.weeks, reason: r.reason };
+}
+
+/** Organizer records a team matchup's final score (Phase 3 will derive it from sub-bouts). */
+export async function recordTeamResult(fixtureId: string, aScore: number, bScore: number): Promise<void> {
+  const { error } = await supabase.rpc('record_league_team_result', { p_fixture: fixtureId, p_a_score: aScore, p_b_score: bScore });
+  if (error) throw error;
+}
+
+/** Season fixtures (optionally one week). */
+export async function fetchTeamFixtures(leagueId: string, week?: number): Promise<LeagueTeamFixture[]> {
+  const { data, error } = await supabase.rpc('league_team_fixtures_list', { p_league: leagueId, p_week: week ?? null });
+  if (error) throw error;
+  return ((data ?? []) as any[]).map((f) => ({
+    id: f.id,
+    week_no: Number(f.week_no),
+    bracket: (f.bracket ?? 'season') as 'season' | 'playoff',
+    team_a: f.team_a ?? null,
+    team_b: f.team_b ?? null,
+    team_a_name: f.team_a_name ?? null,
+    team_b_name: f.team_b_name ?? null,
+    a_score: Number(f.a_score ?? 0),
+    b_score: Number(f.b_score ?? 0),
+    winner: (f.winner ?? null) as 'a' | 'b' | 'draw' | null,
+    status: (f.status ?? 'pending') as 'pending' | 'done' | 'bye',
+  }));
+}
+
+export async function fetchTeamStandings(leagueId: string): Promise<LeagueTeamStanding[]> {
+  const { data, error } = await supabase.rpc('league_team_standings', { p_league: leagueId });
+  if (error) throw error;
+  return ((data ?? []) as any[]).map((s) => ({
+    team_id: s.team_id,
+    name: s.name,
+    played: Number(s.played ?? 0),
+    wins: Number(s.wins ?? 0),
+    losses: Number(s.losses ?? 0),
+    draws: Number(s.draws ?? 0),
+    points: Number(s.points ?? 0),
+  }));
+}
 
 // ---------------------------------------------------------------------------
 // League divisions (belt/age/weight/rating/gender + Gi/No-Gi), mirroring the
