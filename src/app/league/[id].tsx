@@ -5,6 +5,7 @@ import { Alert, Pressable, Share, StyleSheet, View } from 'react-native';
 
 import { LeagueDivisionRegister } from '@/components/league-division-register';
 import { LeagueDivisions } from '@/components/league-divisions';
+import { LeagueTeams } from '@/components/league-teams';
 import { ThemedText } from '@/components/themed-text';
 import { Avatar, BeltChip, Button, Card, EmptyState, Loading, Screen, TextField } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
@@ -92,6 +93,7 @@ export default function LeagueDetailScreen() {
   const me = members.find((m) => m.user_id === userId);
   const isMember = !!me;
   const isOrganizer = league.created_by === userId;
+  const isTeamLeague = league.team_rule !== 'none';
   const myFixture = fixtures.find((f) => f.player_a === userId || f.player_b === userId);
 
   async function act(fn: () => Promise<unknown>) {
@@ -277,19 +279,39 @@ export default function LeagueDetailScreen() {
         </>
       )}
 
-      {/* Divisions: organizer builds them; members self-register by eligibility.
-          A league with no divisions runs the legacy single pool (nothing shows). */}
-      {isOrganizer && <LeagueDivisions leagueId={league.id} onChanged={load} />}
-      {/* Any member (incl. the organizer, who competes in their own league) can
-          register into a division. Self-hides when the league has none. */}
-      {isMember && <LeagueDivisionRegister leagueId={league.id} onChanged={load} />}
+      {/* Team-format league: organizer builds the rosters; members see them read-only. */}
+      {isTeamLeague && (
+        <LeagueTeams
+          leagueId={league.id}
+          teamSize={league.team_size}
+          userId={userId}
+          readOnly={!isOrganizer}
+          onChanged={load}
+        />
+      )}
 
-      {/* This week */}
+      {/* Individual league: organizer builds divisions; members self-register by
+          eligibility. A league with no divisions runs the legacy single pool. */}
+      {!isTeamLeague && isOrganizer && <LeagueDivisions leagueId={league.id} onChanged={load} />}
+      {!isTeamLeague && isMember && <LeagueDivisionRegister leagueId={league.id} onChanged={load} />}
+
+      {/* Team leagues: season play (fixtures / scoring / playoff) is a later phase.
+          Show the roster builder above; skip the individual weekly pairing here. */}
+      {isTeamLeague && (
+        <Card style={{ gap: Spacing.one }}>
+          <ThemedText style={{ fontWeight: '700' }}>{t('lt.seasonSoonTitle')}</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">{t('lt.seasonSoonBody')}</ThemedText>
+        </Card>
+      )}
+
+      {/* This week (individual leagues) */}
+      {!isTeamLeague && (
       <ThemedText type="smallBold" themeColor="textSecondary" style={styles.section}>{t('le.thisWeek')}</ThemedText>
-      {isOrganizer && fixtures.length === 0 && (
+      )}
+      {!isTeamLeague && isOrganizer && fixtures.length === 0 && (
         <Button label={t('le.generate')} icon="shuffle" variant="secondary" loading={busy} onPress={confirmGenWeek} />
       )}
-      {fixtures.length === 0 ? (
+      {!isTeamLeague && (fixtures.length === 0 ? (
         <EmptyState icon="shuffle-outline" title={t('le.noFixturesTitle')} subtitle={isOrganizer ? t('le.noFixturesOrg') : t('le.noFixturesSub')} />
       ) : (
         <>
@@ -342,11 +364,13 @@ export default function LeagueDetailScreen() {
             })}
           </Card>
         </>
-      )}
+      ))}
 
-      {/* Standings */}
+      {/* Standings (individual leagues; team standings arrive with team fixtures) */}
+      {!isTeamLeague && (
       <ThemedText type="smallBold" themeColor="textSecondary" style={styles.section}>{t('le.standings')}</ThemedText>
-      {standings.length === 0 ? (
+      )}
+      {!isTeamLeague && (standings.length === 0 ? (
         <EmptyState icon="podium-outline" title={t('le.noStandingsTitle')} subtitle={t('le.noStandingsSub')} />
       ) : (
         <Card style={{ paddingVertical: Spacing.one, paddingHorizontal: Spacing.one }}>
@@ -377,7 +401,7 @@ export default function LeagueDetailScreen() {
             );
           })}
         </Card>
-      )}
+      ))}
 
       {/* Members */}
       <ThemedText type="smallBold" themeColor="textSecondary" style={styles.section}>{t('le.members')} · {members.length}</ThemedText>

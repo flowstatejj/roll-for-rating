@@ -11,10 +11,12 @@ import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
 import { createLeague, fetchMyLeagues, fetchMyLeagueInvites, fetchOpenLeagues, joinLeagueByCode, type LeagueInvite, respondLeagueInvite, WEEKDAYS } from '@/lib/leagues';
 import { RULESET_PRESETS } from '@/lib/tournaments';
-import type { League, LeagueAudience, LeagueRulesetPreset, LeagueScoring, LeagueVisibility } from '@/lib/types';
+import type { League, LeagueAudience, LeagueFormat, LeagueRulesetPreset, LeagueScoring, LeagueVisibility } from '@/lib/types';
+import { LEAGUE_FORMATS } from '@/lib/types';
 
 const RULESETS: LeagueRulesetPreset[] = ['ibjjf', 'naga', 'grappling_industries', 'adcc', 'custom'];
 const SCORINGS: LeagueScoring[] = ['points', 'submission_only'];
+const FORMATS: LeagueFormat[] = ['individuals', 'duo', 'trio', 'quintet'];
 
 type Tab = 'mine' | 'browse';
 // Parse a signed integer from a text box (blank / "-" / junk -> 0).
@@ -65,6 +67,7 @@ export default function LeaguesScreen() {
   const [breakBonus, setBreakBonus] = useState('0');
   const [scoring, setScoring] = useState<LeagueScoring>('points');
   const [rulesetPreset, setRulesetPreset] = useState<LeagueRulesetPreset>('custom');
+  const [format, setFormat] = useState<LeagueFormat>('individuals');
 
   // Picking a federation seeds the standings-scoring defaults (win/draw/loss +
   // sub bonuses), same as tournament create. 'custom' leaves whatever is set.
@@ -140,6 +143,8 @@ export default function LeaguesScreen() {
         subBreakBonus: intval(breakBonus),
         scoring,
         rulesetPreset,
+        teamRule: LEAGUE_FORMATS[format].rule,
+        teamSize: LEAGUE_FORMATS[format].size,
       });
       setCreating(false);
       setName(''); setDesc(''); setLocation(''); setCity('');
@@ -223,6 +228,15 @@ export default function LeaguesScreen() {
           <ThemedText style={{ fontWeight: '800', fontSize: 18 }}>{t('le.create')}</ThemedText>
           <TextField label={t('le.name')} value={name} onChangeText={setName} placeholder={t('le.namePh')} />
           <TextField label={t('le.desc')} value={desc} onChangeText={setDesc} placeholder={t('le.descPh')} multiline />
+
+          {/* Format: individual season or a team season (2v2 / 3v3 / quintet). */}
+          <Field label={t('le.format')}>
+            <View style={styles.chips}>
+              {FORMATS.map((f) => (
+                <Chip key={f} label={t(`le.fmt.${f}`)} active={format === f} onPress={() => setFormat(f)} />
+              ))}
+            </View>
+          </Field>
 
           <Field label={t('le.audience')}>
             <View style={styles.chips}>

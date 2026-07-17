@@ -156,11 +156,39 @@ export interface League {
   /** How a bout is scored + the federation preset (parity with tournaments). */
   scoring: LeagueScoring;
   ruleset_preset: LeagueRulesetPreset;
+  /** Team format: 'none' = individuals; 'duel' = 2v2/3v3; 'quintet' = 5v5 survivor. */
+  team_rule: LeagueTeamRule;
+  team_size: number; // 1 | 2 | 3 | 5
   created_at: string;
   /** present on rows fetched with membership context */
   member_count?: number;
   is_member?: boolean;
   is_organizer?: boolean;
+}
+
+export type LeagueTeamRule = 'none' | 'duel' | 'quintet';
+
+/** The four selectable league formats, each mapping to a (team_rule, team_size). */
+export type LeagueFormat = 'individuals' | 'duo' | 'trio' | 'quintet';
+export const LEAGUE_FORMATS: Record<LeagueFormat, { rule: LeagueTeamRule; size: number }> = {
+  individuals: { rule: 'none', size: 1 },
+  duo: { rule: 'duel', size: 2 },
+  trio: { rule: 'duel', size: 3 },
+  quintet: { rule: 'quintet', size: 5 },
+};
+
+export interface LeagueTeamMember {
+  user_id: string;
+  display_name: string;
+  belt_rank: BeltRank;
+  slot: number | null;
+}
+export interface LeagueTeam {
+  id: string;
+  name: string;
+  captain_id: string | null;
+  seed: number | null;
+  members: LeagueTeamMember[];
 }
 
 // Leagues reuse the tournament scoring/ruleset vocabularies verbatim.
