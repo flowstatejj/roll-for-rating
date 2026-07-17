@@ -116,6 +116,10 @@ create or replace function public.create_league_division(
 declare did uuid;
 begin
   if not public.is_league_organizer(p_league) then raise exception 'Only the organizer can add divisions'; end if;
+  -- Divisions are an INDIVIDUAL-league concept; a team league uses team rosters.
+  if coalesce((select team_rule from public.leagues where id = p_league), 'none') <> 'none' then
+    raise exception 'Divisions are for individual leagues, not team leagues';
+  end if;
   insert into public.league_divisions
     (league_id, name, belt_min, belt_max, age_min, age_max, weight_min_kg, weight_max_kg,
      weight_unit, rating_min, rating_max, gender, open, ruleset,
@@ -360,6 +364,12 @@ declare
 begin
   select (created_by = auth.uid()) into is_org from public.leagues where id = p_league_id;
   if not coalesce(is_org, false) then raise exception 'Only the organizer can generate fixtures'; end if;
+
+  -- Team leagues generate TEAM fixtures via a separate path (later phase); never
+  -- pair their rostered players as individuals here.
+  if coalesce((select team_rule from public.leagues where id = p_league_id), 'none') <> 'none' then
+    return;
+  end if;
 
   -- Divisions WITH ENTRANTS present -> fan out per division (each idempotent per
   -- div/week). We gate on "has an entrant", not merely "a division row exists",

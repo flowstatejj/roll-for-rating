@@ -10,6 +10,8 @@ import type {
   LeagueRulesetPreset,
   LeagueScoring,
   LeagueStanding,
+  LeagueTeam,
+  LeagueTeamRule,
   SentInvite,
 } from './types';
 
@@ -78,6 +80,8 @@ export async function createLeague(args: {
   subBreakBonus: number;
   scoring: LeagueScoring;
   rulesetPreset: LeagueRulesetPreset;
+  teamRule: LeagueTeamRule;
+  teamSize: number;
 }): Promise<League> {
   const { data, error } = await supabase
     .from('leagues')
@@ -101,6 +105,8 @@ export async function createLeague(args: {
       sub_break_bonus: args.subBreakBonus,
       scoring: args.scoring,
       ruleset_preset: args.rulesetPreset,
+      team_rule: args.teamRule,
+      team_size: args.teamSize,
     })
     .select('*')
     .single();
@@ -254,6 +260,57 @@ export function currentLeagueWeek(league: Pick<League, 'season_starts' | 'weeks'
 }
 
 export const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+// ---------------------------------------------------------------------------
+// League teams (Phase 1): rosters for 2v2 / 3v3 / quintet leagues. Individual
+// leagues (team_rule 'none') never use these.
+// ---------------------------------------------------------------------------
+
+export async function fetchLeagueTeams(leagueId: string): Promise<LeagueTeam[]> {
+  const { data, error } = await supabase.rpc('league_teams_list', { p_league: leagueId });
+  if (error) throw error;
+  return ((data ?? []) as any[]).map((t) => ({
+    id: t.id,
+    name: t.name,
+    captain_id: t.captain_id ?? null,
+    seed: numOrNull(t.seed),
+    members: ((t.members ?? []) as any[]).map((m) => ({
+      user_id: m.user_id,
+      display_name: m.display_name,
+      belt_rank: m.belt_rank as BeltRank,
+      slot: numOrNull(m.slot),
+    })),
+  }));
+}
+
+export async function createLeagueTeam(leagueId: string, name: string, captainId?: string | null): Promise<string> {
+  const { data, error } = await supabase.rpc('create_league_team', {
+    p_league: leagueId,
+    p_name: name.trim(),
+    p_captain: captainId ?? null,
+  });
+  if (error) throw error;
+  return data as string;
+}
+
+export async function deleteLeagueTeam(teamId: string): Promise<void> {
+  const { error } = await supabase.rpc('delete_league_team', { p_team: teamId });
+  if (error) throw error;
+}
+
+export async function addLeagueTeamMember(teamId: string, userId: string): Promise<void> {
+  const { error } = await supabase.rpc('add_league_team_member', { p_team: teamId, p_user: userId });
+  if (error) throw error;
+}
+
+export async function removeLeagueTeamMember(teamId: string, userId: string): Promise<void> {
+  const { error } = await supabase.rpc('remove_league_team_member', { p_team: teamId, p_user: userId });
+  if (error) throw error;
+}
+
+// LeagueTeamRule is re-exported so screens can type format helpers without a
+// second import path.
+export type { LeagueTeamRule } from './types';
 
 // ---------------------------------------------------------------------------
 // League divisions (belt/age/weight/rating/gender + Gi/No-Gi), mirroring the
