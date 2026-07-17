@@ -92,9 +92,11 @@ create policy "ld_entrants_read" on public.league_division_entrants for select t
 -- is_league_organizer - small helper (no equivalent existed; leagues.sql checks
 -- created_by inline). Used by the RPCs below.
 -- ---------------------------------------------------------------------------
-create or replace function public.is_league_organizer(p_league uuid)
+-- Param name MUST stay p_lid to match league-invites.sql's definition (create
+-- or replace cannot rename an input parameter; the two files both own this fn).
+create or replace function public.is_league_organizer(p_lid uuid)
 returns boolean language sql stable security definer set search_path = public as $$
-  select exists (select 1 from public.leagues where id = p_league and created_by = auth.uid());
+  select exists (select 1 from public.leagues where id = p_lid and created_by = auth.uid());
 $$;
 
 -- ---------------------------------------------------------------------------
