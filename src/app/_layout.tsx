@@ -132,6 +132,7 @@ function RootNavigator() {
       <Stack.Screen name="quests" options={{ headerShown: true, title: t('nav.quests') }} />
       <Stack.Screen name="leagues" options={{ headerShown: true, title: t('nav.leagues') }} />
       <Stack.Screen name="league/[id]" options={{ headerShown: true, title: t('nav.league') }} />
+      <Stack.Screen name="league/matchup/[id]" options={{ headerShown: true, title: t('lt.matchup') }} />
       <Stack.Screen name="tournaments" options={{ headerShown: true, title: t('nav.tournaments') }} />
       <Stack.Screen name="tournament/[id]" options={{ headerShown: true, title: t('nav.tournament') }} />
       <Stack.Screen name="tournament/bout/[id]" options={{ headerShown: true, title: t('tn.record') }} />

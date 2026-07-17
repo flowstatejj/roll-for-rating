@@ -7,6 +7,7 @@ import { LeagueDivisionRegister } from '@/components/league-division-register';
 import { LeagueDivisions } from '@/components/league-divisions';
 import { LeagueTeams } from '@/components/league-teams';
 import { LeagueTeamSeason } from '@/components/league-team-season';
+import { LeagueTeamPlayoff } from '@/components/league-team-playoff';
 import { ThemedText } from '@/components/themed-text';
 import { Avatar, BeltChip, Button, Card, EmptyState, Loading, Screen, TextField } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
@@ -299,6 +300,11 @@ export default function LeagueDetailScreen() {
       {/* Team leagues: double round-robin season, scores + team standings. */}
       {isTeamLeague && (
         <LeagueTeamSeason leagueId={league.id} isOrganizer={isOrganizer} onChanged={load} />
+      )}
+
+      {/* Team leagues: season-ending single-elimination playoff bracket. */}
+      {isTeamLeague && (
+        <LeagueTeamPlayoff leagueId={league.id} isOrganizer={isOrganizer} onChanged={load} />
       )}
 
       {/* This week (individual leagues) */}
