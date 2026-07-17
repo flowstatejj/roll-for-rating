@@ -16,6 +16,7 @@ import { supabase } from '@/lib/supabase';
 import {
   addTeamMember,
   assignBoutMat,
+  autoAssignMats,
   autoBalanceTeams,
   completeTournament,
   createTeam,
@@ -63,7 +64,6 @@ export default function TournamentDetailScreen() {
   const [invited, setInvited] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [showAllEntrants, setShowAllEntrants] = useState(false);
 
   const [picker, setPicker] = useState<Picker>(null);
   const [pq, setPq] = useState('');
@@ -173,7 +173,21 @@ export default function TournamentDetailScreen() {
     if (n < 2) { Alert.alert(t('tn.needMoreTitle'), t('tn.needMoreBody')); return; }
     Alert.alert(t('tn.generateTitle'), t('tn.generateBody').replace('{n}', String(n)), [
       { text: t('common.cancel'), style: 'cancel' },
-      { text: t('tn.generate'), onPress: () => act(() => generateTournament(id)) },
+      {
+        text: t('tn.generate'),
+        onPress: () => act(async () => {
+          await generateTournament(id);
+          // Mats are assigned automatically (division-per-mat). Stay silent only
+          // when the RPC doesn't exist yet (out-of-date backend); surface real
+          // failures so "Unassigned" bouts never appear without explanation.
+          await autoAssignMats(id).catch((e: any) => {
+            const sig = `${e?.code ?? ''} ${e?.message ?? ''}`;
+            if (!/PGRST202|42883|auto_assign_mats/i.test(sig)) {
+              Alert.alert(t('md.error'), e?.message ?? t('md.tryAgain'));
+            }
+          });
+        }),
+      },
     ]);
   }
 
@@ -320,42 +334,42 @@ export default function TournamentDetailScreen() {
       {/* Host: divisions builder (belt/age/weight/gender/rating brackets) */}
       {isHost && <TournamentDivisions tournamentId={id} onChanged={load} />}
 
-      {/* Entrants (individual tournaments) — so the host and players can see who's in */}
+      {/* Entrants (individual tournaments): a compact link into the searchable
+          full-list screen, so the event page never becomes a 64-row wall. */}
       {!isTeam && (
-        <>
-          <ThemedText style={styles.section}>{t('tn.entrants')} · {entrants.length}</ThemedText>
-          {entrants.length === 0 ? (
-            <EmptyState icon="people-outline" title={t('tn.noEntrants')} subtitle={isHost ? t('tn.noEntrantsSub') : ''} />
-          ) : (
-            <>
-              <Card style={{ paddingVertical: Spacing.one }}>
-                {(showAllEntrants ? entrants : entrants.slice(0, 8)).map((p, i) => (
-                  <View key={p.id}>
-                    {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
-                    <Pressable onPress={() => router.push(`/user/${p.id}`)} style={styles.prow}>
-                      <Avatar name={p.display_name} size={32} warrior={p.avatar_warrior ?? undefined} color={p.avatar_color ?? undefined} />
-                      <ThemedText style={{ flex: 1, fontWeight: '700' }} numberOfLines={1}>{p.display_name}</ThemedText>
-                      <BeltChip belt={p.belt_rank} size="sm" />
-                    </Pressable>
-                  </View>
-                ))}
-              </Card>
-              {entrants.length > 8 && !showAllEntrants && (
-                <Pressable onPress={() => setShowAllEntrants(true)} style={[styles.showAll, { borderColor: theme.tileBorder }]}>
-                  <ThemedText type="smallBold" themeColor="textSecondary">
-                    {t('tn.showAllEntrants').replace('{n}', String(entrants.length))}
-                  </ThemedText>
-                </Pressable>
-              )}
-            </>
-          )}
-        </>
+        entrants.length === 0 ? (
+          <EmptyState icon="people-outline" title={t('tn.noEntrants')} subtitle={isHost ? t('tn.noEntrantsSub') : ''} />
+        ) : (
+          <Card style={{ padding: 0 }}>
+            <Pressable
+              onPress={() => router.push(`/tournament/entrants/${id}`)}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two, padding: Spacing.three }}>
+              <Ionicons name="people-outline" size={20} color={theme.accent} />
+              <ThemedText style={{ flex: 1, fontWeight: '800' }}>{t('tn.entrants')} · {entrants.length}</ThemedText>
+              <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
+            </Pressable>
+          </Card>
+        )
       )}
 
       {/* Picker panel (set referee / add team member) */}
       {picker && (
         <Card style={{ gap: Spacing.two, borderColor: theme.accent, borderWidth: 1 }}>
           <ThemedText style={{ fontWeight: '800' }}>{picker.mode === 'ref' ? t('tn.pickRef') : t('tn.pickMember')}</ThemedText>
+          {/* People search excludes yourself, so give the host a one-tap way in. */}
+          {picker.mode === 'ref' && (
+            <Button
+              label={t('tn.meAsRef')}
+              icon="person"
+              variant="secondary"
+              loading={busy}
+              onPress={() => {
+                const cur = picker;
+                setPicker(null); setPq(''); setPresults([]);
+                act(() => setMatReferee(cur.matId, userId));
+              }}
+            />
+          )}
           <TextField value={pq} onChangeText={setPq} placeholder={t('mn.searchPlaceholder')} autoCapitalize="none" />
           {presults.slice(0, 8).map((p) => (
             <Pressable key={p.id} onPress={() => pick(p)}>
@@ -424,7 +438,12 @@ export default function TournamentDetailScreen() {
       )}
 
       {/* Mats */}
-      <ThemedText style={styles.section}>{t('tn.mats')} · {mats.length}</ThemedText>
+      <View style={styles.sectionRow}>
+        <ThemedText style={styles.section}>{t('tn.mats')} · {mats.length}</ThemedText>
+        {isHost && generated && tr.status === 'running' && (
+          <Button label={t('tn.autoAssignMats')} variant="secondary" loading={busy} onPress={() => act(() => autoAssignMats(id))} />
+        )}
+      </View>
       {mats.map((m) => (
         <Card key={m.id} style={styles.matRow}>
           <Ionicons name="grid-outline" size={20} color={theme.accent} />
@@ -444,8 +463,19 @@ export default function TournamentDetailScreen() {
       {isHost && !generated && (
         <Button label={t('tn.generate')} icon="shuffle" loading={busy} onPress={confirmGenerate} />
       )}
-      {isHost && generated && tr.format === 'rr_playoff' && !bouts.some((b) => b.bracket === 'playoff') && (
-        <Button label={t('tn.startPlayoff')} icon="trophy" variant="secondary" loading={busy} onPress={() => act(() => generatePlayoff(id, 4))} />
+      {/* Playoff: legacy whole-event rr_playoff only - a division event would seed
+          a cross-division playoff from event-wide standings (kids vs adults). */}
+      {isHost && generated && tr.format === 'rr_playoff' && !hasDivisions && !bouts.some((b) => b.bracket === 'playoff') && (
+        <Button
+          label={t('tn.startPlayoff')}
+          icon="trophy"
+          variant="secondary"
+          loading={busy}
+          onPress={() => act(async () => {
+            await generatePlayoff(id, 4);
+            await autoAssignMats(id).catch(() => {});
+          })}
+        />
       )}
       {isHost && generated && tr.status === 'running' && (
         <Button label={t('tn.completeBtn')} icon="flag" variant="secondary" loading={busy} onPress={confirmComplete} />
@@ -557,5 +587,4 @@ const styles = StyleSheet.create({
   divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.two },
   tag: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 1 },
   divHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one, borderLeftWidth: 3, paddingLeft: Spacing.two, marginTop: Spacing.two },
-  showAll: { alignItems: 'center', paddingVertical: Spacing.two, borderWidth: 1, borderRadius: 10 },
 });
