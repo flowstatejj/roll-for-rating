@@ -99,8 +99,10 @@ end; $$;
 
 -- ---------------------------------------------------------------------------
 -- record_league_team_result - organizer enters a team matchup's final score.
--- (Phase 3 will supersede this with sub-bout-derived scoring.) Winner is derived
--- from the score; a draw is allowed for season play (not for the playoff).
+-- Winner is derived from the score; a draw is allowed for season play.
+-- NOTE: Phase 3 (league-team-subbouts.sql) REDEFINES this same function to add a
+-- guard that refuses once sub-bouts exist. If both files are run, phase 3 wins
+-- (it runs last). Keep the (uuid, int, int) signature identical in both files.
 -- ---------------------------------------------------------------------------
 create or replace function public.record_league_team_result(p_fixture uuid, p_a_score int, p_b_score int)
 returns void language plpgsql security definer set search_path = public as $$
@@ -143,6 +145,9 @@ $$;
 -- ---------------------------------------------------------------------------
 -- league_team_standings - W/D/L + points (league win/draw/loss scheme) from
 -- completed SEASON team fixtures. Byes count as neither win nor loss.
+-- NOTE: Phase 4 (league-team-playoff.sql) REDEFINES this with a deterministic
+-- final tiebreak (draws desc, team_id) so playoff seeding is reproducible. If
+-- both files are run, phase 4 wins (it runs last). Keep the signature identical.
 -- ---------------------------------------------------------------------------
 create or replace function public.league_team_standings(p_league uuid)
 returns table (team_id uuid, name text, played int, wins int, losses int, draws int, points int)

@@ -41,7 +41,10 @@ begin
         -- ARBITRARY user id and bypass profiles RLS (PII oracle if callable);
         -- generate_league_division_week has no organizer gate of its own.
         '_eligibility_check', '_division_eligibility', '_league_division_eligibility',
-        'generate_league_division_week'
+        'generate_league_division_week',
+        -- 2026-07-17: team-league playoff internals (league-team-playoff.sql).
+        -- Both mutate bracket state with no caller gate; must not be client-callable.
+        '_advance_league_playoff', '_gen_league_playoff_bracket'
       )
   loop
     execute format('revoke execute on function %s from public, anon, authenticated', r.sig);

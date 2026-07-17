@@ -203,6 +203,27 @@ export interface LeagueTeamFixture {
   b_score: number;
   winner: 'a' | 'b' | 'draw' | null;
   status: 'pending' | 'done' | 'bye';
+  /** Phase 3: quintet survivor pointers + recorded sub-bout count. */
+  a_idx?: number;
+  b_idx?: number;
+  sub_count?: number;
+  /** Phase 4 (playoff bracket): round number + team seeds. */
+  round_no?: number | null;
+  team_a_seed?: number | null;
+  team_b_seed?: number | null;
+}
+
+/** One member-vs-member match inside a team fixture (Phase 3). */
+export interface LeagueTeamSubbout {
+  id: string;
+  order_no: number;
+  a_user: string | null;
+  b_user: string | null;
+  a_name: string | null;
+  b_name: string | null;
+  winner: 'a' | 'b' | 'draw' | null;
+  result: ResultType | null;
+  sub_category: 'kill' | 'break' | null;
 }
 
 export interface LeagueTeamStanding {

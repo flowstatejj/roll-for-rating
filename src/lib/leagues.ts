@@ -326,10 +326,53 @@ export async function generateTeamSeason(leagueId: string): Promise<{ ok: boolea
   return { ok: !!r.ok, weeks: r.weeks, reason: r.reason };
 }
 
-/** Organizer records a team matchup's final score (Phase 3 will derive it from sub-bouts). */
+/** Organizer records a team matchup's final score directly (quick path; refused once sub-bouts exist). */
 export async function recordTeamResult(fixtureId: string, aScore: number, bScore: number): Promise<void> {
   const { error } = await supabase.rpc('record_league_team_result', { p_fixture: fixtureId, p_a_score: aScore, p_b_score: bScore });
   if (error) throw error;
+}
+
+/**
+ * Organizer records one member-vs-member match of a team fixture. The server
+ * computes the running team score and closes the fixture when it is decided
+ * (Phase 3). Duel = each slot fights once; quintet = winner-stays survivor.
+ */
+export async function recordLeagueTeamSubbout(args: {
+  fixtureId: string;
+  winner: 'a' | 'b' | 'draw';
+  result: import('./types').ResultType;
+  subCategory?: 'kill' | 'break' | null;
+}): Promise<void> {
+  const { error } = await supabase.rpc('record_league_team_subbout', {
+    p_fixture: args.fixtureId,
+    p_winner: args.winner,
+    p_result: args.result,
+    p_sub_category: args.subCategory ?? null,
+  });
+  if (error) throw error;
+}
+
+/** Organizer clears a matchup's sub-bouts + score so it can be re-run. */
+export async function resetTeamMatchup(fixtureId: string): Promise<void> {
+  const { error } = await supabase.rpc('reset_league_team_matchup', { p_fixture: fixtureId });
+  if (error) throw error;
+}
+
+/** The member-vs-member matches already recorded for a fixture (in order). */
+export async function fetchTeamSubbouts(fixtureId: string): Promise<import('./types').LeagueTeamSubbout[]> {
+  const { data, error } = await supabase.rpc('league_team_subbouts_list', { p_fixture: fixtureId });
+  if (error) throw error;
+  return ((data ?? []) as any[]).map((s) => ({
+    id: s.id,
+    order_no: Number(s.order_no),
+    a_user: s.a_user ?? null,
+    b_user: s.b_user ?? null,
+    a_name: s.a_name ?? null,
+    b_name: s.b_name ?? null,
+    winner: (s.winner ?? null) as 'a' | 'b' | 'draw' | null,
+    result: (s.result ?? null) as import('./types').ResultType | null,
+    sub_category: (s.sub_category ?? null) as 'kill' | 'break' | null,
+  }));
 }
 
 /** Season fixtures (optionally one week). */
@@ -348,6 +391,44 @@ export async function fetchTeamFixtures(leagueId: string, week?: number): Promis
     b_score: Number(f.b_score ?? 0),
     winner: (f.winner ?? null) as 'a' | 'b' | 'draw' | null,
     status: (f.status ?? 'pending') as 'pending' | 'done' | 'bye',
+    a_idx: f.a_idx == null ? undefined : Number(f.a_idx),
+    b_idx: f.b_idx == null ? undefined : Number(f.b_idx),
+    sub_count: f.sub_count == null ? undefined : Number(f.sub_count),
+  }));
+}
+
+// --- League team playoff (Phase 4): season -> single-elim bracket -----------
+
+/** Organizer seeds the top N teams (by standings) into a single-elim playoff. */
+export async function generateTeamPlayoff(leagueId: string, top = 8): Promise<{ ok: boolean; teams?: number; rounds?: number; reason?: string }> {
+  const { data, error } = await supabase.rpc('generate_league_team_playoff', { p_league: leagueId, p_top: top });
+  if (error) throw error;
+  const r = (data ?? {}) as { ok?: boolean; teams?: number; rounds?: number; reason?: string };
+  return { ok: !!r.ok, teams: r.teams, rounds: r.rounds, reason: r.reason };
+}
+
+/** The playoff bracket fixtures (with round + seeds), ordered by round. */
+export async function fetchTeamPlayoff(leagueId: string): Promise<LeagueTeamFixture[]> {
+  const { data, error } = await supabase.rpc('league_team_playoff_list', { p_league: leagueId });
+  if (error) throw error;
+  return ((data ?? []) as any[]).map((f) => ({
+    id: f.id,
+    week_no: Number(f.week_no ?? 0),
+    round_no: f.round_no == null ? undefined : Number(f.round_no),
+    bracket: 'playoff' as const,
+    team_a: f.team_a ?? null,
+    team_b: f.team_b ?? null,
+    team_a_name: f.team_a_name ?? null,
+    team_b_name: f.team_b_name ?? null,
+    team_a_seed: f.team_a_seed == null ? null : Number(f.team_a_seed),
+    team_b_seed: f.team_b_seed == null ? null : Number(f.team_b_seed),
+    a_score: Number(f.a_score ?? 0),
+    b_score: Number(f.b_score ?? 0),
+    winner: (f.winner ?? null) as 'a' | 'b' | 'draw' | null,
+    status: (f.status ?? 'pending') as 'pending' | 'done' | 'bye',
+    a_idx: f.a_idx == null ? undefined : Number(f.a_idx),
+    b_idx: f.b_idx == null ? undefined : Number(f.b_idx),
+    sub_count: f.sub_count == null ? undefined : Number(f.sub_count),
   }));
 }
 

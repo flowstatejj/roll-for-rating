@@ -1,22 +1,24 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useCallback, useEffect, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Button, Card, EmptyState, TextField } from '@/components/ui/kit';
+import { Button, Card, EmptyState } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useTranslation } from '@/lib/i18n';
-import { fetchTeamFixtures, fetchTeamStandings, generateTeamSeason, recordTeamResult } from '@/lib/leagues';
+import { fetchTeamFixtures, fetchTeamStandings, generateTeamSeason } from '@/lib/leagues';
 import type { LeagueTeamFixture, LeagueTeamStanding } from '@/lib/types';
 
 /**
  * Team-league season surface: generate the double round-robin, browse weekly
- * team fixtures, record each matchup's score (organizer), and rank teams.
- * Phase 2 records a direct team score; Phase 3 will derive it from sub-bouts.
+ * team fixtures, and rank teams. Recording a matchup opens the member-vs-member
+ * runner (Phase 3), which computes the team score.
  */
 export function LeagueTeamSeason({ leagueId, isOrganizer, onChanged }: { leagueId: string; isOrganizer: boolean; onChanged?: () => void }) {
   const theme = useTheme();
+  const router = useRouter();
   const { t } = useTranslation();
 
   const [fixtures, setFixtures] = useState<LeagueTeamFixture[]>([]);
@@ -24,9 +26,6 @@ export function LeagueTeamSeason({ leagueId, isOrganizer, onChanged }: { leagueI
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [scoringId, setScoringId] = useState<string | null>(null);
-  const [aScore, setAScore] = useState('');
-  const [bScore, setBScore] = useState('');
 
   const reload = useCallback(async () => {
     try {
@@ -42,9 +41,10 @@ export function LeagueTeamSeason({ leagueId, isOrganizer, onChanged }: { leagueI
     }
   }, [leagueId]);
 
-  useEffect(() => {
+  // Reload on focus so scores recorded in the matchup runner show on return.
+  useFocusEffect(useCallback(() => {
     reload();
-  }, [reload]);
+  }, [reload]));
 
   async function act(fn: () => Promise<unknown>) {
     if (busy) return;
@@ -71,28 +71,6 @@ export function LeagueTeamSeason({ leagueId, isOrganizer, onChanged }: { leagueI
         }),
       },
     ]);
-  }
-
-  function openScore(f: LeagueTeamFixture) {
-    setScoringId(f.id);
-    // f.a_score/b_score are always numbers; render a real 0 as "0", not blank.
-    setAScore(f.status === 'done' ? String(f.a_score) : '');
-    setBScore(f.status === 'done' ? String(f.b_score) : '');
-  }
-
-  async function saveScore(f: LeagueTeamFixture) {
-    const a = parseInt(aScore, 10);
-    const b = parseInt(bScore, 10);
-    if (!Number.isFinite(a) || !Number.isFinite(b) || a < 0 || b < 0) {
-      Alert.alert(t('lt.enterScores'));
-      return;
-    }
-    // Close the editor only after a successful save, so a failure keeps the row
-    // open with the typed scores.
-    await act(async () => {
-      await recordTeamResult(f.id, a, b);
-      setScoringId(null);
-    });
   }
 
   if (loading) return null;
@@ -159,7 +137,9 @@ export function LeagueTeamSeason({ leagueId, isOrganizer, onChanged }: { leagueI
         <View key={wk} style={{ gap: Spacing.one }}>
           <ThemedText type="smallBold" themeColor="textSecondary">{t('le.week')} {wk}</ThemedText>
           <Card style={{ paddingVertical: Spacing.one }}>
-            {fixtures.filter((f) => f.week_no === wk).map((f, i) => (
+            {fixtures.filter((f) => f.week_no === wk).map((f, i) => {
+              const inProgress = f.status === 'pending' && (f.sub_count ?? 0) > 0;
+              return (
               <View key={f.id}>
                 {i > 0 && <View style={[styles.divider, { backgroundColor: theme.tileBorder }]} />}
                 <View style={{ paddingVertical: Spacing.two, gap: Spacing.one }}>
@@ -169,36 +149,22 @@ export function LeagueTeamSeason({ leagueId, isOrganizer, onChanged }: { leagueI
                         ? `${f.team_a_name ?? '?'} · ${t('le.byeShort')}`
                         : `${f.team_a_name ?? '?'} ${t('le.vs')} ${f.team_b_name ?? '?'}`}
                     </ThemedText>
-                    {f.status === 'done' && (
+                    {(f.status === 'done' || inProgress) && (
                       <ThemedText style={{ fontWeight: '800' }}>{f.a_score}-{f.b_score}</ThemedText>
                     )}
                     {f.status === 'done' && <Ionicons name="checkmark-circle" size={18} color={theme.success} />}
-                    {isOrganizer && f.status !== 'bye' && scoringId !== f.id && (
-                      <Button label={f.status === 'done' ? t('lt.edit') : t('lt.record')} variant={f.status === 'done' ? 'ghost' : 'secondary'} onPress={() => openScore(f)} />
+                    {inProgress && <Ionicons name="ellipse" size={10} color={theme.accent} />}
+                    {f.status !== 'bye' && (
+                      <Button
+                        label={f.status === 'done' ? (isOrganizer ? t('lt.edit') : t('lt.view')) : !isOrganizer ? t('lt.view') : inProgress ? t('lt.continue') : t('lt.record')}
+                        variant={f.status === 'done' ? 'ghost' : 'secondary'}
+                        onPress={() => router.push(`/league/matchup/${f.id}`)}
+                      />
                     )}
                   </View>
-
-                  {scoringId === f.id && (
-                    <View style={{ gap: Spacing.two }}>
-                      <View style={styles.scoreRow}>
-                        <View style={{ flex: 1 }}>
-                          <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>{f.team_a_name}</ThemedText>
-                          <TextField value={aScore} onChangeText={setAScore} keyboardType="number-pad" placeholder="0" />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                          <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>{f.team_b_name}</ThemedText>
-                          <TextField value={bScore} onChangeText={setBScore} keyboardType="number-pad" placeholder="0" />
-                        </View>
-                      </View>
-                      <View style={styles.scoreRow}>
-                        <View style={{ flex: 1 }}><Button label={t('common.cancel')} variant="ghost" onPress={() => setScoringId(null)} /></View>
-                        <View style={{ flex: 1 }}><Button label={t('lt.save')} icon="checkmark" loading={busy} onPress={() => saveScore(f)} /></View>
-                      </View>
-                    </View>
-                  )}
                 </View>
               </View>
-            ))}
+            ); })}
           </Card>
         </View>
       ))}
@@ -211,5 +177,4 @@ const styles = StyleSheet.create({
   divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.two },
   standRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.two, paddingHorizontal: Spacing.two },
   rank: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-  scoreRow: { flexDirection: 'row', gap: Spacing.two },
 });
