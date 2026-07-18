@@ -79,6 +79,12 @@ begin
   select league_id into lid from public.league_teams where id = p_team;
   if lid is null then raise exception 'Team not found'; end if;
   if not public.is_league_organizer(lid) then raise exception 'Only the organizer can delete a team'; end if;
+  -- A team's fixtures reference it ON DELETE CASCADE, so deleting a team once a
+  -- season/playoff exists would silently erase played results + bracket nodes and
+  -- rewrite everyone's standings. Refuse; the schedule must be cleared first.
+  if exists (select 1 from public.league_team_fixtures f where f.team_a = p_team or f.team_b = p_team) then
+    raise exception 'Cannot delete a team that already has fixtures; clear the season/playoff first';
+  end if;
   delete from public.league_teams where id = p_team;
 end; $$;
 
@@ -96,6 +102,17 @@ begin
   where lt.id = p_team;
   if lid is null then raise exception 'Team not found'; end if;
   if not public.is_league_organizer(lid) then raise exception 'Only the organizer can add members'; end if;
+  -- Freeze the roster while a matchup is being scored: the sub-bout engine indexes
+  -- into a slot-ordered roster array rebuilt per call, so mutating it mid-matchup
+  -- would skip a live fighter or record against the wrong athlete.
+  if exists (
+    select 1 from public.league_team_fixtures f
+    where (f.team_a = p_team or f.team_b = p_team) and f.status = 'pending'
+      and (f.a_idx > 1 or f.b_idx > 1
+           or exists (select 1 from public.league_team_subbouts s where s.fixture_id = f.id))
+  ) then
+    raise exception 'Cannot change the roster while a matchup is being scored; finish or reset it first';
+  end if;
 
   -- A player is on at most one team in a league (mirrors one-division-per-league).
   if exists (
@@ -128,6 +145,15 @@ begin
   select league_id into lid from public.league_teams where id = p_team;
   if lid is null then raise exception 'Team not found'; end if;
   if not public.is_league_organizer(lid) then raise exception 'Only the organizer can remove members'; end if;
+  -- Same roster freeze as add_league_team_member (see the note there).
+  if exists (
+    select 1 from public.league_team_fixtures f
+    where (f.team_a = p_team or f.team_b = p_team) and f.status = 'pending'
+      and (f.a_idx > 1 or f.b_idx > 1
+           or exists (select 1 from public.league_team_subbouts s where s.fixture_id = f.id))
+  ) then
+    raise exception 'Cannot change the roster while a matchup is being scored; finish or reset it first';
+  end if;
   delete from public.league_team_members where team_id = p_team and user_id = p_user;
 end; $$;
 

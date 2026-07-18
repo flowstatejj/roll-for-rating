@@ -89,16 +89,14 @@ drop policy if exists "ld_entrants_read" on public.league_division_entrants;
 create policy "ld_entrants_read" on public.league_division_entrants for select to authenticated using (true);
 
 -- ---------------------------------------------------------------------------
--- is_league_organizer - small helper (no equivalent existed; leagues.sql checks
--- created_by inline). Used by the RPCs below.
--- ---------------------------------------------------------------------------
--- Param name MUST stay p_lid to match league-invites.sql's definition (create
--- or replace cannot rename an input parameter; the two files both own this fn).
-create or replace function public.is_league_organizer(p_lid uuid)
-returns boolean language sql stable security definer set search_path = public as $$
-  select exists (select 1 from public.leagues where id = p_lid and created_by = auth.uid());
-$$;
-
+-- is_league_organizer - DEFINITION MOVED OUT (2026-07-18 audit). It is now owned
+-- by leagues-hardening.sql (byte-identical to league-invites.sql): creator OR a
+-- member promoted to role='organizer'. This file previously redefined it as
+-- creator-only, which - depending on file load order - silently locked promoted
+-- organizers out of every organizer RPC. Do NOT re-add a definition here; both
+-- files run before this one, so the helper already exists when the RPCs below
+-- are created (plpgsql is late-bound). The grant near the end of this file is
+-- harmless (the function exists from the other files).
 -- ---------------------------------------------------------------------------
 -- create_league_division - organizer only. Mirrors create_division minus the
 -- bracket `format` (leagues are weekly round-robin) plus optional per-division
@@ -252,6 +250,21 @@ begin
   select * into d from public.league_divisions where id = p_division;
   if not found then return jsonb_build_object('ok', false, 'reason', 'not_found'); end if;
   wk := public.current_league_week(d.league_id);
+  -- Serialize per league so two concurrent self-registrations into DIFFERENT
+  -- divisions of the same league can't both pass the one-division-per-league
+  -- check below (TOCTOU) and double-enter the member.
+  perform 1 from public.leagues where id = d.league_id for update;
+
+  -- A PRIVATE league is not self-joinable via this SECURITY DEFINER path (it
+  -- bypasses RLS): require the caller to already be a member or hold an invite,
+  -- mirroring the league_members RLS + join_league_by_code / respond_league_invite
+  -- gates. (Legitimate registrants are already members, so this never blocks them.)
+  if (select visibility from public.leagues where id = d.league_id) = 'private'
+     and not exists (select 1 from public.league_members m where m.league_id = d.league_id and m.user_id = uid)
+     and not exists (select 1 from public.league_invites li where li.league_id = d.league_id and li.invited_user = uid)
+  then
+    return jsonb_build_object('ok', false, 'reason', 'private_league');
+  end if;
 
   -- Fill in missing profile data only (never overwrite an existing value with null).
   if p_weight_lbs is not null then

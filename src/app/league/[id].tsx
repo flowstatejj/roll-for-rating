@@ -209,7 +209,10 @@ export default function LeagueDetailScreen() {
 
       {/* Membership actions */}
       {!isMember ? (
-        !invited && (
+        // Direct join is only for OPEN leagues; private leagues join via the
+        // invite accept card (above) or a join code, so don't render a button
+        // that RLS would reject.
+        !invited && league.visibility === 'open' && (
           <>
             <Button label={t('le.joinLeague')} icon="add-circle" loading={busy} onPress={() => act(() => joinLeague(userId, league.id))} />
             <ThemedText type="small" themeColor="textSecondary" style={{ textAlign: 'center' }}>{t('le.notMember')}</ThemedText>

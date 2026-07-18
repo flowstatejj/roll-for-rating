@@ -8,7 +8,7 @@ import { Button, Card, EmptyState } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useTranslation } from '@/lib/i18n';
-import { fetchTeamFixtures, fetchTeamPlayoff, generateTeamPlayoff } from '@/lib/leagues';
+import { deleteTeamPlayoff, fetchTeamFixtures, fetchTeamPlayoff, generateTeamPlayoff } from '@/lib/leagues';
 import type { LeagueTeamFixture } from '@/lib/types';
 
 /**
@@ -69,10 +69,19 @@ export function LeagueTeamPlayoff({ leagueId, isOrganizer, onChanged }: { league
       {
         text: t('lt.generatePlayoff'),
         onPress: () => act(async () => {
-          const r = await generateTeamPlayoff(leagueId, 8);
+          // Seeding an incomplete season is deliberate here (the organizer just
+          // confirmed the "incomplete" prompt), so force past the season-done gate.
+          const r = await generateTeamPlayoff(leagueId, 8, !seasonComplete);
           if (!r.ok) throw new Error(r.reason === 'need_2_teams' ? t('lt.need2Teams') : t('md.tryAgain'));
         }),
       },
+    ]);
+  }
+
+  function confirmResetBracket() {
+    Alert.alert(t('lt.resetBracketTitle'), t('lt.resetBracketBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('lt.reset'), style: 'destructive', onPress: () => act(() => deleteTeamPlayoff(leagueId)) },
     ]);
   }
 
@@ -178,6 +187,11 @@ export function LeagueTeamPlayoff({ leagueId, isOrganizer, onChanged }: { league
               </Card>
             </View>
           ))}
+          {/* Let the organizer redo a bracket generated at the wrong time, but
+              only before any matchup has been played. */}
+          {isOrganizer && !bracket.some((f) => f.status === 'done') && (
+            <Button label={t('lt.resetBracket')} variant="ghost" icon="refresh" loading={busy} onPress={confirmResetBracket} />
+          )}
         </>
       )}
     </>
