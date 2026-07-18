@@ -108,7 +108,10 @@ begin
     update public.league_team_fixtures
        set a_idx = f.a_idx, b_idx = f.b_idx, a_score = f.a_score, b_score = f.b_score
      where id = p_fixture;
-    if (f.a_idx > sz) or (f.b_idx > sz) then
+    -- Decide against the SHORTER of nominal team_size and actual roster length
+    -- (like the quintet branch) so an under-strength duel roster never stalls;
+    -- unfillable slots simply play no bout.
+    if (f.a_idx > least(sz, alen)) or (f.b_idx > least(sz, blen)) then
       decided := true;
       team_win := case when f.a_score > f.b_score then 'a' when f.b_score > f.a_score then 'b' else 'draw' end;
     end if;
@@ -132,7 +135,7 @@ end; $$;
 -- ---------------------------------------------------------------------------
 create or replace function public.reset_league_team_matchup(p_fixture uuid)
 returns void language plpgsql security definer set search_path = public as $$
-declare f public.league_team_fixtures; nstat text;
+declare f public.league_team_fixtures; nstat text; naidx int; nbidx int;
 begin
   select * into f from public.league_team_fixtures where id = p_fixture for update;
   if not found then raise exception 'Fixture not found'; end if;
@@ -141,9 +144,13 @@ begin
 
   -- Playoff: undo the advance into the next round before clearing this result.
   if f.bracket = 'playoff' and f.next_fixture_id is not null then
-    select status into nstat from public.league_team_fixtures where id = f.next_fixture_id for update;
-    if nstat = 'done' then
-      raise exception 'The next round has already been played; reset that matchup first';
+    select status, a_idx, b_idx into nstat, naidx, nbidx
+      from public.league_team_fixtures where id = f.next_fixture_id for update;
+    -- Refuse if the next round has BEGUN (done, pointers advanced, or any sub-bout
+    -- recorded) - un-advancing then would corrupt a live/finished downstream matchup.
+    if nstat = 'done' or coalesce(naidx, 1) > 1 or coalesce(nbidx, 1) > 1
+       or exists (select 1 from public.league_team_subbouts s where s.fixture_id = f.next_fixture_id) then
+      raise exception 'The next round has already begun; reset that matchup first';
     end if;
     -- This fixture only ever feeds its own next_slot, so clearing it is safe.
     if f.next_slot = 'a' then
@@ -217,6 +224,13 @@ begin
   if not found then raise exception 'Fixture not found'; end if;
   if not public.is_league_organizer(f.league_id) then raise exception 'Only the organizer can record results'; end if;
   if f.status = 'bye' then raise exception 'A bye has no result'; end if;
+  -- A finished PLAYOFF fixture must not be re-scored directly (it would re-run
+  -- _advance_league_playoff and stomp an already-played next round); force
+  -- corrections through reset_league_team_matchup, which un-advances safely.
+  -- Season fixtures may still be corrected in place.
+  if f.status = 'done' and f.bracket = 'playoff' then
+    raise exception 'This playoff matchup is finished; reset it to change the result';
+  end if;
   if f.team_a is null or f.team_b is null then raise exception 'Both teams are required'; end if;
   if p_a_score < 0 or p_b_score < 0 then raise exception 'Scores must be >= 0'; end if;
   if exists (select 1 from public.league_team_subbouts where fixture_id = p_fixture) then

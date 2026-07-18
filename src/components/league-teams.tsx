@@ -12,6 +12,7 @@ import {
   createLeagueTeam,
   deleteLeagueTeam,
   fetchLeagueTeams,
+  fetchTeamFixtures,
   removeLeagueTeamMember,
 } from '@/lib/leagues';
 import { searchProfiles } from '@/lib/matches';
@@ -45,10 +46,15 @@ export function LeagueTeams({
   const [addingTo, setAddingTo] = useState<string | null>(null);
   const [q, setQ] = useState('');
   const [results, setResults] = useState<Profile[]>([]);
+  // Once a season is generated, a team can no longer be deleted (its fixtures
+  // reference it and the server refuses), so hide the delete affordance.
+  const [hasSeason, setHasSeason] = useState(false);
 
   const reload = useCallback(async () => {
     try {
-      setTeams(await fetchLeagueTeams(leagueId));
+      const [tms, fixtures] = await Promise.all([fetchLeagueTeams(leagueId), fetchTeamFixtures(leagueId)]);
+      setTeams(tms);
+      setHasSeason(fixtures.length > 0);
     } catch (e) {
       console.warn('league teams load failed', e);
     }
@@ -127,7 +133,7 @@ export function LeagueTeams({
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
               <ThemedText style={{ flex: 1, fontWeight: '800' }} numberOfLines={1}>{team.name}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">{team.members.length}/{teamSize}</ThemedText>
-              {!readOnly && (
+              {!readOnly && !hasSeason && (
                 <Pressable onPress={() => confirmDeleteTeam(team)} hitSlop={8} style={{ padding: Spacing.one }}>
                   <Ionicons name="trash-outline" size={18} color={theme.danger} />
                 </Pressable>

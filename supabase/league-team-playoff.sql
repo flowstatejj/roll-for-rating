@@ -162,7 +162,11 @@ $$;
 -- standings) into the bracket. Idempotent (returns 'already' if a playoff
 -- exists). p_top defaults to 8; clamped to at least 2 and the teams available.
 -- ---------------------------------------------------------------------------
-create or replace function public.generate_league_team_playoff(p_league uuid, p_top int default 8)
+-- p_force lets the organizer seed from partial standings on purpose (the app
+-- confirms first); otherwise a finished season is required so seeds aren't
+-- effectively random (all-zero standings order by team_id).
+drop function if exists public.generate_league_team_playoff(uuid, int);
+create or replace function public.generate_league_team_playoff(p_league uuid, p_top int default 8, p_force boolean default false)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare ids uuid[]; k int; i int; sz int; rnds int;
 begin
@@ -173,6 +177,15 @@ begin
   end if;
   if exists (select 1 from public.league_team_fixtures where league_id = p_league and bracket = 'playoff') then
     return jsonb_build_object('ok', true, 'reason', 'already');
+  end if;
+  if not p_force then
+    if not exists (select 1 from public.league_team_fixtures where league_id = p_league and bracket = 'season') then
+      return jsonb_build_object('ok', false, 'reason', 'no_season');
+    end if;
+    if exists (select 1 from public.league_team_fixtures
+               where league_id = p_league and bracket = 'season' and status = 'pending') then
+      return jsonb_build_object('ok', false, 'reason', 'season_incomplete');
+    end if;
   end if;
 
   -- Seed by final season standings (deterministic order); take the top N. The
@@ -229,7 +242,25 @@ $$;
 revoke execute on function public._advance_league_playoff(uuid) from public, anon, authenticated;
 revoke execute on function public._gen_league_playoff_bracket(uuid, uuid[]) from public, anon, authenticated;
 
-grant execute on function public.generate_league_team_playoff(uuid, int) to authenticated;
+-- ---------------------------------------------------------------------------
+-- delete_league_team_playoff - organizer tears down the bracket (e.g. it was
+-- generated at the wrong time) and clears the stamped seeds. Refuses once any
+-- playoff matchup has been played, so a live bracket can't be wiped.
+-- ---------------------------------------------------------------------------
+create or replace function public.delete_league_team_playoff(p_league uuid)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_league_organizer(p_league) then raise exception 'Only the organizer can reset the playoff'; end if;
+  if exists (select 1 from public.league_team_fixtures
+             where league_id = p_league and bracket = 'playoff' and status = 'done') then
+    raise exception 'A playoff matchup has already been played; the bracket cannot be reset';
+  end if;
+  delete from public.league_team_fixtures where league_id = p_league and bracket = 'playoff';
+  update public.league_teams set seed = null where league_id = p_league;
+end; $$;
+
+grant execute on function public.generate_league_team_playoff(uuid, int, boolean) to authenticated;
+grant execute on function public.delete_league_team_playoff(uuid) to authenticated;
 grant execute on function public.league_team_playoff_list(uuid) to authenticated;
 
 notify pgrst, 'reload schema';

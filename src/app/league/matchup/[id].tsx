@@ -161,7 +161,7 @@ export default function LeagueMatchupScreen() {
     <Screen>
       <Stack.Screen options={{ title: t('lt.matchup') }} />
 
-      {!done && rostersFull && <MatchTimer matchId={`ltf:${id}`} canControl />}
+      {!done && rostersFull && <MatchTimer matchId={`ltf:${id}`} canControl={isOrganizer} />}
 
       <Card style={{ gap: Spacing.one }}>
         <ThemedText style={{ fontWeight: '800', fontSize: 18 }}>{aName} {t('le.vs')} {bName}</ThemedText>
@@ -225,7 +225,12 @@ export default function LeagueMatchupScreen() {
       ) : !rostersFull ? (
         <Card style={{ gap: Spacing.two }}>
           <ThemedText type="small" themeColor="textSecondary">{t('lt.rosterNeeded')}</ThemedText>
-          <Button label={t('lt.quickScore')} variant="secondary" onPress={() => setQuick(true)} />
+          {subbouts.length > 0 ? (
+            // Quick score would be refused once sub-bouts exist; offer Reset instead.
+            <Button label={t('lt.reset')} variant="secondary" icon="refresh" loading={busy} onPress={confirmReset} />
+          ) : (
+            <Button label={t('lt.quickScore')} variant="secondary" onPress={() => setQuick(true)} />
+          )}
         </Card>
       ) : (
         <Card style={{ gap: Spacing.three }}>

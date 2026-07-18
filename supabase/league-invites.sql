@@ -70,8 +70,8 @@ begin
     where league_id = p_lid and invited_user = auth.uid() and status = 'pending';
   if not found then raise exception 'No pending invite for this league.'; end if;
   if p_accept then
-    insert into public.league_members (league_id, user_id, role, active)
-    values (p_lid, auth.uid(), 'member', true)
+    insert into public.league_members (league_id, user_id, role, active, joined_week)
+    values (p_lid, auth.uid(), 'member', true, public.current_league_week(p_lid))
     on conflict (league_id, user_id) do update set active = true;
   end if;
 end; $$;

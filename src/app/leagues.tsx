@@ -246,13 +246,16 @@ export default function LeaguesScreen() {
             </View>
           </Field>
 
-          <View style={styles.switchRow}>
-            <View style={{ flex: 1 }}>
-              <ThemedText style={{ fontWeight: '700' }}>{t('le.ranked')}</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">{t('le.rankedHint')}</ThemedText>
+          {/* Team formats never create rated 1v1 matches, so Ranked is a no-op there. */}
+          {format === 'individuals' && (
+            <View style={styles.switchRow}>
+              <View style={{ flex: 1 }}>
+                <ThemedText style={{ fontWeight: '700' }}>{t('le.ranked')}</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">{t('le.rankedHint')}</ThemedText>
+              </View>
+              <Switch value={ranked} onValueChange={setRanked} trackColor={{ true: theme.accent }} />
             </View>
-            <Switch value={ranked} onValueChange={setRanked} trackColor={{ true: theme.accent }} />
-          </View>
+          )}
 
           <Field label={t('le.visibility')}>
             <View style={styles.chips}>
@@ -272,7 +275,10 @@ export default function LeaguesScreen() {
 
           <View style={{ flexDirection: 'row', gap: Spacing.two }}>
             <View style={{ flex: 1 }}><TextField label={t('le.meetTime')} value={meetTime} onChangeText={setMeetTime} placeholder={t('le.meetTimePh')} /></View>
-            <View style={{ width: 120 }}><TextField label={t('le.weeks')} value={weeks} onChangeText={setWeeks} keyboardType="number-pad" /></View>
+            {/* Weeks is derived from the number of teams for a team-format season. */}
+            {format === 'individuals' && (
+              <View style={{ width: 120 }}><TextField label={t('le.weeks')} value={weeks} onChangeText={setWeeks} keyboardType="number-pad" /></View>
+            )}
           </View>
           <TextField label={t('le.location')} value={location} onChangeText={setLocation} placeholder={t('le.locationPh')} />
           <TextField label={t('le.city')} value={city} onChangeText={setCity} autoCapitalize="words" />
@@ -310,11 +316,17 @@ export default function LeaguesScreen() {
                 </View>
               </Field>
               <ThemedText type="small" themeColor="textSecondary">{t('le.scoreHint')}</ThemedText>
-              <View style={{ flexDirection: 'row', gap: Spacing.two }}>
-                <View style={{ flex: 1 }}><TextField label={t('le.killBonus')} value={killBonus} onChangeText={setKillBonus} keyboardType="numbers-and-punctuation" /></View>
-                <View style={{ flex: 1 }}><TextField label={t('le.breakBonus')} value={breakBonus} onChangeText={setBreakBonus} keyboardType="numbers-and-punctuation" /></View>
-              </View>
-              <ThemedText type="small" themeColor="textSecondary">{t('le.subBonusHint')}</ThemedText>
+              {/* Submission bonuses apply per individual bout; team standings score
+                  by win/draw/loss only, so hide them for team formats. */}
+              {format === 'individuals' && (
+                <>
+                  <View style={{ flexDirection: 'row', gap: Spacing.two }}>
+                    <View style={{ flex: 1 }}><TextField label={t('le.killBonus')} value={killBonus} onChangeText={setKillBonus} keyboardType="numbers-and-punctuation" /></View>
+                    <View style={{ flex: 1 }}><TextField label={t('le.breakBonus')} value={breakBonus} onChangeText={setBreakBonus} keyboardType="numbers-and-punctuation" /></View>
+                  </View>
+                  <ThemedText type="small" themeColor="textSecondary">{t('le.subBonusHint')}</ThemedText>
+                </>
+              )}
             </>
           )}
 

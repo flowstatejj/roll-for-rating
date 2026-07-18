@@ -123,6 +123,10 @@ end; $$;
 
 -- ---------------------------------------------------------------------------
 -- Fixtures for a week (or the whole season if p_week is null), with team names.
+-- NOTE: Phase 3 (league-team-subbouts.sql) REDEFINES this function to add
+-- a_idx/b_idx/sub_count to the payload (the season screen's in-progress display
+-- depends on them). If you re-run THIS file, you MUST re-run league-team-
+-- subbouts.sql afterward or the in-progress display silently breaks.
 -- ---------------------------------------------------------------------------
 create or replace function public.league_team_fixtures_list(p_league uuid, p_week int default null)
 returns jsonb language sql stable security definer set search_path = public as $$

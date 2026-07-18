@@ -399,12 +399,22 @@ export async function fetchTeamFixtures(leagueId: string, week?: number): Promis
 
 // --- League team playoff (Phase 4): season -> single-elim bracket -----------
 
-/** Organizer seeds the top N teams (by standings) into a single-elim playoff. */
-export async function generateTeamPlayoff(leagueId: string, top = 8): Promise<{ ok: boolean; teams?: number; rounds?: number; reason?: string }> {
-  const { data, error } = await supabase.rpc('generate_league_team_playoff', { p_league: leagueId, p_top: top });
+/**
+ * Organizer seeds the top N teams (by standings) into a single-elim playoff.
+ * By default the season must be complete; pass force to seed from partial
+ * standings on purpose (the UI confirms first).
+ */
+export async function generateTeamPlayoff(leagueId: string, top = 8, force = false): Promise<{ ok: boolean; teams?: number; rounds?: number; reason?: string }> {
+  const { data, error } = await supabase.rpc('generate_league_team_playoff', { p_league: leagueId, p_top: top, p_force: force });
   if (error) throw error;
   const r = (data ?? {}) as { ok?: boolean; teams?: number; rounds?: number; reason?: string };
   return { ok: !!r.ok, teams: r.teams, rounds: r.rounds, reason: r.reason };
+}
+
+/** Organizer tears down the playoff bracket (refused once a matchup was played). */
+export async function deleteTeamPlayoff(leagueId: string): Promise<void> {
+  const { error } = await supabase.rpc('delete_league_team_playoff', { p_league: leagueId });
+  if (error) throw error;
 }
 
 /** The playoff bracket fixtures (with round + seeds), ordered by round. */
