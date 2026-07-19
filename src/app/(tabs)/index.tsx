@@ -93,7 +93,9 @@ export default function HomeScreen() {
       // waived result logged: the other competitor needs to confirm it
       (m.status === 'pending_confirmation' && isCompetitor(m) && m.result_proposed_by !== userId),
   );
-  const recent = matches.slice(0, 5);
+  // Recent shows MY games - a match I only refereed isn't mine (it lives on
+  // Matches > Reffing), so it shouldn't fill my home feed.
+  const recent = matches.filter(isCompetitor).slice(0, 5);
   const total = profile.wins + profile.losses + profile.draws;
   const winRate = total > 0 ? Math.round((profile.wins / total) * 100) : 0;
   const drawRate = total > 0 ? Math.round((profile.draws / total) * 100) : 0;
