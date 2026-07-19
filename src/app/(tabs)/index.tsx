@@ -86,8 +86,10 @@ export default function HomeScreen() {
   const needsMe = matches.filter(
     (m) =>
       (m.status === 'pending_opponent' && m.opponent_id === userId) ||
-      // reffed: I'm the referee; waived: either competitor can log it
-      (m.status === 'pending_referee' && (m.referee_waived ? isCompetitor(m) : m.referee_id === userId)) ||
+      // Only my OWN matches surface on home: a waived match a competitor must
+      // log. Officiating duty (I'm the assigned referee) is decluttered off home
+      // and lives on the Matches > Reffing filter instead.
+      (m.status === 'pending_referee' && m.referee_waived && isCompetitor(m)) ||
       // waived result logged: the other competitor needs to confirm it
       (m.status === 'pending_confirmation' && isCompetitor(m) && m.result_proposed_by !== userId),
   );
