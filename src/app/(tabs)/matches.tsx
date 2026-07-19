@@ -13,11 +13,12 @@ import { fetchMyMatches } from '@/lib/matches';
 import { supabase } from '@/lib/supabase';
 import type { MatchWithPeople } from '@/lib/types';
 
-type Filter = 'all' | 'active' | 'completed';
+type Filter = 'all' | 'active' | 'completed' | 'reffing';
 const FILTERS: { key: Filter; tkey: string }[] = [
   { key: 'all', tkey: 'matches.filterAll' },
   { key: 'active', tkey: 'matches.filterActive' },
   { key: 'completed', tkey: 'matches.filterCompleted' },
+  { key: 'reffing', tkey: 'matches.filterReffing' },
 ];
 
 const HISTORY_STATUSES = new Set(['completed', 'declined', 'cancelled']);
@@ -80,16 +81,34 @@ export default function MatchesScreen() {
     return false;
   }
 
+  // Matches I'm OFFICIATING (referee, not a competitor). These live only under
+  // the "Reffing" filter so they don't clutter the competitor views (or home).
+  const isRefOnly = (m: MatchWithPeople) =>
+    m.referee_id === userId && m.challenger_id !== userId && m.opponent_id !== userId;
+
+  const hasRefMatches = matches.some(isRefOnly);
+  const refPending = matches.filter((m) => isRefOnly(m) && m.status === 'pending_referee').length;
+  // Only show the Reffing chip to people who actually referee; if the selected
+  // filter is Reffing but there's nothing to ref, fall back to All.
+  const shownFilters = hasRefMatches ? FILTERS : FILTERS.filter((f) => f.key !== 'reffing');
+  const eff: Filter = filter === 'reffing' && !hasRefMatches ? 'all' : filter;
+
   const action: MatchWithPeople[] = [];
   const inProgress: MatchWithPeople[] = [];
   const history: MatchWithPeople[] = [];
   for (const m of matches) {
+    const refOnly = isRefOnly(m);
+    if (eff === 'reffing') {
+      if (!refOnly) continue;
+    } else if (refOnly) {
+      continue; // officiating matches belong to the Reffing filter only
+    }
     if (HISTORY_STATUSES.has(m.status)) {
-      if (filter === 'active') continue;
-      if (filter === 'completed' && m.status !== 'completed') continue;
+      if (eff === 'active') continue;
+      if (eff === 'completed' && m.status !== 'completed') continue;
       history.push(m);
     } else {
-      if (filter === 'completed') continue;
+      if (eff === 'completed') continue;
       (needsMe(m) ? action : inProgress).push(m);
     }
   }
@@ -137,8 +156,9 @@ export default function MatchesScreen() {
       </ThemedText>
 
       <View style={styles.filters}>
-        {FILTERS.map((f) => {
-          const active = filter === f.key;
+        {shownFilters.map((f) => {
+          const active = eff === f.key;
+          const showCount = f.key === 'reffing' && refPending > 0;
           return (
             <Pressable
               key={f.key}
@@ -153,6 +173,13 @@ export default function MatchesScreen() {
               <ThemedText style={{ color: active ? theme.accentText : theme.text, fontWeight: '700', fontSize: 13 }}>
                 {t(f.tkey)}
               </ThemedText>
+              {showCount && (
+                <View style={[styles.chipBadge, { backgroundColor: active ? theme.accentText : theme.danger }]}>
+                  <ThemedText style={{ color: active ? theme.accent : '#fff', fontWeight: '800', fontSize: 10 }}>
+                    {refPending > 9 ? '9+' : refPending}
+                  </ThemedText>
+                </View>
+              )}
             </Pressable>
           );
         })}
@@ -181,8 +208,9 @@ export default function MatchesScreen() {
 }
 
 const styles = StyleSheet.create({
-  filters: { flexDirection: 'row', gap: Spacing.two },
-  chip: { paddingVertical: Spacing.two, paddingHorizontal: Spacing.three, borderRadius: 999, borderWidth: 1 },
+  filters: { flexDirection: 'row', gap: Spacing.two, flexWrap: 'wrap' },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.two, paddingHorizontal: Spacing.three, borderRadius: 999, borderWidth: 1 },
+  chipBadge: { minWidth: 16, height: 16, borderRadius: 8, paddingHorizontal: 3, alignItems: 'center', justifyContent: 'center' },
   divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.one },
   older: { alignSelf: 'center', paddingVertical: Spacing.two, paddingHorizontal: Spacing.four, borderRadius: 999, borderWidth: 1 },
 });

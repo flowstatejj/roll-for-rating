@@ -63,7 +63,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'gym.typeToSearch': 'Search by name or city to find a gym.',
     'ui.showOlder': 'Show older', 'ui.showMore': 'Show more', 'ui.showAll': 'Show all {n}', 'ui.viewAll': 'View all {n}', 'ui.showCompleted': 'Show completed', 'ui.hideCompleted': 'Hide completed',
     'matches.needsAction': 'Needs your action', 'matches.inProgress': 'In progress', 'matches.showOlder': 'Show older',
-    'matches.filterAll': 'All', 'matches.filterActive': 'Active', 'matches.filterCompleted': 'Completed',
+    'matches.filterAll': 'All', 'matches.filterActive': 'Active', 'matches.filterCompleted': 'Completed', 'matches.filterReffing': 'Reffing',
     'matches.emptyTitle': 'Nothing here yet',
     'matches.emptySub': 'Matches you compete in or referee will show up here.',
 
@@ -777,7 +777,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'gym.typeToSearch': 'Busca por nombre o ciudad para encontrar un gimnasio.',
     'ui.showOlder': 'Ver anteriores', 'ui.showMore': 'Ver más', 'ui.showAll': 'Ver los {n}', 'ui.viewAll': 'Ver todos ({n})', 'ui.showCompleted': 'Ver completados', 'ui.hideCompleted': 'Ocultar completados',
     'matches.needsAction': 'Requiere tu acción', 'matches.inProgress': 'En curso', 'matches.showOlder': 'Ver anteriores',
-    'matches.filterAll': 'Todos', 'matches.filterActive': 'Activos', 'matches.filterCompleted': 'Completados',
+    'matches.filterAll': 'Todos', 'matches.filterActive': 'Activos', 'matches.filterCompleted': 'Completados', 'matches.filterReffing': 'Arbitrando',
     'matches.emptyTitle': 'Aún no hay nada',
     'matches.emptySub': 'Los combates en los que compites o arbitras aparecerán aquí.',
 
@@ -1486,7 +1486,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'gym.typeToSearch': 'Busque por nome ou cidade para encontrar uma academia.',
     'ui.showOlder': 'Mostrar antigas', 'ui.showMore': 'Mostrar mais', 'ui.showAll': 'Mostrar todos ({n})', 'ui.viewAll': 'Ver todos ({n})', 'ui.showCompleted': 'Mostrar concluídos', 'ui.hideCompleted': 'Ocultar concluídos',
     'matches.needsAction': 'Precisa da sua ação', 'matches.inProgress': 'Em andamento', 'matches.showOlder': 'Mostrar antigas',
-    'matches.filterAll': 'Todas', 'matches.filterActive': 'Ativas', 'matches.filterCompleted': 'Concluídas',
+    'matches.filterAll': 'Todas', 'matches.filterActive': 'Ativas', 'matches.filterCompleted': 'Concluídas', 'matches.filterReffing': 'Arbitrando',
     'matches.emptyTitle': 'Ainda não há nada',
     'matches.emptySub': 'As lutas em que você compete ou arbitra aparecem aqui.',
 
@@ -2195,7 +2195,7 @@ const STRINGS: Record<LangCode, Record<string, string>> = {
     'gym.typeToSearch': 'Cherche par nom ou ville pour trouver un club.',
     'ui.showOlder': 'Voir plus ancien', 'ui.showMore': 'Voir plus', 'ui.showAll': 'Tout afficher ({n})', 'ui.viewAll': 'Tout voir ({n})', 'ui.showCompleted': 'Voir terminés', 'ui.hideCompleted': 'Masquer terminés',
     'matches.needsAction': 'Action requise', 'matches.inProgress': 'En cours', 'matches.showOlder': 'Voir plus ancien',
-    'matches.filterAll': 'Tous', 'matches.filterActive': 'Actifs', 'matches.filterCompleted': 'Terminés',
+    'matches.filterAll': 'Tous', 'matches.filterActive': 'Actifs', 'matches.filterCompleted': 'Terminés', 'matches.filterReffing': 'Arbitrage',
     'matches.emptyTitle': 'Rien ici pour l’instant',
     'matches.emptySub': 'Les combats où tu participes ou arbitres apparaîtront ici.',
 
