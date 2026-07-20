@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient, type User } from '@supabase/supabase-js';
-import { Platform } from 'react-native';
+import { AppState, type AppStateStatus, Platform } from 'react-native';
 import 'react-native-url-polyfill/auto';
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -39,6 +39,22 @@ supabase.auth.getSession().then(({ data }) => {
 supabase.auth.onAuthStateChange((_event, session) => {
   cachedUser = session?.user ?? null;
 });
+
+// Keep the auth session alive on native. Supabase's token auto-refresh ticker
+// must be started/stopped with the app's foreground state: if it fires while the
+// OS is suspending the JS thread, the refresh can be cut off after the server has
+// already rotated the refresh token but before the new one is persisted, so on
+// resume the stored (now-consumed) token is rejected and the user is signed out.
+// Stopping on background and refreshing on foreground avoids that race. Web runs
+// its own visibility-based refresh, so this is native-only.
+if (Platform.OS !== 'web') {
+  const syncAutoRefresh = (state: AppStateStatus) => {
+    if (state === 'active') supabase.auth.startAutoRefresh();
+    else supabase.auth.stopAutoRefresh();
+  };
+  syncAutoRefresh(AppState.currentState);
+  AppState.addEventListener('change', syncAutoRefresh);
+}
 
 /**
  * The signed-in user from the cached session, or null. Reads local state only —

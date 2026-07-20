@@ -1,12 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Button, Screen, TextField } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { LAST_EMAIL_KEY } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 
@@ -26,6 +28,13 @@ export default function ForgotPasswordScreen() {
   const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Pre-fill the last email used so the reset is one tap from sign-in.
+  useEffect(() => {
+    AsyncStorage.getItem(LAST_EMAIL_KEY)
+      .then((v) => { if (v) setEmail(v); })
+      .catch(() => {});
+  }, []);
 
   async function sendCode() {
     if (!email.trim()) {
@@ -116,6 +125,8 @@ export default function ForgotPasswordScreen() {
               value={password}
               onChangeText={setPassword}
               secureTextEntry
+              autoComplete="new-password"
+              textContentType="newPassword"
               placeholder="••••••••"
             />
             <Button label={t('fp.reset')} onPress={resetPassword} loading={loading} icon="lock-closed" />
