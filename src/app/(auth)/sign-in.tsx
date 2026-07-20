@@ -1,13 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Link } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Button, Screen, TextField } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { useAuth } from '@/lib/auth';
+import { LAST_EMAIL_KEY, useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
 
 export default function SignInScreen() {
@@ -17,6 +18,13 @@ export default function SignInScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Pre-fill the last email used so a returning user only enters a password.
+  useEffect(() => {
+    AsyncStorage.getItem(LAST_EMAIL_KEY)
+      .then((v) => { if (v) setEmail(v); })
+      .catch(() => {});
+  }, []);
 
   async function onSubmit() {
     if (!email.trim() || !password) {
@@ -57,6 +65,7 @@ export default function SignInScreen() {
             autoCapitalize="none"
             keyboardType="email-address"
             autoComplete="email"
+            textContentType="emailAddress"
             placeholder="you@example.com"
           />
           <TextField
@@ -64,6 +73,8 @@ export default function SignInScreen() {
             value={password}
             onChangeText={setPassword}
             secureTextEntry
+            autoComplete="current-password"
+            textContentType="password"
             placeholder="••••••••"
           />
           <Button label={t('auth.signIn')} onPress={onSubmit} loading={loading} />

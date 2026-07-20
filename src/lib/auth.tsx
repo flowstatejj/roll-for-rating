@@ -19,6 +19,8 @@ import { supabase } from './supabase';
 import type { BeltRank, Profile } from './types';
 
 const onboardKey = (uid: string) => `onboarded:${uid}`;
+/** Last email a user signed in / up with; pre-filled on the auth screens. */
+export const LAST_EMAIL_KEY = 'ror.lastEmail';
 
 interface SignUpArgs {
   email: string;
@@ -80,7 +82,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .single();
     if (error) {
       console.warn('Failed to load profile:', error.message);
-      setProfile(null);
+      // Only blank the profile when the row is genuinely gone (PGRST116). A
+      // transient transport error must not wipe a good profile - that blanks
+      // authenticated screens and reads as a surprise sign-out. Keep the last
+      // known profile; the next load (or a realtime refresh) recovers it.
+      if (error.code === 'PGRST116') setProfile(null);
       return;
     }
     // App Store 1.2: a banned (ejected) member is signed out on load.
@@ -144,17 +150,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
 
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!active) return;
-      setSession(data.session);
-      if (data.session?.user) {
-        await loadProfile(data.session.user.id);
-        loadOnboarded(data.session.user.id);
-        redeemPendingReferral();
-        redeemPendingEliteInvite();
-      }
-      setInitializing(false);
-    });
+    supabase.auth
+      .getSession()
+      .then(async ({ data }) => {
+        if (!active) return;
+        setSession(data.session);
+        if (data.session?.user) {
+          await loadProfile(data.session.user.id);
+          loadOnboarded(data.session.user.id);
+          redeemPendingReferral();
+          redeemPendingEliteInvite();
+        }
+      })
+      .catch((e) => {
+        // A storage read failure must not strand the app on the launch spinner;
+        // degrade to the sign-in screen instead of hanging forever.
+        console.warn('Session restore failed:', e);
+      })
+      .finally(() => {
+        if (active) setInitializing(false);
+      });
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
@@ -198,6 +213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       });
       if (error) throw error;
+      AsyncStorage.setItem(LAST_EMAIL_KEY, email.trim()).catch(() => {});
     },
     [],
   );
@@ -205,6 +221,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    // Remember the email so re-login is one field (pre-filled on the auth screens).
+    AsyncStorage.setItem(LAST_EMAIL_KEY, email.trim()).catch(() => {});
   }, []);
 
   const signOut = useCallback(async () => {
