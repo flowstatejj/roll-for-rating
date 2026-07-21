@@ -262,7 +262,11 @@ export default function ProfileScreen() {
     month: 'short',
     year: 'numeric',
   });
-  const recent = matches.slice(0, 5);
+  // Match history is MY rolls - bouts I only refereed live on Matches > Reffing
+  // and must not show here (same rule as the home feed).
+  const recent = matches
+    .filter((m) => m.challenger_id === profile.id || m.opponent_id === profile.id)
+    .slice(0, 5);
   const streak = winStreak(matches, profile.id);
   const achievements = computeAchievements(profile, matches, streak);
   const earnedCount = achievements.filter((a) => a.earned).length;
