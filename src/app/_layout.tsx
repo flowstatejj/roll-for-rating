@@ -2,15 +2,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { DarkTheme, Stack, ThemeProvider, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { Pressable } from 'react-native';
+import { Alert, Pressable } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { AppErrorBoundary } from '@/components/app-error-boundary';
 import { Colors } from '@/constants/theme';
 import { Loading } from '@/components/ui/kit';
 import { usePush } from '@/hooks/use-push';
 import { useUploadQueue } from '@/hooks/use-upload-queue';
 import { AuthProvider, useAuth } from '@/lib/auth';
+import { installCrashSurface, takeLastCrash } from '@/lib/crash-surface';
 import { I18nProvider, useTranslation } from '@/lib/i18n';
 import { initSentry, wrapWithSentry } from '@/lib/sentry';
 import { SubscriptionProvider, useSubscription } from '@/lib/subscription';
@@ -18,6 +20,9 @@ import { SubscriptionProvider, useSubscription } from '@/lib/subscription';
 // Initialise crash/performance monitoring as early as possible (no-op until a
 // EXPO_PUBLIC_SENTRY_DSN is configured).
 initSentry();
+// Record uncaught JS errors (effects/handlers/async) that a render boundary can
+// never see, so a silent app-close becomes a visible message on next launch.
+installCrashSurface();
 
 // chess.com-style dark navigation chrome.
 const NavTheme = {
@@ -64,6 +69,14 @@ function RootNavigator() {
   usePush();
   // Retry any offline-queued match-video uploads on launch + foreground.
   useUploadQueue();
+
+  // If a previous session died on an uncaught JS error, show it once so it can
+  // be captured instead of just "the app closed."
+  useEffect(() => {
+    takeLastCrash().then((c) => {
+      if (c) Alert.alert('The app closed unexpectedly last time', c);
+    });
+  }, []);
 
   useEffect(() => {
     if (initializing) return;
@@ -157,7 +170,9 @@ function RootLayout() {
           <I18nProvider>
             <AuthProvider>
               <SubscriptionProvider>
-                <RootNavigator />
+                <AppErrorBoundary>
+                  <RootNavigator />
+                </AppErrorBoundary>
                 <StatusBar style="light" />
               </SubscriptionProvider>
             </AuthProvider>
