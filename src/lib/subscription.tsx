@@ -23,6 +23,7 @@ import {
   endConnection,
   fetchProducts,
   finishTransaction,
+  getAvailablePurchases,
   initConnection,
   purchaseErrorListener,
   purchaseUpdatedListener,
@@ -238,10 +239,50 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         if (!offerToken) {
           throw new Error('Subscription details are still loading. Please try again in a moment.');
         }
-        await requestPurchase({
-          request: { google: { skus: [sku], subscriptionOffers: [{ sku, offerToken }] } },
-          type: 'subs',
-        });
+        // Switching tiers on Play is a REPLACEMENT, not a second purchase.
+        // pro.monthly and family.monthly are separate products, so without
+        // these params Play happily sells the second one alongside the first
+        // and the member is billed for both every month (Apple handles this
+        // itself via the shared subscription group). Look for an active
+        // purchase of the other tier and tell Play to replace it.
+        const otherSku = sku === FAMILY_MONTHLY_SKU ? PRO_MONTHLY_SKU : FAMILY_MONTHLY_SKU;
+        // The server entitlement tells us whether they ALREADY hold the other
+        // tier. If they do, a plain purchase would double-bill, so a failed
+        // lookup must abort rather than fall through to the very bug we are
+        // fixing. With no existing tier, falling through is correct.
+        const holdsOtherTier = info?.plan != null && SKU_FOR[info.plan] === otherSku;
+        let oldToken: string | null = null;
+        try {
+          // includeSuspendedAndroid: a suspended sub (failed card, billing
+          // retry) is still a live Play subscription and must be passed as the
+          // token to replace; it is filtered out by default.
+          const owned = await getAvailablePurchases({ includeSuspendedAndroid: true });
+          const prev = (owned ?? []).find(
+            (p) => p.productId === otherSku && p.purchaseState === 'purchased',
+          );
+          oldToken = prev?.purchaseToken ?? null;
+        } catch (e) {
+          if (holdsOtherTier) {
+            throw new Error('Could not reach Google Play to switch your plan. Please try again.');
+          }
+        }
+        if (holdsOtherTier && !oldToken) {
+          throw new Error('Could not reach Google Play to switch your plan. Please try again.');
+        }
+        const google: Parameters<typeof requestPurchase>[0]['request']['google'] = {
+          skus: [sku],
+          subscriptionOffers: [{ sku, offerToken }],
+          ...(oldToken
+            ? {
+                purchaseToken: oldToken,
+                subscriptionProductReplacementParams: {
+                  oldProductId: otherSku,
+                  replacementMode: 'with-time-proration' as const,
+                },
+              }
+            : {}),
+        };
+        await requestPurchase({ request: { google }, type: 'subs' });
       } else {
         await requestPurchase({ request: { apple: { sku } }, type: 'subs' });
       }
@@ -251,7 +292,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       setPurchasing(false);
       throw e;
     }
-  }, [product, familyProduct, loadProducts]);
+  }, [product, familyProduct, loadProducts, info]);
 
   const restore = useCallback(async (): Promise<boolean> => {
     if (!IAP_AVAILABLE) return false;

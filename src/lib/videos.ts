@@ -121,8 +121,18 @@ export async function uploadMatchVideo(
 
 /** Remove a video (R2 file via the edge function + the DB row). */
 export async function deleteMatchVideo(video: MatchVideo): Promise<void> {
-  // Best-effort R2 delete (edge fn checks participation); always remove the row.
-  await supabase.functions.invoke('video-url', { body: { op: 'delete', path: video.path } }).catch(() => {});
+  // The row is the ONLY pointer to the R2 object - the retention job finds files
+  // to purge by walking match_videos (functions/purge-old-videos). So if the R2
+  // delete fails we must KEEP the row, otherwise the file (possibly a minor's)
+  // survives in the bucket with nothing left that can ever reach it.
+  // functions.invoke resolves with { error } on a non-2xx instead of throwing,
+  // so check the result rather than relying on a catch.
+  const { data, error: fnErr } = await supabase.functions.invoke('video-url', {
+    body: { op: 'delete', path: video.path },
+  });
+  if (fnErr || !(data as { ok?: boolean } | null)?.ok) {
+    throw new Error('Could not delete the video file. Nothing was removed - please try again.');
+  }
   const { error } = await supabase.from('match_videos').delete().eq('id', video.id);
   if (error) throw error;
 }

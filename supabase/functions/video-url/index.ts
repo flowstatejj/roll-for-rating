@@ -39,6 +39,32 @@ async function presign(path: string, method: 'GET' | 'PUT', expires = 3600): Pro
   return signed.url;
 }
 
+// Object keys are ALWAYS `<matchId>/<name>.<ext>` and nothing else.
+//
+// Why this is strict: authorization below is derived from the FIRST path
+// segment, but the whole string is what gets signed or deleted. `new Request()`
+// runs WHATWG URL normalisation, which collapses `..` BEFORE aws4fetch signs,
+// so a path like `<my match>/../<your match>/clip.mp4` authorised as my match
+// but resolved to yours - handing any signed-in user read, overwrite and delete
+// on every object in the bucket, including minors' videos. Validating the shape
+// and re-checking the prefix after validation closes that.
+const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+const NAME_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
+
+/** Returns the matchId the key belongs to, or null if the key is not well formed. */
+function parseKey(path: string): string | null {
+  if (!path || path.length > 200) return null;
+  // Reject anything that could survive as a traversal or escape an object name.
+  if (path.includes('..') || path.includes('//') || path.includes('\\')) return null;
+  if (/%2e|%2f|%5c/i.test(path)) return null;
+  const parts = path.split('/');
+  if (parts.length !== 2) return null;
+  const [matchId, name] = parts;
+  if (!UUID_RE.test(matchId)) return null;
+  if (!NAME_RE.test(name) || name.includes('..')) return null;
+  return matchId;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   try {
@@ -59,6 +85,12 @@ Deno.serve(async (req) => {
       const stamp = String(body?.stamp ?? '');
       const ext = (String(body?.ext ?? 'mp4').match(/^[a-z0-9]+$/i)?.[0] ?? 'mp4').toLowerCase();
       if (!matchId || !stamp) return json({ error: 'matchId and stamp are required' }, 400);
+      // The client only ever sends Date.now(). Keeping the key deterministic
+      // (rather than randomising it here) is what lets the offline queue retry
+      // an upload without orphaning the previous partial object.
+      if (!UUID_RE.test(matchId) || !/^[0-9]{1,20}$/.test(stamp)) {
+        return json({ error: 'Invalid matchId or stamp' }, 400);
+      }
 
       const { data: m } = await admin
         .from('matches')
@@ -70,13 +102,14 @@ Deno.serve(async (req) => {
       }
 
       const path = `${matchId}/${stamp}.${ext}`;
+      if (parseKey(path) !== matchId) return json({ error: 'Invalid path' }, 400);
       return json({ url: await presign(path, 'PUT'), path });
     }
 
     if (op === 'play') {
       const path = String(body?.path ?? '');
-      if (!path.includes('/')) return json({ error: 'path is required' }, 400);
-      const matchId = path.split('/')[0];
+      const matchId = parseKey(path);
+      if (!matchId) return json({ error: 'Invalid path' }, 400);
 
       const { data: m } = await admin
         .from('matches')
@@ -92,8 +125,8 @@ Deno.serve(async (req) => {
 
     if (op === 'delete') {
       const path = String(body?.path ?? '');
-      if (!path.includes('/')) return json({ error: 'path is required' }, 400);
-      const matchId = path.split('/')[0];
+      const matchId = parseKey(path);
+      if (!matchId) return json({ error: 'Invalid path' }, 400);
       const { data: m } = await admin
         .from('matches')
         .select('challenger_id, opponent_id, referee_id')
@@ -102,7 +135,12 @@ Deno.serve(async (req) => {
       if (!m || ![m.challenger_id, m.opponent_id, m.referee_id].includes(uid)) {
         return json({ error: 'Not allowed' }, 403);
       }
-      await r2.fetch(`${ENDPOINT}/${BUCKET}/${path}`, { method: 'DELETE' });
+      const del = await r2.fetch(`${ENDPOINT}/${BUCKET}/${path}`, { method: 'DELETE' });
+      // R2 resolves (not throws) on 403/5xx, so surface a real failure instead
+      // of reporting success while the object survives.
+      if (!del.ok && del.status !== 404) {
+        return json({ error: `R2 delete failed (${del.status})` }, 502);
+      }
       return json({ ok: true });
     }
 
