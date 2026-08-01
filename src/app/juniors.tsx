@@ -34,12 +34,18 @@ export default function JuniorsScreen() {
   // junior_capacity() and the same insert policy), so the button can never
   // offer an add the database will reject - or hide one it would allow.
   // Founders and admins get 5; a paid family plan is effectively unlimited.
-  const isFamily = plan === 'family' || juniorCap >= 99;
-  const atCapacity = juniors.length >= juniorCap;
+  //
+  // null = we do not KNOW the capacity yet (RPC still in flight or it errored).
+  // Unknown is not zero: treating it as zero told a paying parent with no
+  // children they were at capacity, and offered a founder the paid upgrade.
+  // While unknown, show no capacity card at all and let a retry settle it.
+  const capKnown = juniorCap != null;
+  const isFamily = plan === 'family' || (juniorCap ?? 0) >= 99;
+  const atCapacity = capKnown && juniors.length >= (juniorCap ?? 0);
   // A comp account (founder, elite, free gym) must NEVER be shown a purchase:
   // buying would replace their free grant with a paid subscription.
   const isComp = info?.source === 'comp';
-  const canBuyUpgrade = !isComp && !isFamily && juniorCap <= 1;
+  const canBuyUpgrade = capKnown && !isComp && !isFamily && (juniorCap ?? 0) <= 1;
 
   // add-form state
   const [name, setName] = useState('');
@@ -170,13 +176,15 @@ export default function JuniorsScreen() {
         {t('jr.intro')}
       </ThemedText>
 
-      <ThemedText type="small" themeColor="textSecondary">
-        {isFamily
-          ? t('jr.capFamily')
-          : juniorCap <= 1
-            ? t('jr.capIndividual')
-            : t('jr.capCount').replace('{used}', String(juniors.length)).replace('{cap}', String(juniorCap))}
-      </ThemedText>
+      {capKnown && (
+        <ThemedText type="small" themeColor="textSecondary">
+          {isFamily
+            ? t('jr.capFamily')
+            : (juniorCap ?? 0) <= 1
+              ? t('jr.capIndividual')
+              : t('jr.capCount').replace('{used}', String(juniors.length)).replace('{cap}', String(juniorCap))}
+        </ThemedText>
+      )}
 
       {juniors.length === 0 && !adding ? (
         <EmptyState icon="happy-outline" title={t('jr.emptyTitle')} subtitle={t('jr.emptySub')} />
@@ -276,9 +284,9 @@ export default function JuniorsScreen() {
             />
           )}
         </Card>
-      ) : (
+      ) : capKnown ? (
         <Button label={t('jr.add')} icon="add" variant="secondary" onPress={() => setAdding(true)} />
-      )}
+      ) : null}
     </Screen>
   );
 }

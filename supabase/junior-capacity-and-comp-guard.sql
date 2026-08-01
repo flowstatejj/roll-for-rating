@@ -53,11 +53,17 @@ returns int language sql stable security definer set search_path = public as $$
   select coalesce(
     (select junior_cap_override from public.profiles where id = p_user),
     case
-      when public.has_active_family(p_user) then 999
+      -- Founder / admin FIRST, on purpose. Section 4 normalises a founder's comp
+      -- product_id to 'comp:founding-member-family' for display, which makes
+      -- has_active_family() true - so if the family arm came first every founder
+      -- would silently land on 999 and the requested tier of 5 (and the
+      -- Request-more path with it) would be dead code.
       when exists (
         select 1 from public.profiles
          where id = p_user and (coalesce(is_founding_member, false) or coalesce(is_admin, false))
       ) then 5
+      -- A genuinely PAID family subscription is the unlimited tier.
+      when public.has_active_family(p_user) then 999
       when public.has_active_entitlement(p_user) then 1
       else 0
     end
@@ -76,6 +82,12 @@ create policy "profiles_insert_managed_junior" on public.profiles
     managed_by = auth.uid()
     and public.my_age_tier() = 'adult'
     and public.tier_for(birthdate) in ('kid','teen')
+    -- Keep the original guarantee EXPLICIT: managing a child still requires
+    -- active access. junior_capacity alone would not enforce it, because the
+    -- override and founder/admin arms short-circuit before the
+    -- has_active_entitlement arm - so a lapsed subscriber holding an override,
+    -- or a founder whose comp grant was revoked, would otherwise still pass.
+    and public.has_active_entitlement(auth.uid())
     and (select count(*) from public.profiles p where p.managed_by = auth.uid())
         < public.junior_capacity(auth.uid())
   );
@@ -133,11 +145,27 @@ begin
      and (old.expires_at is null or old.expires_at > now())
      and coalesce(old.status, 'active') in ('active', 'grace')
   then
-    -- Keep the comp grant. Record what the store said so a real purchase can
-    -- still be reconciled (or refunded) instead of vanishing.
     insert into public.comp_purchase_conflicts (user_id, attempted_product_id, attempted_source, attempted_txn)
     values (old.user_id, new.product_id, new.source, new.original_transaction_id);
-    return old;
+
+    -- Keep the comp ACCESS (source/product/status/expiry) but ADOPT the store's
+    -- identifiers. Returning a bare OLD would make a real, paid subscription
+    -- vanish: validate-purchase's "already linked to another account" check and
+    -- the whole apple-notifications pipeline both look a subscription up by
+    -- original_transaction_id, so with no row carrying it the member would be
+    -- billed monthly forever with nothing recorded, renewals/refunds/revokes
+    -- would be silent no-ops, and the same receipt could be restored onto a
+    -- DIFFERENT account for free access. Carrying the ids keeps the purchase
+    -- discoverable and refundable while the free grant still wins.
+    new.source                  := old.source;
+    new.product_id              := old.product_id;
+    new.status                  := old.status;
+    new.expires_at              := old.expires_at;
+    new.auto_renew              := old.auto_renew;
+    new.original_transaction_id := coalesce(new.original_transaction_id, old.original_transaction_id);
+    new.latest_transaction_id   := coalesce(new.latest_transaction_id, old.latest_transaction_id);
+    new.purchased_at            := coalesce(new.purchased_at, old.purchased_at);
+    return new;
   end if;
   return new;
 end $$;

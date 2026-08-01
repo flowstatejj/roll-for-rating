@@ -144,6 +144,30 @@ Deno.serve(async (req) => {
       return json({ error: 'This subscription is already linked to another account.' }, 409);
     }
 
+    // 3b) Never let a store purchase replace a LIVE comp grant (founding
+    // member, elite invite, free verified gym). Without this the member pays
+    // real money to downgrade themselves from free lifetime access, and their
+    // managed-junior capacity drops with it. The DB trigger
+    // _protect_comp_entitlement is the backstop; this is the part that can
+    // actually TELL the caller, so they can seek a refund instead of being
+    // billed monthly with no visible subscription.
+    const { data: existing } = await admin
+      .from('entitlements')
+      .select('source, status, expires_at')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (
+      existing?.source === 'comp' &&
+      ['active', 'grace'].includes(existing.status ?? 'active') &&
+      (!existing.expires_at || new Date(existing.expires_at) > new Date())
+    ) {
+      console.error(`validate-purchase: comp account ${userId} purchased ${productId}; grant kept`);
+      return json({
+        code: 'comp_active',
+        error: 'This account already has free access, so the purchase was not applied. Contact support for a refund.',
+      }, 409);
+    }
+
     // 4) Upsert the entitlement.
     const { error: upErr } = await admin.from('entitlements').upsert(row, { onConflict: 'user_id' });
     if (upErr) return json({ error: upErr.message }, 400);
