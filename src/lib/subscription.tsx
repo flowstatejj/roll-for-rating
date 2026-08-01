@@ -62,6 +62,10 @@ export interface SubInfo {
   expiresAt: string | null;
   /** which tier the active entitlement is, when there is one */
   plan: Plan | null;
+  /** How many managed juniors this account may have IN TOTAL. Decided server
+   *  side by junior_capacity() and mirrored by the insert policy, so the UI can
+   *  never disagree with what the database will actually allow. */
+  juniorCap: number;
 }
 
 interface SubscriptionContextValue {
@@ -71,6 +75,8 @@ interface SubscriptionContextValue {
   active: boolean;
   /** the active plan tier, or null when not subscribed */
   plan: Plan | null;
+  /** how many managed juniors this account may have in total (server-decided) */
+  juniorCap: number;
   info: SubInfo | null;
   /** the individual ($4.99) StoreKit product, when loaded */
   product: ProductSubscription | null;
@@ -106,7 +112,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     if (error) {
       // Fail CLOSED would lock everyone out on a transient error; the gate also
       // checks `ready`, so we surface "inactive" but let a retry recover.
-      setInfo({ active: false, status: null, source: null, productId: null, expiresAt: null, plan: null });
+      setInfo({ active: false, status: null, source: null, productId: null, expiresAt: null, plan: null, juniorCap: 0 });
     } else {
       const row = Array.isArray(data) ? data[0] : data;
       active = !!row?.active;
@@ -118,6 +124,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         productId: row?.product_id ?? null,
         expiresAt: row?.expires_at ?? null,
         plan: active ? planTier : null,
+        juniorCap: Number(row?.junior_cap ?? 0),
       });
     }
     setReady(true);
@@ -266,6 +273,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       ready,
       active: !!info?.active,
       plan: info?.plan ?? null,
+      juniorCap: info?.juniorCap ?? 0,
       info,
       product,
       familyProduct,
