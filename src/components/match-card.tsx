@@ -80,9 +80,14 @@ export function MatchCard({ match, currentUserId }: { match: MatchWithPeople; cu
 
         <View style={styles.footer}>
           <View style={styles.refRow}>
-            <Ionicons name={match.referee ? 'eye-outline' : 'videocam-outline'} size={14} color={theme.textSecondary} />
+            <Ionicons name={match.referee_waived ? 'videocam-outline' : 'eye-outline'} size={14} color={theme.textSecondary} />
             <ThemedText type="small" themeColor="textSecondary">
-              {match.referee ? `${t('mc.ref')}: ${match.referee.display_name}` : t('md.noReferee')}
+              {match.referee
+                ? `${t('mc.ref')}: ${match.referee.display_name}`
+                : match.referee_waived
+                  ? t('md.noReferee')
+                  /* refereed, but that account is gone - keep the tombstone name */
+                  : `${t('mc.ref')}: ${match.referee_name_snapshot ?? t('md.refUnknown')}`}
             </ThemedText>
           </View>
           {match.status === 'completed' && match.result && (

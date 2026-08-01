@@ -529,9 +529,13 @@ export interface Match {
   id: string;
   challenger_id: string;
   opponent_id: string;
-  /** null when the referee is waived (both competitors confirm the result instead). */
+  /** null when the referee is waived (both competitors confirm the result instead),
+   *  or when the referee later deleted their account (see referee_name_snapshot). */
   referee_id: string | null;
   referee_waived: boolean;
+  /** Who officiated, kept when their account is deleted so a finished match
+   *  still records who scored it. Null on waived matches. */
+  referee_name_snapshot?: string | null;
   /** on a waived match: the competitor who logged the pending result. */
   result_proposed_by: string | null;
   status: MatchStatus;

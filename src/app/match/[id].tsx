@@ -342,7 +342,11 @@ export default function MatchDetailScreen() {
 
       {/* Referee (or waived: filmed + mutually confirmed) */}
       <Card style={styles.refCard}>
-        {isWaived || !match.referee ? (
+        {/* Branch on referee_waived, NOT on a missing referee: a refereed match
+            whose referee later deleted their account has referee_id null but was
+            never self-reported, and labelling it "no referee" would be a false
+            claim about a permanent competitive record. */}
+        {isWaived ? (
           <>
             <Ionicons name="videocam" size={28} color={theme.accent} />
             <View style={{ flex: 1 }}>
@@ -352,6 +356,21 @@ export default function MatchDetailScreen() {
               <ThemedText style={{ fontWeight: '700' }}>{t('md.noReferee')}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
                 {t('md.noRefereeSub')}
+              </ThemedText>
+            </View>
+          </>
+        ) : !match.referee ? (
+          <>
+            <Ionicons name="person-remove-outline" size={28} color={theme.textSecondary} />
+            <View style={{ flex: 1 }}>
+              <ThemedText type="small" themeColor="textSecondary">
+                {t('md.referee')}
+              </ThemedText>
+              <ThemedText style={{ fontWeight: '700' }}>
+                {match.referee_name_snapshot ?? t('md.refUnknown')}
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {t('md.refDeleted')}
               </ThemedText>
             </View>
           </>
