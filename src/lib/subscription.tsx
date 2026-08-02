@@ -250,7 +250,15 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         // tier. If they do, a plain purchase would double-bill, so a failed
         // lookup must abort rather than fall through to the very bug we are
         // fixing. With no existing tier, falling through is correct.
-        const holdsOtherTier = info?.plan != null && SKU_FOR[info.plan] === otherSku;
+        // Keyed on source === 'google', NOT on the tier alone. The entitlement
+        // tier is set for comp grants, founders and Apple subscribers too, and
+        // none of those has a Play purchase to replace - so keying on tier made
+        // getAvailablePurchases return nothing, holdsOtherTier stay true, and the
+        // purchase abort with 'Could not reach Google Play' every single time.
+        // That is a permanent dead end for exactly the members most likely to be
+        // upgrading, where previously they could just buy.
+        const holdsOtherTier =
+          info?.source === 'google' && info?.plan != null && SKU_FOR[info.plan] === otherSku;
         let oldToken: string | null = null;
         try {
           // includeSuspendedAndroid: a suspended sub (failed card, billing
