@@ -18,7 +18,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { Platform } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import {
   endConnection,
   fetchProducts,
@@ -154,8 +154,17 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         if (!transactionId) return;
         body = { transactionId };
       }
-      const { error } = await supabase.functions.invoke('validate-purchase', { body });
+      // Read the RESPONSE, not just the error. The comp-account case returns 200
+      // with code 'comp_active': the store took the money but the account
+      // already has free access, so the free grant was kept. Discarding this
+      // (the previous behaviour) meant the member was charged and shown nothing
+      // at all, with no way to know a refund was needed.
+      const { data, error } = await supabase.functions.invoke('validate-purchase', { body });
+      const res = data as { code?: string; error?: string } | null;
       if (!error) await refresh();
+      if (res?.code === 'comp_active' && res.error) {
+        Alert.alert('Your account is already free', res.error);
+      }
     },
     [refresh],
   );
