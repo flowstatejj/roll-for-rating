@@ -116,7 +116,16 @@ export default function BoutRunnerScreen() {
         router.back();
       }
     } catch (e: any) {
-      Alert.alert(t('tn.recordFail'), e.message ?? t('md.tryAgain'));
+      // The completed-event guard raises with hint 'tournament_complete'. Show
+      // a localized message aimed at the person who actually hits it (usually a
+      // mat referee, who cannot reopen the event themselves) instead of the
+      // raw English database text.
+      const isComplete = e?.hint === 'tournament_complete' ||
+        /marked complete/i.test(String(e?.message ?? ''));
+      Alert.alert(
+        t('tn.recordFail'),
+        isComplete ? t('tn.eventClosedBody') : (e.message ?? t('md.tryAgain')),
+      );
     } finally {
       setBusy(false);
     }

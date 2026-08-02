@@ -76,36 +76,68 @@ begin
   if not public.is_tournament_host(p_tid) then
     raise exception 'Only the host can reopen the tournament';
   end if;
+  -- Strict complete -> running. Without this a host could push a 'setup' event
+  -- straight to running with no bracket, which renders as Live.
+  if (select status from public.tournaments where id = p_tid) <> 'complete' then
+    return;
+  end if;
   update public.tournaments set status = 'running' where id = p_tid;
-  -- Only divisions with unfinished bouts go back to running; fully scored ones
-  -- stay complete so reopening does not resurrect a settled division.
+
+  -- Restore each division to what it actually IS, not just the ones mid-run.
+  -- complete_tournament flips EVERY division, including ones still in 'setup'
+  -- with no bouts; a filter that only revived in-progress divisions left those
+  -- stuck on 'complete' forever, where the UI refuses both new entrants and
+  -- generation - so the mis-tap this function exists to undo would have
+  -- permanently bricked them.
   update public.tournament_divisions d
-     set status = 'running'
-   where d.tournament_id = p_tid
-     and exists (
-       select 1 from public.tournament_bouts b
-       where b.division_id = d.id and b.status not in ('done', 'bye')
-     );
+     set status = case
+       when exists (select 1 from public.tournament_bouts b
+                     where b.division_id = d.id and b.status not in ('done','bye')) then 'running'
+       when exists (select 1 from public.tournament_bouts b
+                     where b.division_id = d.id) then 'complete'
+       else 'setup'
+     end
+   where d.tournament_id = p_tid;
 end; $$;
 
 -- The actual enforcement: a completed event stops accepting results. A trigger
 -- rather than an edit to each recorder, because record_bout_result,
 -- record_subbout and any future recorder all write tournament_bouts, and a
 -- guard added to one body is a guard the next caller forgets.
+-- SECURITY DEFINER on purpose. As an invoker-rights function its tournaments
+-- lookup would run under the caller's RLS, and an empty read leaves tstatus
+-- NULL, which makes `tstatus = 'complete'` NULL and lets the write through.
+-- That is a guard that fails OPEN on a silent read failure - the same shape as
+-- the send-push bug this batch is fixing - so the NULL case raises explicitly.
 create or replace function public._block_bouts_on_complete_tournament()
-returns trigger language plpgsql set search_path = public as $$
+returns trigger language plpgsql security definer set search_path = public as $$
 declare tstatus text;
 begin
-  -- Only care when a bout is being SCORED (status/winner/result changing).
+  -- Let genuinely non-scoring updates through: mat assignment, referee
+  -- assignment, and _advance_winner writing the NEXT bout's competitor slots
+  -- (which runs INSIDE record_bout_result, so blocking it would break normal
+  -- recording). Every column a recorder touches when SCORING is listed here -
+  -- the first version checked only status/winner/result, which let
+  -- record_subbout write a_idx/b_idx/a_score/b_score on a completed event and
+  -- strand team bouts part-scored.
   if tg_op = 'UPDATE'
-     and old.status is not distinct from new.status
-     and old.winner is not distinct from new.winner
-     and old.result is not distinct from new.result then
+     and old.status  is not distinct from new.status
+     and old.winner  is not distinct from new.winner
+     and old.result  is not distinct from new.result
+     and old.a_score is not distinct from new.a_score
+     and old.b_score is not distinct from new.b_score
+     and old.a_idx   is not distinct from new.a_idx
+     and old.b_idx   is not distinct from new.b_idx
+     and old.match_id is not distinct from new.match_id then
     return new;
   end if;
   select status into tstatus from public.tournaments where id = new.tournament_id;
+  if tstatus is null then
+    raise exception 'Bout % has no tournament', new.id;
+  end if;
   if tstatus = 'complete' then
-    raise exception 'This tournament is marked complete. Reopen it before recording more bouts.';
+    raise exception 'This tournament is marked complete. Reopen it before recording more bouts.'
+      using errcode = 'P0001', hint = 'tournament_complete';
   end if;
   return new;
 end $$;
@@ -114,6 +146,34 @@ drop trigger if exists trg_block_bouts_on_complete_tournament on public.tourname
 create trigger trg_block_bouts_on_complete_tournament
   before update on public.tournament_bouts
   for each row execute function public._block_bouts_on_complete_tournament();
+
+-- Sub-bouts are rows of their own, so the bout trigger never sees them: a
+-- completed team event would otherwise keep accepting every sub-bout except the
+-- deciding one, leaving bouts visibly stuck mid-score and unfinishable.
+create or replace function public._block_subbouts_on_complete_tournament()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare tstatus text;
+begin
+  select t.status into tstatus
+    from public.tournament_bouts b
+    join public.tournaments t on t.id = b.tournament_id
+   where b.id = new.bout_id;
+  if tstatus is null then
+    raise exception 'Sub-bout has no tournament';
+  end if;
+  if tstatus = 'complete' then
+    raise exception 'This tournament is marked complete. Reopen it before recording more bouts.'
+      using errcode = 'P0001', hint = 'tournament_complete';
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists trg_block_subbouts_on_complete_tournament on public.tournament_subbouts;
+create trigger trg_block_subbouts_on_complete_tournament
+  before insert or update on public.tournament_subbouts
+  for each row execute function public._block_subbouts_on_complete_tournament();
+
+revoke execute on function public._block_subbouts_on_complete_tournament() from public, anon, authenticated;
 
 revoke execute on function public._block_bouts_on_complete_tournament() from public, anon, authenticated;
 

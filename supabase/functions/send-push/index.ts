@@ -6,9 +6,17 @@
 // look up their Expo push tokens, and deliver via Expo's push service (no APNs/
 // FCM keys needed — Expo relays). Invalid tokens are pruned.
 //
-// Deploy with "Verify JWT" OFF (the webhook is not a signed-in user). Optionally
-// set a PUSH_WEBHOOK_SECRET function secret and configure the webhook to send an
-// `x-webhook-secret` header with the same value to reject spoofed calls.
+// Deploy with "Verify JWT" OFF (the webhook is not a signed-in user).
+//
+// SECURITY: the request body is treated as a POINTER, not as content. Only
+// `record.id` is read from it; the notification's user_id/type/title/body come
+// from re-reading the row with the service key. Clients cannot INSERT into
+// public.notifications, so a spoofed call has no row to point at and delivers
+// nothing. Do not "optimise" this back into reading the payload directly.
+//
+// PUSH_WEBHOOK_SECRET is optional defence in depth. If you set it, the Database
+// Webhook MUST send a matching `x-webhook-secret` header - and add the header
+// FIRST, then set the secret, or every notification 401s in between.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const CORS = {
@@ -40,25 +48,41 @@ function categoryFor(type: string): string {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   try {
-    // FAIL CLOSED. This function is deployed with JWT verification off (it is
-    // called by a DB webhook), so the shared secret is the ONLY thing standing
-    // between the public internet and "push arbitrary text to any user id".
-    // The previous `if (secret && ...)` made the check evaporate whenever the
-    // secret was unset - the one configuration where it actually matters - so a
-    // missing secret silently turned this into an open relay for spoofed
-    // notifications. Refuse to run rather than run unauthenticated.
+    // This function runs with JWT verification OFF (a DB webhook calls it), so
+    // it is reachable by anyone. The old code trusted the REQUEST BODY: a raw
+    // POST of {user_id, type, title, body} was pushed verbatim, letting any
+    // caller send arbitrary text - and an attacker-chosen deep link - to any
+    // user id, wearing the app's own name. The shared-secret check was the only
+    // defence and it read `if (secret && ...)`, which does nothing when the
+    // secret is unset: exactly the configuration it needed to cover.
+    //
+    // Fixed in the DATA, not just the door: the payload is now only a POINTER.
+    // We re-read the notification row with the service key and push what the
+    // DATABASE says. public.notifications has no INSERT policy for clients, so
+    // an attacker cannot create a row to point at, and spoofing is impossible
+    // whether or not the secret is configured. That also means a missing secret
+    // degrades to "no extra check" rather than either an open relay or a total
+    // push outage - important, because the webhook headers live in the Supabase
+    // dashboard, outside this repo and outside review.
     const secret = Deno.env.get('PUSH_WEBHOOK_SECRET');
-    if (!secret) {
-      console.error('send-push: PUSH_WEBHOOK_SECRET is not set; refusing to send.');
-      return json({ error: 'push not configured' }, 503);
+    if (secret && req.headers.get('x-webhook-secret') !== secret) {
+      return json({ error: 'unauthorized' }, 401);
     }
-    if (req.headers.get('x-webhook-secret') !== secret) return json({ error: 'unauthorized' }, 401);
 
     const payload = await req.json();
-    const rec = payload?.record ?? payload; // webhook sends {type,table,record,...}
-    if (!rec?.user_id || !rec?.type) return json({ ok: true, skipped: 'no record' });
+    const claimed = payload?.record ?? payload; // webhook sends {type,table,record,...}
+    if (!claimed?.id) return json({ ok: true, skipped: 'no record id' });
 
     const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+
+    // Authoritative values come from the row, never from the caller.
+    const { data: rec, error: recErr } = await admin
+      .from('notifications')
+      .select('id, user_id, type, title, body, match_id, data')
+      .eq('id', claimed.id)
+      .maybeSingle();
+    if (recErr) return json({ error: recErr.message }, 500);
+    if (!rec?.user_id || !rec?.type) return json({ ok: true, skipped: 'no such notification' });
 
     // 1. Honor the recipient's per-category toggle (missing key = enabled).
     const category = categoryFor(rec.type);

@@ -134,10 +134,16 @@ create policy "profiles_read_visible" on public.profiles
     or (age_tier = 'teen' and consent_status = 'verified')
     or (gym_id is not null and gym_id = public.my_gym_id())
     or managed_by = auth.uid()
+    -- status = 'accepted' is LOAD-BEARING, do not drop it: without it any
+    -- guardian could unlock a child's full row (exact birthdate, gym, city,
+    -- weight, gender) just by creating a one-sided challenge against them, with
+    -- nothing for the other family to approve. Kept in sync with
+    -- minors-and-tournament-state.sql, which re-applies this policy.
     or exists (
       select 1 from public.match_requests mr
-      where (mr.from_junior = public.profiles.id and public.is_my_junior(mr.to_junior))
-         or (mr.to_junior   = public.profiles.id and public.is_my_junior(mr.from_junior))
+      where mr.status = 'accepted'
+        and ((mr.from_junior = public.profiles.id and public.is_my_junior(mr.to_junior))
+          or (mr.to_junior   = public.profiles.id and public.is_my_junior(mr.from_junior)))
     )
     or exists (
       select 1 from public.matches m

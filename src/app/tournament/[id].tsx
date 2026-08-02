@@ -521,7 +521,12 @@ export default function TournamentDetailScreen() {
                     </ThemedText>
                 <Card style={{ paddingVertical: Spacing.one }}>
                   {rbouts.map((b, i) => {
+                    // tr.status gate: scoring is blocked server side once the
+                    // event is complete, and only the HOST sees Reopen - so
+                    // without this a mat referee would fill in a whole result
+                    // and get a raw database error they cannot act on.
                     const canRec =
+                      tr!.status !== 'complete' &&
                       (b.referee_id === userId || isHost || mats.some((m) => m.id === b.mat_id && m.referee_id === userId)) &&
                       b.status !== 'done' && b.status !== 'bye' && !!b.a_name && !!b.b_name;
                     const mat = mats.find((m) => m.id === b.mat_id);
