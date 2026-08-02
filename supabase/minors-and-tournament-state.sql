@@ -128,7 +128,18 @@ begin
      and old.b_score is not distinct from new.b_score
      and old.a_idx   is not distinct from new.a_idx
      and old.b_idx   is not distinct from new.b_idx
-     and old.match_id is not distinct from new.match_id then
+     -- match_id may be CLEARED but not SET. tournament_bouts.match_id is
+     -- declared ON DELETE SET NULL (tournaments-pro.sql:89), and a foreign-key
+     -- SET NULL action runs as a real UPDATE that fires this trigger. Comparing
+     -- match_id for equality therefore rejected Postgres' OWN cleanup: deleting
+     -- an account cascades into that member's matches, the database tries to
+     -- null the bout pointer, this trigger raised, and the entire delete aborted
+     -- - permanently, for anyone who ever competed in a completed event. Paired
+     -- with batch 2 (which destroys their media BEFORE the delete) that leaves
+     -- the media gone and the account alive. Clearing the pointer is cleanup,
+     -- never scoring, so let it through; setting one is still caught, and a real
+     -- score writes status/winner/result in the same statement anyway.
+     and (old.match_id is not distinct from new.match_id or new.match_id is null) then
     return new;
   end if;
   select status into tstatus from public.tournaments where id = new.tournament_id;
@@ -154,6 +165,20 @@ create or replace function public._block_subbouts_on_complete_tournament()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare tstatus text;
 begin
+  -- Same cleanup problem as the bout trigger: tournament_subbouts.a_user and
+  -- b_user are ON DELETE SET NULL (tournaments-pro.sql:99-100), so deleting a
+  -- competitor's account makes Postgres null those columns, which fires this
+  -- trigger and would abort the delete. An UPDATE that changes no scoring column
+  -- is cleanup, not a result, so let it through. INSERTs are always checked.
+  if tg_op = 'UPDATE'
+     and old.winner       is not distinct from new.winner
+     and old.result       is not distinct from new.result
+     and old.sub_category is not distinct from new.sub_category
+     and old.order_no     is not distinct from new.order_no
+     and old.bout_id      is not distinct from new.bout_id then
+    return new;
+  end if;
+
   select t.status into tstatus
     from public.tournament_bouts b
     join public.tournaments t on t.id = b.tournament_id
