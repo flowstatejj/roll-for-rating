@@ -49,13 +49,29 @@ create policy "leagues_read" on public.leagues for select to authenticated
 create or replace function public._lock_league_membership()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
+  -- league_id and user_id are IMMUTABLE for everyone, checked FIRST and with no
+  -- exemption. The creator bypass below tests the row's CURRENT league, so
+  -- putting it first meant anyone could create a throwaway league (free and
+  -- self-service, leagues.sql:88), become its creator, and then move that same
+  -- membership row into any PRIVATE league by id - taking its join code, roster
+  -- and division registration with them. That is precisely the hole this file
+  -- exists to close, so the check cannot sit behind an escape hatch.
+  --
+  -- Verified safe against every writer: nothing legitimate ever changes these
+  -- two columns on an existing row. Joining is an insert (leagues.sql:148,
+  -- league-invites.sql:75, league-divisions.sql:310, league-teams.sql:138),
+  -- and leaving is a delete (src/lib/leagues.ts:140).
+  if new.league_id is distinct from old.league_id
+     or new.user_id is distinct from old.user_id then
+    raise exception 'A membership row cannot be moved to another league or member';
+  end if;
+
   if exists (select 1 from public.leagues l
               where l.id = old.league_id and l.created_by = auth.uid()) then
     return new;                       -- the creator may reshape their own league
   end if;
-  if new.league_id is distinct from old.league_id
-     or new.user_id is distinct from old.user_id
-     or new.joined_week is distinct from old.joined_week
+
+  if new.joined_week is distinct from old.joined_week
      or new.role is distinct from old.role then
     raise exception 'You can only change your own membership settings in this league';
   end if;
