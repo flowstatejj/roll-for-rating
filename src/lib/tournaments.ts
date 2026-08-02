@@ -487,6 +487,14 @@ export async function createDivision(args: {
 }
 
 /** Host deletes a division. */
+/** Build the bracket for ONE division that was skipped at Generate time.
+ *  The whole-event Generate button hides once any bout exists, which used to
+ *  strand such a division with no bracket and no way to build one. */
+export async function generateDivisionNow(divisionId: string): Promise<void> {
+  const { error } = await supabase.rpc('generate_division_now', { p_division: divisionId });
+  if (error) throw error;
+}
+
 export async function deleteDivision(divisionId: string): Promise<void> {
   const { error } = await supabase.rpc('delete_division', { p_division: divisionId });
   if (error) throw error;
