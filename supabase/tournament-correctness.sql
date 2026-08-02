@@ -1,7 +1,7 @@
 -- ============================================================================
 -- Roll for Rating -- Batch 6: tournament correctness
 --
--- RUN AFTER safety.sql, avatars.sql, tournaments-pro.sql,
+-- RUN AFTER safety.sql, avatars.sql, avatars-warrior.sql, tournaments-pro.sql,
 -- tournament-divisions.sql and tournament-divisions-v2.sql. Safe to re-run.
 --
 -- THIS FILE OWNS enforce_avatar_required, enforce_not_blocked and
@@ -24,29 +24,44 @@ set lock_timeout = '5s';
 --     challenger side was unrecordable.
 --   * blocked-pair: two entrants who have blocked each other can still be drawn
 --     against each other, and then their bout could never be recorded.
--- Both now skip event-sourced matches (tournament_id / league_id set). They
--- still apply in full to a user-initiated challenge, which is where they mean
--- something.
+-- Both now skip matches created by a tournament bracket. They still apply in
+-- full to a user-initiated challenge, which is where they mean something.
+-- Body based on avatars-warrior.sql:16-27, NOT avatars.sql. avatars-warrior.sql
+-- supersedes it and accepts a warrior emblem OR a photo. Copying the older
+-- photo-only body would lock out every warrior user - which is every MINOR,
+-- since minors cannot upload photos by design and choosing a warrior sets
+-- avatar_path to null (src/lib/avatars.ts:72). That would be a total outage of
+-- match creation for the entire under-18 user base on a live build.
 create or replace function public.enforce_avatar_required()
 returns trigger language plpgsql security definer set search_path = public as $$
-declare has_photo boolean;
+declare has_avatar boolean;
 begin
-  if new.tournament_id is not null or new.league_id is not null then
-    return new;  -- bracket/fixture pairing, not a challenge
+  if new.tournament_id is not null then
+    return new;  -- bracket pairing, not a challenge
   end if;
-  select avatar_path is not null and btrim(avatar_path) <> ''
-    into has_photo from public.profiles where id = new.challenger_id;
-  if not coalesce(has_photo, false) then
-    raise exception 'Add a profile photo before you can compete.';
+  select (avatar_path is not null and btrim(avatar_path) <> '')
+      or (avatar_warrior is not null and btrim(avatar_warrior) <> '')
+    into has_avatar from public.profiles where id = new.challenger_id;
+  if not coalesce(has_avatar, false) then
+    raise exception 'Add a profile avatar before you can compete.';
   end if;
   return new;
 end; $$;
 
+-- The bypass is keyed on tournament_id ONLY, deliberately.
+-- league_id looks equivalent but is not: harden-internal-functions.sql:74
+-- grants INSERT on league_id to authenticated, and no server function ever sets
+-- it (the only server-side match insert, tournaments-pro.sql:601, sets
+-- tournament_id). So a league_id arm would be client-forgeable: create a
+-- throwaway league, insert both parties as members, then insert the match with
+-- that league_id - and a blocked user has just forced a challenge notification
+-- and a match chat channel onto the person who blocked them. tournament_id is
+-- not in the client grant, so the bracket fix is fully preserved without it.
 create or replace function public.enforce_not_blocked()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
-  if new.tournament_id is not null or new.league_id is not null then
-    return new;  -- the organizer's draw decided this pairing, not either user
+  if new.tournament_id is not null then
+    return new;  -- the host's draw decided this pairing, not either user
   end if;
   if public.is_blocked_pair(new.challenger_id, new.opponent_id) then
     raise exception 'You can''t start a match with a user you''ve blocked (or who blocked you).';
@@ -137,8 +152,14 @@ notify pgrst, 'reload schema';
 --   Informational.
 -- delete_guard: expect true.
 select
-  (select prosrc like '%tournament_id is not null%' from pg_proc
-    where proname = 'enforce_avatar_required' limit 1) as event_bypass,
+  -- avatar_ok must be true on BOTH counts: the bracket bypass is present AND
+  -- the warrior arm survived. Checking only the bypass would report success
+  -- while every minor was locked out of creating a match.
+  (select prosrc like '%avatar_warrior%' and prosrc like '%tournament_id is not null%'
+     from pg_proc where proname = 'enforce_avatar_required' limit 1) as avatar_ok,
+  -- expect true: no league_id arm, which would be client-forgeable.
+  (select prosrc not like '%league_id%' from pg_proc
+    where proname = 'enforce_not_blocked' limit 1) as block_rule_intact,
   (select prosrc like '%division_has_results%' from pg_proc
     where proname = 'delete_division' limit 1) as delete_guard,
   (select count(*) from public.tournament_divisions d
