@@ -2,7 +2,19 @@
 -- Roll for Rating — Tournaments PRO (builder + live multi-mat runner)
 -- Run in the Supabase SQL editor AFTER schema.sql, teams-tournaments.sql,
 -- match-waive-and-wager.sql, ror-mismatch-scaling.sql, leagues.sql.
--- Safe to re-run.
+-- *** NOT safe to re-run on its own (2026-07-20 audit) ***
+-- Re-running this file reverts three fixes and can brick the event engine:
+--   1. It recreates the OPEN ttiteams_write / ttmembers_write policies and
+--      the unchecked add_team_member, reopening "anyone can create, join or
+--      DELETE a team in any event" (fixed in settlement-and-teams-hardening.sql).
+--   2. It redefines _settle_match, clobbering the authoritative symmetric
+--      engine in ror-symmetric-stake.sql (which must then be re-run).
+--   3. It redefines complete_tournament-adjacent behaviour; re-run
+--      minors-and-tournament-state.sql afterwards or hosts lose the
+--      completed-event scoring guard and the Reopen undo.
+-- If you must re-run it, re-run ror-symmetric-stake.sql,
+-- settlement-and-teams-hardening.sql and minors-and-tournament-state.sql
+-- afterwards, IN THAT ORDER.
 --
 -- Adds to the existing `tournaments` table the ability to BUILD and RUN events:
 --   • formats: round_robin, single_elim, double_elim, rr_playoff
