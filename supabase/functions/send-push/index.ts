@@ -40,8 +40,19 @@ function categoryFor(type: string): string {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   try {
+    // FAIL CLOSED. This function is deployed with JWT verification off (it is
+    // called by a DB webhook), so the shared secret is the ONLY thing standing
+    // between the public internet and "push arbitrary text to any user id".
+    // The previous `if (secret && ...)` made the check evaporate whenever the
+    // secret was unset - the one configuration where it actually matters - so a
+    // missing secret silently turned this into an open relay for spoofed
+    // notifications. Refuse to run rather than run unauthenticated.
     const secret = Deno.env.get('PUSH_WEBHOOK_SECRET');
-    if (secret && req.headers.get('x-webhook-secret') !== secret) return json({ error: 'unauthorized' }, 401);
+    if (!secret) {
+      console.error('send-push: PUSH_WEBHOOK_SECRET is not set; refusing to send.');
+      return json({ error: 'push not configured' }, 503);
+    }
+    if (req.headers.get('x-webhook-secret') !== secret) return json({ error: 'unauthorized' }, 401);
 
     const payload = await req.json();
     const rec = payload?.record ?? payload; // webhook sends {type,table,record,...}

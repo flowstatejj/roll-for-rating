@@ -588,6 +588,14 @@ export async function completeTournament(tid: string): Promise<void> {
   if (error) throw error;
 }
 
+/** Undo a mis-tapped Complete. Completing now BLOCKS further scoring, so
+ *  without this a stray tap would strand an event with unrecorded bouts.
+ *  Divisions that were fully scored stay complete. */
+export async function reopenTournament(tid: string): Promise<void> {
+  const { error } = await supabase.rpc('reopen_tournament', { p_tid: tid });
+  if (error) throw error;
+}
+
 /**
  * Host auto-assigns every bout a mat: divisions are pinned one-per-mat
  * (round-robin when there are more divisions than mats), legacy bouts cycle

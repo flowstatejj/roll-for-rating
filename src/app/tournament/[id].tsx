@@ -19,6 +19,7 @@ import {
   autoAssignMats,
   autoBalanceTeams,
   completeTournament,
+  reopenTournament,
   createTeam,
   fetchBouts,
   fetchDivisions,
@@ -319,6 +320,23 @@ export default function TournamentDetailScreen() {
             <Button label={t('tn.withdraw')} icon="exit-outline" variant="ghost" loading={busy} onPress={confirmWithdraw} />
           )}
         </View>
+      )}
+
+      {/* Host: undo a mis-tapped Complete. Completing now stops all further
+          scoring server side, so an event closed by accident would otherwise be
+          stuck with unrecordable bouts. */}
+      {isHost && tr.status === 'complete' && (
+        <Button
+          label={t('tn.reopenBtn')}
+          icon="lock-open-outline"
+          variant="secondary"
+          onPress={() =>
+            Alert.alert(t('tn.reopenTitle'), t('tn.reopenBody'), [
+              { text: t('common.cancel'), style: 'cancel' },
+              { text: t('tn.reopenBtn'), onPress: () => act(() => reopenTournament(id)) },
+            ])
+          }
+        />
       )}
 
       {/* Host: invite specific people (opens the dedicated invite screen) */}
