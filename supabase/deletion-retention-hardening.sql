@@ -130,11 +130,36 @@ revoke execute on function public._release_matches_on_profile_delete() from publ
 --     per row under a lock that blocks writes on BOTH tables. Existing rows all
 --     already satisfy it (they satisfied the stricter CASCADE version), so
 --     validation is a formality - just not one worth an outage.
+--     RUN THIS FILE AS ONE TRANSACTION. The constraint has to be dropped before
+--     it can be re-added under the same name, and that name is load-bearing far
+--     beyond the database: the app embeds the referee through it by name
+--     (`profiles!matches_referee_id_fkey` in src/lib/matches.ts), so between the
+--     drop and the add there is a window where My Matches, the Watch feed and
+--     every match screen fail to load. The Supabase SQL editor wraps a script in
+--     a transaction, so an abort rolls the drop back - but running this file
+--     statement by statement, or with "run selection", does not, and a
+--     lock_timeout firing on the ADD would leave the table with no referee FK at
+--     all and the file un-re-runnable.
 alter table public.matches drop constraint if exists matches_referee_id_fkey;
 alter table public.matches
   add constraint matches_referee_id_fkey
   foreign key (referee_id) references public.profiles (id) on delete set null not valid;
 alter table public.matches validate constraint matches_referee_id_fkey;
+
+--     Fail LOUDLY rather than leaving a half-applied schema: if the constraint
+--     is not present and correct at this point, the app is already broken and
+--     the operator needs to know now, not from a support ticket.
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+     where conname = 'matches_referee_id_fkey'
+       and conrelid = 'public.matches'::regclass
+       and confdeltype = 'n'
+  ) then
+    raise exception 'matches_referee_id_fkey is missing or not SET NULL. The app embeds the referee through this constraint BY NAME, so match screens are broken until it is restored. Re-run this file as a single transaction.';
+  end if;
+end $$;
 
 notify pgrst, 'reload schema';
 
