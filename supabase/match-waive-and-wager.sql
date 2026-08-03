@@ -30,10 +30,20 @@ alter table public.matches drop constraint if exists referee_not_competitor;
 alter table public.matches add constraint referee_not_competitor
   check (referee_id is null or (referee_id <> challenger_id and referee_id <> opponent_id));
 
--- exactly one mode: a real referee, or a waiver (and then no referee)
+-- exactly one mode: a real referee, or a waiver (and then no referee).
+-- The `status in (...)` arm is NOT optional and must stay in sync with
+-- deletion-retention-hardening.sql, which owns this constraint: since that file
+-- made matches.referee_id ON DELETE SET NULL, prod contains finished matches
+-- with referee_waived = false and referee_id IS NULL (their referee deleted
+-- their account). Re-adding the strict two-arm form here would abort with
+-- 23514 against those rows and leave this whole file half-applied.
 alter table public.matches drop constraint if exists referee_mode;
 alter table public.matches add constraint referee_mode
-  check ((referee_waived and referee_id is null) or (not referee_waived and referee_id is not null));
+  check (
+    status in ('completed', 'cancelled', 'declined')
+    or (referee_waived and referee_id is null)
+    or (not referee_waived and referee_id is not null)
+  );
 
 -- ---------------------------------------------------------------------------
 -- 2. _settle_match — the scoring engine (Elo + wager + complete). Shared by the
