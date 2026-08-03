@@ -1,3 +1,12 @@
+-- *** RE-RUN WARNING (added 2026-07-20 audit) ***
+-- This file (re)defines public.handle_new_user, the signup trigger. So do
+-- schema.sql, minors.sql, family-plan.sql, belt-starting-rating.sql,
+-- shared-eligibility.sql, tournament-guests.sql and signup-username.sql.
+-- The AUTHORITATIVE version is supabase/signup-trigger-consolidated.sql
+-- (it adds the concurrency retry + guards). Last one applied wins, so
+-- ALWAYS re-run signup-trigger-consolidated.sql after this file, or new
+-- signups silently regress to an older trigger. A partial version of this
+-- exact mechanism caused the July signup outage.
 -- ============================================================================
 -- Roll for Rating — Age tiers + parental consent (minor protections)
 -- Run in the Supabase SQL Editor (after schema.sql, social.sql, public-matches,
