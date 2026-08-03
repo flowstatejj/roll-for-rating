@@ -19,6 +19,7 @@ import {
   autoAssignMats,
   autoBalanceTeams,
   completeTournament,
+  reopenTournament,
   createTeam,
   fetchBouts,
   fetchDivisions,
@@ -321,6 +322,23 @@ export default function TournamentDetailScreen() {
         </View>
       )}
 
+      {/* Host: undo a mis-tapped Complete. Completing now stops all further
+          scoring server side, so an event closed by accident would otherwise be
+          stuck with unrecordable bouts. */}
+      {isHost && tr.status === 'complete' && (
+        <Button
+          label={t('tn.reopenBtn')}
+          icon="lock-open-outline"
+          variant="secondary"
+          onPress={() =>
+            Alert.alert(t('tn.reopenTitle'), t('tn.reopenBody'), [
+              { text: t('common.cancel'), style: 'cancel' },
+              { text: t('tn.reopenBtn'), onPress: () => act(() => reopenTournament(id)) },
+            ])
+          }
+        />
+      )}
+
       {/* Host: invite specific people (opens the dedicated invite screen) */}
       {isHost && tr.status !== 'complete' && (
         <Button
@@ -503,7 +521,12 @@ export default function TournamentDetailScreen() {
                     </ThemedText>
                 <Card style={{ paddingVertical: Spacing.one }}>
                   {rbouts.map((b, i) => {
+                    // tr.status gate: scoring is blocked server side once the
+                    // event is complete, and only the HOST sees Reopen - so
+                    // without this a mat referee would fill in a whole result
+                    // and get a raw database error they cannot act on.
                     const canRec =
+                      tr!.status !== 'complete' &&
                       (b.referee_id === userId || isHost || mats.some((m) => m.id === b.mat_id && m.referee_id === userId)) &&
                       b.status !== 'done' && b.status !== 'bye' && !!b.a_name && !!b.b_name;
                     const mat = mats.find((m) => m.id === b.mat_id);

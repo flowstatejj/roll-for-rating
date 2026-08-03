@@ -8,9 +8,13 @@
 -- host-gated RPC is the one and only status-complete transition.
 -- ============================================================================
 
+-- NOTE: completing an event now BLOCKS further scoring (the triggers in
+-- minors-and-tournament-state.sql, which also adds reopen_tournament). Re-run
+-- that file after this one, or hosts lose the undo for a mis-tapped Complete.
 create or replace function public.complete_tournament(p_tid uuid)
 returns void language plpgsql security definer set search_path = public as $$
 begin
+  if auth.uid() is null then raise exception 'Not authenticated'; end if;
   if not public.is_tournament_host(p_tid) then
     raise exception 'Only the host can complete the tournament';
   end if;
