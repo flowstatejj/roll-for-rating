@@ -11,6 +11,7 @@ import {
   createDivision,
   createGuestCompetitor,
   deleteDivision,
+  generateDivisionNow,
   divisionSummary,
   fetchDivisionRoster,
   fetchDivisions,
@@ -452,6 +453,18 @@ function DivisionCard({
           <Ionicons name="trash-outline" size={18} color={theme.danger} />
         </Pressable>
       </View>
+
+      {expanded && division.status === 'setup' && (
+        <Button
+          label={t('tdv.generateOne')}
+          icon="git-branch-outline"
+          variant="secondary"
+          onPress={async () => {
+            try { await generateDivisionNow(division.id); onChanged?.(); }
+            catch (e: any) { Alert.alert(t('md.error'), e.message ?? t('md.tryAgain')); }
+          }}
+        />
+      )}
 
       {expanded && (
         <View style={{ gap: Spacing.two, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border, paddingTop: Spacing.two }}>
