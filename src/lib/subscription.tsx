@@ -18,7 +18,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { Platform } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import {
   endConnection,
   fetchProducts,
@@ -63,6 +63,14 @@ export interface SubInfo {
   expiresAt: string | null;
   /** which tier the active entitlement is, when there is one */
   plan: Plan | null;
+  /** How many managed juniors this account may have IN TOTAL. Decided server
+   *  side by junior_capacity() and mirrored by the insert policy, so the UI can
+   *  never disagree with what the database will actually allow.
+   *  NULL means "not known yet" (RPC not back, or it errored) - callers must
+   *  treat that as unknown, never as zero. Defaulting it to 0 told a paying
+   *  parent with no children that they were at capacity, and showed a founder
+   *  the paid upgrade the comp guard exists to keep away from them. */
+  juniorCap: number | null;
 }
 
 interface SubscriptionContextValue {
@@ -72,6 +80,9 @@ interface SubscriptionContextValue {
   active: boolean;
   /** the active plan tier, or null when not subscribed */
   plan: Plan | null;
+  /** how many managed juniors this account may have in total (server-decided);
+   *  null = not known yet, which must never be treated as zero */
+  juniorCap: number | null;
   info: SubInfo | null;
   /** the individual ($4.99) StoreKit product, when loaded */
   product: ProductSubscription | null;
@@ -107,7 +118,10 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     if (error) {
       // Fail CLOSED would lock everyone out on a transient error; the gate also
       // checks `ready`, so we surface "inactive" but let a retry recover.
-      setInfo({ active: false, status: null, source: null, productId: null, expiresAt: null, plan: null });
+      // Keep the last known-good row if we have one: overwriting it with an
+      // all-null inactive row is what let a transient blip show a comp member
+      // the paid upsell and strand a paying parent at 'capacity 0'.
+      setInfo((prev) => prev ?? { active: false, status: null, source: null, productId: null, expiresAt: null, plan: null, juniorCap: null });
     } else {
       const row = Array.isArray(data) ? data[0] : data;
       active = !!row?.active;
@@ -119,6 +133,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         productId: row?.product_id ?? null,
         expiresAt: row?.expires_at ?? null,
         plan: active ? planTier : null,
+        juniorCap: row?.junior_cap == null ? null : Number(row.junior_cap),
       });
     }
     setReady(true);
@@ -140,8 +155,17 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         if (!transactionId) return;
         body = { transactionId };
       }
-      const { error } = await supabase.functions.invoke('validate-purchase', { body });
+      // Read the RESPONSE, not just the error. The comp-account case returns 200
+      // with code 'comp_active': the store took the money but the account
+      // already has free access, so the free grant was kept. Discarding this
+      // (the previous behaviour) meant the member was charged and shown nothing
+      // at all, with no way to know a refund was needed.
+      const { data, error } = await supabase.functions.invoke('validate-purchase', { body });
+      const res = data as { code?: string; error?: string } | null;
       if (!error) await refresh();
+      if (res?.code === 'comp_active' && res.error) {
+        Alert.alert('Your account is already free', res.error);
+      }
     },
     [refresh],
   );
@@ -315,6 +339,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       ready,
       active: !!info?.active,
       plan: info?.plan ?? null,
+      juniorCap: info?.juniorCap ?? null,
       info,
       product,
       familyProduct,

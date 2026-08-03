@@ -12,6 +12,7 @@ import { parseDob } from '@/lib/dob';
 import { useTranslation } from '@/lib/i18n';
 import { addJunior, fetchJuniors, removeJunior } from '@/lib/juniors';
 import { useSubscription } from '@/lib/subscription';
+import { submitSupportRequest } from '@/lib/support';
 import { YOUTH_BELTS, type BeltRank, type Profile } from '@/lib/types';
 
 // Minors use the IBJJF youth belt system (gray/yellow/orange/green + stripes).
@@ -21,16 +22,30 @@ export default function JuniorsScreen() {
   const { profile } = useAuth();
   const theme = useTheme();
   const { t } = useTranslation();
-  const { plan, familyProduct, purchase, purchasing } = useSubscription();
+  const { plan, juniorCap, info, familyProduct, purchase, purchasing } = useSubscription();
 
   const [juniors, setJuniors] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [requesting, setRequesting] = useState(false);
 
-  // Capacity: family = unlimited; individual/comp = one managed child.
-  const isFamily = plan === 'family';
-  const atCapacity = !isFamily && juniors.length >= 1;
+  // Capacity comes from the SERVER (my_subscription.junior_cap, backed by
+  // junior_capacity() and the same insert policy), so the button can never
+  // offer an add the database will reject - or hide one it would allow.
+  // Founders and admins get 5; a paid family plan is effectively unlimited.
+  //
+  // null = we do not KNOW the capacity yet (RPC still in flight or it errored).
+  // Unknown is not zero: treating it as zero told a paying parent with no
+  // children they were at capacity, and offered a founder the paid upgrade.
+  // While unknown, show no capacity card at all and let a retry settle it.
+  const capKnown = juniorCap != null;
+  const isFamily = plan === 'family' || (juniorCap ?? 0) >= 99;
+  const atCapacity = capKnown && juniors.length >= (juniorCap ?? 0);
+  // A comp account (founder, elite, free gym) must NEVER be shown a purchase:
+  // buying would replace their free grant with a paid subscription.
+  const isComp = info?.source === 'comp';
+  const canBuyUpgrade = capKnown && !isComp && !isFamily && (juniorCap ?? 0) <= 1;
 
   // add-form state
   const [name, setName] = useState('');
@@ -94,6 +109,30 @@ export default function JuniorsScreen() {
     }
   }
 
+  // Ask for more than the automatic allowance. Files a support_requests row
+  // (category 'account') rather than selling anything - beyond the founder/admin
+  // tier this is a human decision, and an admin raises junior_cap_override.
+  async function onRequestMore() {
+    if (requesting) return;
+    setRequesting(true);
+    try {
+      // Reuse the shared helper: it stamps the reply-to email, app version and
+      // platform, and satisfies the support_insert_own policy (user_id = auth.uid()).
+      await submitSupportRequest({
+        category: 'account',
+        subject: 'More managed juniors',
+        body:
+          `${profile?.display_name ?? 'A member'} is asking to manage more than ${juniorCap} juniors ` +
+          `(currently ${juniors.length}).`,
+      });
+      Alert.alert(t('jr.requestSentTitle'), t('jr.requestSentBody'));
+    } catch (e: any) {
+      Alert.alert(t('jr.requestFail'), e.message ?? t('md.tryAgain'));
+    } finally {
+      setRequesting(false);
+    }
+  }
+
   async function onUpgrade() {
     try {
       await purchase('family');
@@ -137,9 +176,15 @@ export default function JuniorsScreen() {
         {t('jr.intro')}
       </ThemedText>
 
-      <ThemedText type="small" themeColor="textSecondary">
-        {isFamily ? t('jr.capFamily') : t('jr.capIndividual')}
-      </ThemedText>
+      {capKnown && (
+        <ThemedText type="small" themeColor="textSecondary">
+          {isFamily
+            ? t('jr.capFamily')
+            : (juniorCap ?? 0) <= 1
+              ? t('jr.capIndividual')
+              : t('jr.capCount').replace('{used}', String(juniors.length)).replace('{cap}', String(juniorCap))}
+        </ThemedText>
+      )}
 
       {juniors.length === 0 && !adding ? (
         <EmptyState icon="happy-outline" title={t('jr.emptyTitle')} subtitle={t('jr.emptySub')} />
@@ -211,19 +256,37 @@ export default function JuniorsScreen() {
         <Card style={{ gap: Spacing.two, borderWidth: 1, borderColor: theme.accent }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
             <Ionicons name="people" size={20} color={theme.accent} />
-            <ThemedText style={{ fontWeight: '800', flex: 1 }}>{t('jr.upgradeTitle')}</ThemedText>
+            <ThemedText style={{ fontWeight: '800', flex: 1 }}>
+              {canBuyUpgrade ? t('jr.upgradeTitle') : t('jr.moreTitle')}
+            </ThemedText>
           </View>
-          <ThemedText type="small" themeColor="textSecondary">{t('jr.upgradeBody')}</ThemedText>
-          <Button
-            label={t('jr.upgradeBtn').replace('{price}', familyProduct?.displayPrice ?? t('pw.familyPriceFallback'))}
-            icon="arrow-up-circle"
-            loading={purchasing}
-            onPress={onUpgrade}
-          />
+          <ThemedText type="small" themeColor="textSecondary">
+            {canBuyUpgrade
+              ? t('jr.upgradeBody')
+              : t('jr.moreBody').replace('{cap}', String(juniorCap))}
+          </ThemedText>
+          {canBuyUpgrade ? (
+            <Button
+              label={t('jr.upgradeBtn').replace('{price}', familyProduct?.displayPrice ?? t('pw.familyPriceFallback'))}
+              icon="arrow-up-circle"
+              loading={purchasing}
+              onPress={onUpgrade}
+            />
+          ) : (
+            /* Already on the highest tier we grant automatically (founder/admin
+               = 5): more than that is a human decision, so file a request. */
+            <Button
+              label={t('jr.requestBtn')}
+              icon="mail-outline"
+              variant="secondary"
+              loading={requesting}
+              onPress={onRequestMore}
+            />
+          )}
         </Card>
-      ) : (
+      ) : capKnown ? (
         <Button label={t('jr.add')} icon="add" variant="secondary" onPress={() => setAdding(true)} />
-      )}
+      ) : null}
     </Screen>
   );
 }

@@ -144,9 +144,43 @@ Deno.serve(async (req) => {
       return json({ error: 'This subscription is already linked to another account.' }, 409);
     }
 
-    // 4) Upsert the entitlement.
+    // 4) Upsert the entitlement, ALWAYS.
+    //
+    // A live comp grant (founding member, elite invite, free verified gym) is
+    // protected by the _protect_comp_entitlement trigger, which keeps the free
+    // access while ADOPTING this purchase's store identifiers. Do not short
+    // circuit before this write: an earlier version returned 409 here, which
+    // meant the paid subscription was recorded nowhere at all. That is worse
+    // than the bug it was meant to fix, because original_transaction_id is what
+    // every downstream path keys on - Apple's refund / renewal / revoke
+    // notifications become permanent no-ops, and the same receipt can be
+    // replayed onto a DIFFERENT account for free access, since the
+    // already-linked check above also finds nothing. On Android the purchase
+    // has additionally been acknowledged by this point, closing Google's
+    // automatic refund window.
     const { error: upErr } = await admin.from('entitlements').upsert(row, { onConflict: 'user_id' });
     if (upErr) return json({ error: upErr.message }, 400);
+
+    // 5) Read the row back to see what the database actually kept. If the comp
+    // trigger held the free grant, tell the caller plainly so they can seek a
+    // refund rather than being billed with nothing visible in the app.
+    const { data: saved } = await admin
+      .from('entitlements')
+      .select('source, status, product_id, expires_at')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (saved?.source === 'comp' && row.source !== 'comp') {
+      console.error(`validate-purchase: comp account ${userId} purchased ${productId}; free grant kept, ids adopted`);
+      return json({
+        code: 'comp_active',
+        active: true,
+        status: saved.status,
+        product_id: saved.product_id,
+        expires_at: saved.expires_at,
+        error: 'This account already has free access, so the subscription was not applied. Contact support for a refund.',
+      }, 200);
+    }
 
     const active = status === 'active' || status === 'grace';
     return json({ active, status, expires_at: expiresAt, product_id: productId });
