@@ -11,6 +11,21 @@
 // client fetches R2 directly (free egress).
 import { AwsClient } from 'aws4fetch';
 
+// Object keys are ALWAYS `<matchId>/<name>.<ext>`. Keep this in lockstep with
+// parseKey in supabase/functions/video-url/index.ts - the two presigners must
+// not diverge, or the cheaper path becomes the insecure one.
+const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+const NAME_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
+
+function isValidKey(path: string): boolean {
+  if (!path || path.length > 200) return false;
+  if (path.includes('..') || path.includes('//') || path.includes('\\')) return false;
+  if (/%2e|%2f|%5c/i.test(path)) return false;
+  const parts = path.split('/');
+  if (parts.length !== 2) return false;
+  return UUID_RE.test(parts[0]) && NAME_RE.test(parts[1]);
+}
+
 export interface Env {
   R2_ACCOUNT_ID: string;
   R2_BUCKET: string;
@@ -47,7 +62,13 @@ export default {
     } catch {
       /* bad body */
     }
-    if (!path.includes('/')) return json({ error: 'path is required' }, 400);
+    // Same key validation as the video-url edge function. The RLS row lookup
+    // below is NOT sufficient on its own: the match_videos insert policy
+    // constrains match_id and uploader_id but nothing about `path`, so a
+    // participant could store a row whose path contains `..` and read it back
+    // legitimately. `new Request()` then collapses the dot segments before
+    // aws4fetch signs, presigning someone else's object. Reject the shape first.
+    if (!isValidKey(path)) return json({ error: 'Invalid path' }, 400);
 
     // Access check: RLS-gated read of the row with the caller's own JWT. It comes
     // back only if they may view it (participant, or the match is public).
